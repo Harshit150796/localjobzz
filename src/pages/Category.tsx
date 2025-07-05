@@ -1,76 +1,154 @@
 
 import React, { useState } from 'react';
-import { Filter, Grid, List, SlidersHorizontal } from 'lucide-react';
+import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import ListingCard from '../components/ListingCard';
 
 const Category = () => {
   const { categoryName } = useParams();
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
-  const [priceRange, setPriceRange] = useState([0, 100000]);
 
-  // Mock listings data
-  const listings = [
+  // Mock job listings data - focused on daily jobs
+  const jobListings = [
     {
-      title: 'iPhone 14 Pro Max - Excellent Condition',
-      price: '85,000',
-      location: 'Bandra, Mumbai',
+      id: 1,
+      title: 'House Cleaning - Urgent Today',
+      salary: '₹800/day',
+      location: 'Bandra West, Mumbai',
+      timePosted: '15 min ago',
+      jobType: 'Household Work',
+      description: 'Need someone to clean 2BHK apartment. Must start today. Work for 4-5 hours.',
+      phone: '+91 98765 43210',
+      requirements: 'Experience preferred, own cleaning supplies',
+      timing: '10 AM - 3 PM',
+      featured: true
+    },
+    {
+      id: 2,
+      title: 'Food Delivery - Swiggy Partner',
+      salary: '₹600-1000/day',
+      location: 'Koramangala, Bangalore',
+      timePosted: '30 min ago',
+      jobType: 'Delivery',
+      description: 'Looking for delivery partner with own bike. Flexible hours, good earnings.',
+      phone: '+91 87654 32109',
+      requirements: 'Own vehicle, smartphone, driving license',
+      timing: 'Flexible - 8 hours',
+      featured: false
+    },
+    {
+      id: 3,
+      title: 'Construction Helper - Building Site',
+      salary: '₹700/day',
+      location: 'Sector 14, Gurgaon',
+      timePosted: '45 min ago',
+      jobType: 'Construction',
+      description: 'Need 3 helpers for construction work. Daily payment guaranteed.',
+      phone: '+91 76543 21098',
+      requirements: 'Physical fitness required, no experience needed',
+      timing: '8 AM - 5 PM',
+      featured: true
+    },
+    {
+      id: 4,
+      title: 'Shop Assistant - Grocery Store',
+      salary: '₹500/day',
+      location: 'Hitech City, Hyderabad',
+      timePosted: '1h ago',
+      jobType: 'Retail',
+      description: 'Part-time help needed in grocery store. Good for students.',
+      phone: '+91 65432 10987',
+      requirements: 'Basic math, customer handling',
+      timing: '2 PM - 8 PM',
+      featured: false
+    },
+    {
+      id: 5,
+      title: 'Cook for Small Family',
+      salary: '₹600/day',
+      location: 'Andheri East, Mumbai',
+      timePosted: '1h ago',
+      jobType: 'Household Work',
+      description: 'Cook lunch and dinner for family of 3. Simple home food.',
+      phone: '+91 54321 09876',
+      requirements: 'Know basic cooking, vegetarian food',
+      timing: '11 AM - 2 PM, 6 PM - 8 PM',
+      featured: false
+    },
+    {
+      id: 6,
+      title: 'Painter Helper - Apartment Painting',
+      salary: '₹650/day',
+      location: 'Whitefield, Bangalore',
       timePosted: '2h ago',
-      image: 'photo-1592750475338-74b7b21085ab',
-      featured: true
-    },
-    {
-      title: 'Samsung Galaxy S23 Ultra',
-      price: '75,000',
-      location: 'Andheri, Mumbai',
-      timePosted: '4h ago',
-      image: 'photo-1610945415295-d9bbf067e59c'
-    },
-    {
-      title: 'OnePlus 11 - Like New',
-      price: '45,000',
-      location: 'Powai, Mumbai',
-      timePosted: '6h ago',
-      image: 'photo-1511707171634-5f897ff02aa9'
-    },
-    {
-      title: 'iPhone 13 - Good Condition',
-      price: '55,000',
-      location: 'Worli, Mumbai',
-      timePosted: '8h ago',
-      image: 'photo-1556656793-08538906a9f8',
-      featured: true
-    },
-    {
-      title: 'Google Pixel 7 Pro',
-      price: '42,000',
-      location: 'Malad, Mumbai',
-      timePosted: '1d ago',
-      image: 'photo-1598300042247-d088f8ab3a91'
-    },
-    {
-      title: 'Xiaomi 13 Pro - Sealed Pack',
-      price: '38,000',
-      location: 'Thane, Mumbai',
-      timePosted: '1d ago',
-      image: 'photo-1567581935884-3349723552ca'
+      jobType: 'Construction',
+      description: 'Help main painter in 3BHK apartment painting. 2-3 days work.',
+      phone: '+91 43210 98765',
+      requirements: 'No experience needed, will teach',
+      timing: '9 AM - 6 PM',
+      featured: false
     }
   ];
 
   const filters = {
-    priceRanges: [
-      { label: 'Under ₹10,000', min: 0, max: 10000 },
-      { label: '₹10,000 - ₹25,000', min: 10000, max: 25000 },
-      { label: '₹25,000 - ₹50,000', min: 25000, max: 50000 },
-      { label: '₹50,000 - ₹1,00,000', min: 50000, max: 100000 },
-      { label: 'Above ₹1,00,000', min: 100000, max: Infinity }
+    jobTypes: ['Household Work', 'Delivery', 'Construction', 'Retail', 'Security', 'Gardening'],
+    salaryRanges: [
+      { label: 'Under ₹500/day', min: 0, max: 500 },
+      { label: '₹500 - ₹700/day', min: 500, max: 700 },
+      { label: '₹700 - ₹1000/day', min: 700, max: 1000 },
+      { label: 'Above ₹1000/day', min: 1000, max: Infinity }
     ],
-    brands: ['Apple', 'Samsung', 'OnePlus', 'Google', 'Xiaomi', 'Oppo', 'Vivo'],
-    condition: ['New', 'Like New', 'Good', 'Fair']
+    timing: ['Morning Shift', 'Evening Shift', 'Full Day', 'Flexible Hours']
   };
+
+  const JobCard = ({ job }: { job: any }) => (
+    <div className={`bg-white rounded-lg shadow-sm border ${job.featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 p-6`}>
+      {job.featured && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2 py-1 rounded mb-4 inline-block">
+          Urgent Job
+        </div>
+      )}
+      
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex-1">
+          <h3 className="font-bold text-xl text-gray-800 mb-2">{job.title}</h3>
+          <div className="text-2xl font-bold text-green-600 mb-2">{job.salary}</div>
+          
+          <div className="flex flex-wrap items-center text-gray-600 text-sm space-x-4 mb-3">
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-4 w-4" />
+              <span>{job.location}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Clock className="h-4 w-4" />
+              <span>{job.timePosted}</span>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded inline-block mb-3">
+            {job.jobType}
+          </div>
+          
+          <p className="text-gray-700 mb-3">{job.description}</p>
+          
+          <div className="space-y-2 text-sm text-gray-600">
+            <div><strong>Timing:</strong> {job.timing}</div>
+            <div><strong>Requirements:</strong> {job.requirements}</div>
+          </div>
+        </div>
+        
+        <div className="mt-4 lg:mt-0 lg:ml-6">
+          <button className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2">
+            <Phone className="h-4 w-4" />
+            <span>Call Now</span>
+          </button>
+          <div className="text-center text-sm text-gray-600 mt-2">{job.phone}</div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -79,10 +157,10 @@ const Category = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2 capitalize">
-            {categoryName || 'Category'} in Mumbai
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Jobs Available Today
           </h1>
-          <p className="text-gray-600">{listings.length} ads found</p>
+          <p className="text-gray-600">{jobListings.length} jobs posted today • Updated every hour</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -93,11 +171,24 @@ const Category = () => {
               <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
             </div>
 
-            {/* Price Range */}
+            {/* Job Type */}
             <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-3">Price Range</h3>
+              <h3 className="font-medium text-gray-700 mb-3">Job Type</h3>
               <div className="space-y-2">
-                {filters.priceRanges.map((range, index) => (
+                {filters.jobTypes.map((type, index) => (
+                  <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
+                    <span className="text-sm text-gray-600">{type}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Salary Range */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-3">Daily Salary</h3>
+              <div className="space-y-2">
+                {filters.salaryRanges.map((range, index) => (
                   <label key={index} className="flex items-center space-x-2 cursor-pointer">
                     <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
                     <span className="text-sm text-gray-600">{range.label}</span>
@@ -106,27 +197,14 @@ const Category = () => {
               </div>
             </div>
 
-            {/* Brand */}
+            {/* Timing */}
             <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-3">Brand</h3>
-              <div className="space-y-2 max-h-32 overflow-y-auto">
-                {filters.brands.map((brand, index) => (
-                  <label key={index} className="flex items-center space-x-2 cursor-pointer">
-                    <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
-                    <span className="text-sm text-gray-600">{brand}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            {/* Condition */}
-            <div className="mb-6">
-              <h3 className="font-medium text-gray-700 mb-3">Condition</h3>
+              <h3 className="font-medium text-gray-700 mb-3">Work Timing</h3>
               <div className="space-y-2">
-                {filters.condition.map((condition, index) => (
+                {filters.timing.map((time, index) => (
                   <label key={index} className="flex items-center space-x-2 cursor-pointer">
                     <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
-                    <span className="text-sm text-gray-600">{condition}</span>
+                    <span className="text-sm text-gray-600">{time}</span>
                   </label>
                 ))}
               </div>
@@ -148,10 +226,9 @@ const Category = () => {
                     onChange={(e) => setSortBy(e.target.value)}
                     className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
                   >
-                    <option value="newest">Newest First</option>
-                    <option value="oldest">Oldest First</option>
-                    <option value="priceLow">Price: Low to High</option>
-                    <option value="priceHigh">Price: High to Low</option>
+                    <option value="newest">Newest Jobs First</option>
+                    <option value="salaryHigh">Highest Salary First</option>
+                    <option value="salaryLow">Lowest Salary First</option>
                   </select>
                 </div>
 
@@ -172,26 +249,18 @@ const Category = () => {
               </div>
             </div>
 
-            {/* Listings Grid */}
-            <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'}`}>
-              {listings.map((listing, index) => (
-                <ListingCard key={index} {...listing} />
+            {/* Job Listings */}
+            <div className="space-y-6">
+              {jobListings.map((job) => (
+                <JobCard key={job.id} job={job} />
               ))}
             </div>
 
-            {/* Pagination */}
-            <div className="mt-8 flex justify-center">
-              <div className="flex items-center space-x-2">
-                <button className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Previous
-                </button>
-                <button className="px-3 py-2 text-sm bg-orange-500 text-white rounded-lg">1</button>
-                <button className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-                <button className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
-                <button className="px-3 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
-                  Next
-                </button>
-              </div>
+            {/* Load More */}
+            <div className="mt-8 text-center">
+              <button className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200">
+                Load More Jobs
+              </button>
             </div>
           </div>
         </div>

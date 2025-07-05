@@ -1,229 +1,245 @@
 
 import React, { useState } from 'react';
-import { Upload, X, Camera } from 'lucide-react';
+import { MapPin, Phone, Clock, Briefcase } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const PostAd = () => {
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [images, setImages] = useState<string[]>([]);
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
+    jobTitle: '',
+    jobType: '',
+    dailySalary: '',
     location: '',
+    workTiming: '',
+    description: '',
+    requirements: '',
     phone: '',
-    email: ''
+    urgency: 'normal'
   });
 
-  const categories = [
-    'Vehicles', 'Properties', 'Mobiles', 'Jobs', 'Services', 
-    'Fashion', 'Electronics', 'Home & Garden', 'Education', 'Matrimonial'
+  const jobTypes = [
+    'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
+    'Security Guard', 'Cooking', 'Cleaning', 'Gardening', 'Painting', 'Other'
   ];
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Mock image upload - in real app would handle actual file upload
-    if (e.target.files) {
-      const newImages = Array.from(e.target.files).map(() => 
-        `https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=300&h=200&fit=crop`
-      );
-      setImages([...images, ...newImages].slice(0, 5));
-    }
-  };
-
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
+  const timingOptions = [
+    'Morning Shift (6 AM - 2 PM)', 'Evening Shift (2 PM - 10 PM)', 
+    'Full Day (8 AM - 6 PM)', 'Night Shift (10 PM - 6 AM)', 'Flexible Hours'
+  ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', { formData, selectedCategory, images });
-    alert('Ad posted successfully! (Demo)');
+    console.log('Job posted:', formData);
+    alert('Job posted successfully! People will start contacting you soon.');
   };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-orange-500 to-red-500 p-6">
-            <h1 className="text-3xl font-bold text-white">Post Your Ad</h1>
-            <p className="text-white/90 mt-2">Reach millions of buyers across India - It's FREE!</p>
+          <div className="bg-gradient-to-r from-green-600 to-green-700 p-6">
+            <h1 className="text-3xl font-bold text-white">Post a Job</h1>
+            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE!</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Category Selection */}
+            {/* Job Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Category *
+                What work do you need done? *
+              </label>
+              <input
+                type="text"
+                value={formData.jobTitle}
+                onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
+                placeholder="e.g., House cleaning, Food delivery, Construction helper"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+
+            {/* Job Type */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Category *
               </label>
               <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                value={formData.jobType}
+                onChange={(e) => setFormData({...formData, jobType: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
               >
-                <option value="">Choose a category</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
+                <option value="">Select job type</option>
+                {jobTypes.map(type => (
+                  <option key={type} value={type}>{type}</option>
                 ))}
               </select>
             </div>
 
-            {/* Ad Title */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Ad Title *
-              </label>
-              <input
-                type="text"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
-                placeholder="Enter a catchy title for your ad"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description *
-              </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
-                placeholder="Describe your item in detail..."
-                rows={5}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            {/* Price */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Price (₹) *
-              </label>
-              <input
-                type="number"
-                value={formData.price}
-                onChange={(e) => setFormData({...formData, price: e.target.value})}
-                placeholder="Enter price in rupees"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
-              </label>
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({...formData, location: e.target.value})}
-                placeholder="Enter your city/area"
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
-                required
-              />
-            </div>
-
-            {/* Contact Info */}
+            {/* Salary and Location Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number *
+                  Daily Payment (₹) *
                 </label>
                 <input
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  type="number"
+                  value={formData.dailySalary}
+                  onChange={(e) => setFormData({...formData, dailySalary: e.target.value})}
+                  placeholder="e.g., 500, 800, 1000"
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  Location *
                 </label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={formData.location}
+                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                    placeholder="Area, City"
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Work Timing */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Work Timing *
+              </label>
+              <select
+                value={formData.workTiming}
+                onChange={(e) => setFormData({...formData, workTiming: e.target.value})}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              >
+                <option value="">Select timing</option>
+                {timingOptions.map(timing => (
+                  <option key={timing} value={timing}>{timing}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Job Description */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Job Description *
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                placeholder="Describe the work in detail. What exactly needs to be done?"
+                rows={4}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                required
+              />
+            </div>
+
+            {/* Requirements */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Requirements (Optional)
+              </label>
+              <textarea
+                value={formData.requirements}
+                onChange={(e) => setFormData({...formData, requirements: e.target.value})}
+                placeholder="Any specific skills, tools, or experience needed?"
+                rows={3}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            {/* Phone Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Your Phone Number *
+              </label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
                 <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({...formData, email: e.target.value})}
-                  placeholder="Enter email (optional)"
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  placeholder="Workers will call you directly"
+                  className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                  required
                 />
               </div>
             </div>
 
-            {/* Image Upload */}
+            {/* Urgency */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Upload Photos (Max 5)
+                How urgent is this job?
               </label>
-              
-              {/* Image Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
-                {images.map((image, index) => (
-                  <div key={index} className="relative group">
-                    <img 
-                      src={image} 
-                      alt={`Upload ${index + 1}`}
-                      className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label className="flex items-center space-x-2 cursor-pointer border rounded-lg p-3 hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="urgency"
+                    value="normal"
+                    checked={formData.urgency === 'normal'}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    className="text-green-500 focus:ring-green-500"
+                  />
+                  <div>
+                    <div className="font-medium">Normal</div>
+                    <div className="text-sm text-gray-500">Within a week</div>
                   </div>
-                ))}
-                
-                {/* Upload Button */}
-                {images.length < 5 && (
-                  <label className="cursor-pointer">
-                    <div className="w-full h-24 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center hover:border-orange-500 transition-colors">
-                      <Camera className="h-6 w-6 text-gray-400 mb-1" />
-                      <span className="text-xs text-gray-500">Add Photo</span>
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                  </label>
-                )}
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer border rounded-lg p-3 hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="urgency"
+                    value="urgent"
+                    checked={formData.urgency === 'urgent'}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    className="text-orange-500 focus:ring-orange-500"
+                  />
+                  <div>
+                    <div className="font-medium">Urgent</div>
+                    <div className="text-sm text-gray-500">Within 2-3 days</div>
+                  </div>
+                </label>
+                <label className="flex items-center space-x-2 cursor-pointer border rounded-lg p-3 hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="urgency"
+                    value="immediate"
+                    checked={formData.urgency === 'immediate'}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    className="text-red-500 focus:ring-red-500"
+                  />
+                  <div>
+                    <div className="font-medium">Immediate</div>
+                    <div className="text-sm text-gray-500">Today or tomorrow</div>
+                  </div>
+                </label>
               </div>
-              
-              <p className="text-sm text-gray-500">
-                Add photos to get 5x more responses. Max file size: 10MB each.
-              </p>
             </div>
 
             {/* Submit Button */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
+            <div className="pt-6 border-t">
               <button
                 type="submit"
-                className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-[1.02]"
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center space-x-2"
               >
-                Post Ad for FREE
+                <Briefcase className="h-5 w-5" />
+                <span>Post Job - Completely FREE</span>
               </button>
-              <button
-                type="button"
-                className="flex-1 sm:flex-none bg-yellow-500 text-white py-3 px-6 rounded-lg font-semibold hover:bg-yellow-600 transition-colors"
-              >
-                Post as Featured (₹99)
-              </button>
+              <p className="text-center text-sm text-gray-500 mt-3">
+                Your job will be visible to thousands of workers immediately
+              </p>
             </div>
           </form>
         </div>
