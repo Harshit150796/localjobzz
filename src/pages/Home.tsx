@@ -7,7 +7,8 @@ import {
   Users,
   TrendingUp,
   Shield,
-  Plus
+  Plus,
+  Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
@@ -87,32 +88,65 @@ const HomePage = () => {
       <Header />
       
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-16">
+      <section className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             Find Work Today
             <span className="block text-yellow-300">Get Paid Today</span>
           </h1>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            India's fastest job platform for daily work. Post a job in 2 steps, find work in 3 clicks.
+          <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
+            India's fastest job platform for daily work. Find work in 3 clicks, post jobs in 2 steps.
           </p>
           
-          {/* Quick Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          {/* Main Action Tiles */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
+            {/* Look for Job Tile */}
             <Link 
               to="/category/jobs"
-              className="bg-white text-orange-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+              className="group transform hover:scale-105 transition-all duration-300"
             >
-              <Briefcase className="h-5 w-5" />
-              <span>Look for a Job</span>
+              <div className="bg-white rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Briefcase className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Look for a Job</h3>
+                <p className="text-gray-600 mb-4">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
+                <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                  3 Easy Steps
+                </div>
+              </div>
             </Link>
+
+            {/* Post Job Tile */}
             <Link 
               to="/post"
-              className="bg-green-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-700 transition-all duration-200 transform hover:scale-105 flex items-center justify-center space-x-2"
+              className="group transform hover:scale-105 transition-all duration-300"
             >
-              <Plus className="h-5 w-5" />
-              <span>Post a Job</span>
+              <div className="bg-white rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Post a Job</h3>
+                <p className="text-gray-600 mb-4">Hire workers today. Get applications within hours.</p>
+                <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                  100% FREE
+                </div>
+              </div>
             </Link>
+
+            {/* AI Post Job Tile */}
+            <div className="group transform hover:scale-105 transition-all duration-300 cursor-pointer">
+              <div className="bg-white rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Bot className="h-10 w-10 text-white" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">Post Job using AI</h3>
+                <p className="text-gray-600 mb-4">Just tell us what you need. AI will create the perfect job post.</p>
+                <div className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                  Coming Soon
+                </div>
+              </div>
+            </div>
           </div>
           
           {/* Stats */}
