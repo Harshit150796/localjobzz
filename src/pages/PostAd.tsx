@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MapPin, Phone, Clock, Briefcase } from 'lucide-react';
+import { MapPin, Phone, Briefcase } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
@@ -10,9 +10,7 @@ const PostAd = () => {
     jobType: '',
     dailySalary: '',
     location: '',
-    workTiming: '',
     description: '',
-    requirements: '',
     phone: '',
     urgency: 'normal'
   });
@@ -20,11 +18,6 @@ const PostAd = () => {
   const jobTypes = [
     'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
     'Security Guard', 'Cooking', 'Cleaning', 'Gardening', 'Painting', 'Other'
-  ];
-
-  const timingOptions = [
-    'Morning Shift (6 AM - 2 PM)', 'Evening Shift (2 PM - 10 PM)', 
-    'Full Day (8 AM - 6 PM)', 'Night Shift (10 PM - 6 AM)', 'Flexible Hours'
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -112,24 +105,6 @@ const PostAd = () => {
               </div>
             </div>
 
-            {/* Work Timing */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Work Timing *
-              </label>
-              <select
-                value={formData.workTiming}
-                onChange={(e) => setFormData({...formData, workTiming: e.target.value})}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
-                required
-              >
-                <option value="">Select timing</option>
-                {timingOptions.map(timing => (
-                  <option key={timing} value={timing}>{timing}</option>
-                ))}
-              </select>
-            </div>
-
             {/* Job Description */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -142,20 +117,6 @@ const PostAd = () => {
                 rows={4}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
-              />
-            </div>
-
-            {/* Requirements */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Requirements (Optional)
-              </label>
-              <textarea
-                value={formData.requirements}
-                onChange={(e) => setFormData({...formData, requirements: e.target.value})}
-                placeholder="Any specific skills, tools, or experience needed?"
-                rows={3}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
               />
             </div>
 
