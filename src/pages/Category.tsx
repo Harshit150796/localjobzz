@@ -1,19 +1,20 @@
-
 import React, { useState } from 'react';
 import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useJobs } from '../contexts/JobContext';
 
 const Category = () => {
   const { categoryName } = useParams();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
+  const { jobs } = useJobs();
 
-  // Mock job listings data - focused on daily jobs
-  const jobListings = [
+  // Mock job listings data - will be combined with real jobs
+  const mockJobListings = [
     {
-      id: 1,
+      id: 'mock-1',
       title: 'House Cleaning - Urgent Today',
       salary: '₹800/day',
       location: 'Bandra West, Mumbai',
@@ -92,6 +93,24 @@ const Category = () => {
     }
   ];
 
+  // Combine real jobs with mock jobs
+  const allJobs = [
+    ...jobs.map(job => ({
+      id: job.id,
+      title: job.title,
+      salary: `₹${job.dailySalary}/day`,
+      location: job.location,
+      timePosted: job.timePosted,
+      jobType: job.jobType,
+      description: job.description,
+      phone: job.phone,
+      requirements: 'As discussed',
+      timing: 'Flexible',
+      featured: job.featured
+    })),
+    ...mockJobListings
+  ];
+
   const filters = {
     jobTypes: ['Household Work', 'Delivery', 'Construction', 'Retail', 'Security', 'Gardening'],
     salaryRanges: [
@@ -160,7 +179,7 @@ const Category = () => {
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             Jobs Available Today
           </h1>
-          <p className="text-gray-600">{jobListings.length} jobs posted today • Updated every hour</p>
+          <p className="text-gray-600">{allJobs.length} jobs posted today • Updated every hour</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -251,7 +270,7 @@ const Category = () => {
 
             {/* Job Listings */}
             <div className="space-y-6">
-              {jobListings.map((job) => (
+              {allJobs.map((job) => (
                 <JobCard key={job.id} job={job} />
               ))}
             </div>

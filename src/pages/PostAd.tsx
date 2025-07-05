@@ -1,10 +1,14 @@
 
 import React, { useState } from 'react';
 import { MapPin, Phone, Briefcase } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { useJobs } from '../contexts/JobContext';
 
 const PostAd = () => {
+  const navigate = useNavigate();
+  const { addJob } = useJobs();
   const [formData, setFormData] = useState({
     jobTitle: '',
     jobType: '',
@@ -12,7 +16,7 @@ const PostAd = () => {
     location: '',
     description: '',
     phone: '',
-    urgency: 'normal'
+    urgency: 'normal' as 'normal' | 'urgent' | 'immediate'
   });
 
   const jobTypes = [
@@ -22,8 +26,36 @@ const PostAd = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Add job to context
+    addJob({
+      title: formData.jobTitle,
+      jobType: formData.jobType,
+      dailySalary: formData.dailySalary,
+      location: formData.location,
+      description: formData.description,
+      phone: formData.phone,
+      urgency: formData.urgency
+    });
+
     console.log('Job posted:', formData);
-    alert('Job posted successfully! People will start contacting you soon.');
+    alert('Job posted successfully! You can now see it in the job listings.');
+    
+    // Reset form
+    setFormData({
+      jobTitle: '',
+      jobType: '',
+      dailySalary: '',
+      location: '',
+      description: '',
+      phone: '',
+      urgency: 'normal'
+    });
+
+    // Navigate to jobs page after 2 seconds
+    setTimeout(() => {
+      navigate('/category/jobs');
+    }, 2000);
   };
 
   return (
