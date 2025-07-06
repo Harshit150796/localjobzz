@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MapPin, Phone, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
@@ -182,7 +181,7 @@ const PostAd = () => {
                     name="urgency"
                     value="normal"
                     checked={formData.urgency === 'normal'}
-                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value as 'normal' | 'urgent' | 'immediate'})}
                     className="text-green-500 focus:ring-green-500"
                   />
                   <div>
@@ -196,7 +195,7 @@ const PostAd = () => {
                     name="urgency"
                     value="urgent"
                     checked={formData.urgency === 'urgent'}
-                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value as 'normal' | 'urgent' | 'immediate'})}
                     className="text-orange-500 focus:ring-orange-500"
                   />
                   <div>
@@ -210,7 +209,7 @@ const PostAd = () => {
                     name="urgency"
                     value="immediate"
                     checked={formData.urgency === 'immediate'}
-                    onChange={(e) => setFormData({...formData, urgency: e.target.value})}
+                    onChange={(e) => setFormData({...formData, urgency: e.target.value as 'normal' | 'urgent' | 'immediate'})}
                     className="text-red-500 focus:ring-red-500"
                   />
                   <div>
