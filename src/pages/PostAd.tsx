@@ -17,6 +17,9 @@ const PostAd = () => {
     phone: '',
     urgency: 'normal' as 'normal' | 'urgent' | 'immediate'
   });
+  
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [citySearchTerm, setCitySearchTerm] = useState('');
 
   const jobTypes = [
     'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
@@ -67,6 +70,24 @@ const PostAd = () => {
   const allCities = Object.entries(indianCitiesByState).flatMap(([state, cities]) => 
     cities.map(city => `${city}, ${state}`)
   );
+
+  // Filter cities based on search term
+  const filteredCities = allCities.filter(city =>
+    city.toLowerCase().includes(citySearchTerm.toLowerCase())
+  ).slice(0, 10); // Limit to 10 results for performance
+
+  const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCitySearchTerm(value);
+    setFormData({...formData, location: value});
+    setShowCityDropdown(value.length > 0);
+  };
+
+  const handleCitySelect = (city: string) => {
+    setFormData({...formData, location: city});
+    setCitySearchTerm(city);
+    setShowCityDropdown(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,22 +190,31 @@ const PostAd = () => {
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400 z-10" />
-                  <select
+                  <input
+                    type="text"
                     value={formData.location}
-                    onChange={(e) => setFormData({...formData, location: e.target.value})}
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white appearance-none"
+                    onChange={handleCityInputChange}
+                    onFocus={() => setShowCityDropdown(formData.location.length > 0)}
+                    onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                    placeholder="Type or select your city"
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
-                  >
-                    <option value="">Select your city</option>
-                    {allCities.map(city => (
-                      <option key={city} value={city}>{city}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  />
+                  
+                  {/* Dropdown List */}
+                  {showCityDropdown && filteredCities.length > 0 && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredCities.map((city, index) => (
+                        <div
+                          key={index}
+                          onClick={() => handleCitySelect(city)}
+                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                        >
+                          {city}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
