@@ -159,10 +159,13 @@ const Category = () => {
         </div>
         
         <div className="mt-4 lg:mt-0 lg:ml-6">
-          <button className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2">
+          <a 
+            href={`tel:${job.phone}`}
+            className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 no-underline"
+          >
             <Phone className="h-4 w-4" />
             <span>Call Now</span>
-          </button>
+          </a>
           <div className="text-center text-sm text-gray-600 mt-2">{job.phone}</div>
         </div>
       </div>
