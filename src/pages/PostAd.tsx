@@ -23,6 +23,63 @@ const PostAd = () => {
     'Security Guard', 'Cooking', 'Cleaning', 'Gardening', 'Painting', 'Other'
   ];
 
+  const indianCities = [
+    // Metropolitan Cities
+    'Mumbai, Maharashtra', 'Delhi, Delhi', 'Bangalore, Karnataka', 'Hyderabad, Telangana',
+    'Chennai, Tamil Nadu', 'Kolkata, West Bengal', 'Pune, Maharashtra', 'Ahmedabad, Gujarat',
+    
+    // Major Cities
+    'Surat, Gujarat', 'Jaipur, Rajasthan', 'Lucknow, Uttar Pradesh', 'Kanpur, Uttar Pradesh',
+    'Nagpur, Maharashtra', 'Indore, Madhya Pradesh', 'Thane, Maharashtra', 'Bhopal, Madhya Pradesh',
+    'Visakhapatnam, Andhra Pradesh', 'Pimpri-Chinchwad, Maharashtra', 'Patna, Bihar', 'Vadodara, Gujarat',
+    'Ghaziabad, Uttar Pradesh', 'Ludhiana, Punjab', 'Agra, Uttar Pradesh', 'Nashik, Maharashtra',
+    'Faridabad, Haryana', 'Meerut, Uttar Pradesh', 'Rajkot, Gujarat', 'Kalyan-Dombivli, Maharashtra',
+    'Vasai-Virar, Maharashtra', 'Varanasi, Uttar Pradesh', 'Srinagar, Jammu and Kashmir', 'Aurangabad, Maharashtra',
+    'Dhanbad, Jharkhand', 'Amritsar, Punjab', 'Navi Mumbai, Maharashtra', 'Allahabad, Uttar Pradesh',
+    'Ranchi, Jharkhand', 'Howrah, West Bengal', 'Coimbatore, Tamil Nadu', 'Jabalpur, Madhya Pradesh',
+    'Gwalior, Madhya Pradesh', 'Vijayawada, Andhra Pradesh', 'Jodhpur, Rajasthan', 'Madurai, Tamil Nadu',
+    'Raipur, Chhattisgarh', 'Kota, Rajasthan', 'Guwahati, Assam', 'Chandigarh, Chandigarh',
+    'Solapur, Maharashtra', 'Hubli-Dharwad, Karnataka', 'Tiruchirappalli, Tamil Nadu', 'Bareilly, Uttar Pradesh',
+    'Mysore, Karnataka', 'Tiruppur, Tamil Nadu', 'Gurgaon, Haryana', 'Aligarh, Uttar Pradesh',
+    'Jalandhar, Punjab', 'Bhubaneswar, Odisha', 'Salem, Tamil Nadu', 'Warangal, Telangana',
+    'Guntur, Andhra Pradesh', 'Bhiwandi, Maharashtra', 'Saharanpur, Uttar Pradesh', 'Gorakhpur, Uttar Pradesh',
+    'Bikaner, Rajasthan', 'Amravati, Maharashtra', 'Noida, Uttar Pradesh', 'Jamshedpur, Jharkhand',
+    'Bhilai, Chhattisgarh', 'Cuttack, Odisha', 'Firozabad, Uttar Pradesh', 'Kochi, Kerala',
+    'Nellore, Andhra Pradesh', 'Bhavnagar, Gujarat', 'Dehradun, Uttarakhand', 'Durgapur, West Bengal',
+    'Asansol, West Bengal', 'Rourkela, Odisha', 'Nanded, Maharashtra', 'Kolhapur, Maharashtra',
+    'Ajmer, Rajasthan', 'Akola, Maharashtra', 'Gulbarga, Karnataka', 'Jamnagar, Gujarat',
+    'Ujjain, Madhya Pradesh', 'Loni, Uttar Pradesh', 'Siliguri, West Bengal', 'Jhansi, Uttar Pradesh',
+    'Ulhasnagar, Maharashtra', 'Jammu, Jammu and Kashmir', 'Sangli-Miraj & Kupwad, Maharashtra', 'Mangalore, Karnataka',
+    'Erode, Tamil Nadu', 'Belgaum, Karnataka', 'Ambattur, Tamil Nadu', 'Tirunelveli, Tamil Nadu',
+    'Malegaon, Maharashtra', 'Gaya, Bihar', 'Jalgaon, Maharashtra', 'Udaipur, Rajasthan',
+    'Maheshtala, West Bengal', 'Davanagere, Karnataka', 'Kozhikode, Kerala', 'Kurnool, Andhra Pradesh',
+    'Rajpur Sonarpur, West Bengal', 'Rajahmundry, Andhra Pradesh', 'Bokaro, Jharkhand', 'South Dumdum, West Bengal',
+    'Bellary, Karnataka', 'Patiala, Punjab', 'Gopalpur, Odisha', 'Agartala, Tripura',
+    'Bhagalpur, Bihar', 'Muzaffarnagar, Uttar Pradesh', 'Bhatpara, West Bengal', 'Panihati, West Bengal',
+    'Latur, Maharashtra', 'Dhule, Maharashtra', 'Rohtak, Haryana', 'Korba, Chhattisgarh',
+    'Bhilwara, Rajasthan', 'Berhampur, Odisha', 'Muzaffarpur, Bihar', 'Ahmednagar, Maharashtra',
+    'Mathura, Uttar Pradesh', 'Kollam, Kerala', 'Avadi, Tamil Nadu', 'Kadapa, Andhra Pradesh',
+    'Kamarhati, West Bengal', 'Sambalpur, Odisha', 'Bilaspur, Chhattisgarh', 'Shahjahanpur, Uttar Pradesh',
+    'Satara, Maharashtra', 'Bijapur, Karnataka', 'Rampur, Uttar Pradesh', 'Shivamogga, Karnataka',
+    'Chandrapur, Maharashtra', 'Junagadh, Gujarat', 'Thrissur, Kerala', 'Alwar, Rajasthan',
+    'Bardhaman, West Bengal', 'Kulti, West Bengal', 'Kakinada, Andhra Pradesh', 'Nizamabad, Telangana',
+    'Parbhani, Maharashtra', 'Tumkur, Karnataka', 'Khammam, Telangana', 'Ozhukarai, Puducherry',
+    'Bihar Sharif, Bihar', 'Panipat, Haryana', 'Darbhanga, Bihar', 'Bally, West Bengal',
+    'Aizawl, Mizoram', 'Dewas, Madhya Pradesh', 'Ichalkaranji, Maharashtra', 'Karnal, Haryana',
+    'Bathinda, Punjab', 'Jalna, Maharashtra', 'Eluru, Andhra Pradesh', 'Kirari Suleman Nagar, Delhi',
+    'Barabanki, Uttar Pradesh', 'Purnia, Bihar', 'Satna, Madhya Pradesh', 'Mau, Uttar Pradesh',
+    'Sonipat, Haryana', 'Farrukhabad, Uttar Pradesh', 'Sagar, Madhya Pradesh', 'Rourkela, Odisha',
+    'Durg, Chhattisgarh', 'Imphal, Manipur', 'Ratlam, Madhya Pradesh', 'Hapur, Uttar Pradesh',
+    'Arrah, Bihar', 'Karimnagar, Telangana', 'Anantapur, Andhra Pradesh', 'Etawah, Uttar Pradesh',
+    'Ambernath, Maharashtra', 'North Dumdum, West Bengal', 'Bharatpur, Rajasthan', 'Begusarai, Bihar',
+    'New Delhi, Delhi', 'Gandhidham, Gujarat', 'Baranagar, West Bengal', 'Tiruvottiyur, Tamil Nadu',
+    'Puducherry, Puducherry', 'Sikar, Rajasthan', 'Thoothukudi, Tamil Nadu', 'Rewa, Madhya Pradesh',
+    'Mirzapur, Uttar Pradesh', 'Raichur, Karnataka', 'Pali, Rajasthan', 'Ramagundam, Telangana',
+    'Silchar, Assam', 'Orai, Uttar Pradesh', 'Tonk, Rajasthan', 'Ramgarh, Jharkhand',
+    'Vizianagaram, Andhra Pradesh', 'Katihar, Bihar', 'Kishangarh, Rajasthan', 'Serampore, West Bengal',
+    'Kurnool, Andhra Pradesh', 'Ozhukarai, Puducherry', 'Sultanganj, Bihar'
+  ];
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -123,15 +180,23 @@ const PostAd = () => {
                   Location *
                 </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
+                  <MapPin className="absolute left-3 top-3.5 h-4 w-4 text-gray-400 z-10" />
+                  <select
                     value={formData.location}
                     onChange={(e) => setFormData({...formData, location: e.target.value})}
-                    placeholder="Area, City"
-                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 bg-white appearance-none"
                     required
-                  />
+                  >
+                    <option value="">Select your city</option>
+                    {indianCities.map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
               </div>
             </div>
