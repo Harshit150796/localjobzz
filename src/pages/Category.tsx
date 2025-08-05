@@ -9,6 +9,7 @@ const Category = () => {
   const { categoryName } = useParams();
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
+  const cityFilter = searchParams.get('city') || '';
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
   const { jobs } = useJobs();
@@ -139,19 +140,29 @@ const Category = () => {
     ...mockJobListings
   ];
 
-  // Filter jobs based on search query
+  // Filter jobs based on search query and city
   const filteredJobs = allJobs.filter(job => {
-    if (!searchQuery) return true;
-    
-    // Split search query into words and check if any word matches
-    const searchWords = searchQuery.toLowerCase().split(' ').filter(word => word.length > 2); // Only words longer than 2 chars
-    
-    return searchWords.some(word => 
-      job.title.toLowerCase().includes(word) ||
-      job.description.toLowerCase().includes(word) ||
-      job.location.toLowerCase().includes(word) ||
-      job.jobType.toLowerCase().includes(word)
-    );
+    // City filter
+    if (cityFilter) {
+      const jobLocation = job.location.toLowerCase();
+      const selectedCity = cityFilter.toLowerCase();
+      if (!jobLocation.includes(selectedCity)) {
+        return false;
+      }
+    }
+
+    // Search filter
+    if (searchQuery) {
+      const searchWords = searchQuery.toLowerCase().split(' ').filter(word => word.length > 2);
+      return searchWords.some(word => 
+        job.title.toLowerCase().includes(word) ||
+        job.description.toLowerCase().includes(word) ||
+        job.location.toLowerCase().includes(word) ||
+        job.jobType.toLowerCase().includes(word)
+      );
+    }
+
+    return true;
   });
 
   const filters = {
@@ -223,10 +234,15 @@ const Category = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            {searchQuery ? `Search Results for "${searchQuery}"` : 'Jobs Available Today'}
+            {cityFilter 
+              ? `Jobs in ${cityFilter}`
+              : searchQuery 
+                ? `Search Results for "${searchQuery}"`
+                : 'Jobs Available Today'
+            }
           </h1>
           <p className="text-gray-600">
-            {searchQuery 
+            {(searchQuery || cityFilter)
               ? `${filteredJobs.length} jobs found` 
               : `${allJobs.length} jobs posted today • Updated every hour`
             }

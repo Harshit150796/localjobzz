@@ -84,6 +84,14 @@ const Header = () => {
     }
   };
 
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setCitySearch('');
+    setShowCityDropdown(false);
+    // Navigate to jobs page filtered by city
+    navigate(`/category/all?city=${encodeURIComponent(city)}`);
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-orange-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -115,11 +123,7 @@ const Header = () => {
                     <div
                       key={index}
                       className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                      onClick={() => {
-                        setSelectedCity(city);
-                        setCitySearch('');
-                        setShowCityDropdown(false);
-                      }}
+                      onClick={() => handleCitySelect(city)}
                     >
                       {city}
                     </div>
@@ -183,11 +187,7 @@ const Header = () => {
                         <div
                           key={index}
                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
-                          onClick={() => {
-                            setSelectedCity(city);
-                            setCitySearch('');
-                            setShowCityDropdown(false);
-                          }}
+                          onClick={() => handleCitySelect(city)}
                         >
                           {city}
                         </div>
