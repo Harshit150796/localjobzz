@@ -143,12 +143,14 @@ const Category = () => {
   const filteredJobs = allJobs.filter(job => {
     if (!searchQuery) return true;
     
-    const query = searchQuery.toLowerCase();
-    return (
-      job.title.toLowerCase().includes(query) ||
-      job.description.toLowerCase().includes(query) ||
-      job.location.toLowerCase().includes(query) ||
-      job.jobType.toLowerCase().includes(query)
+    // Split search query into words and check if any word matches
+    const searchWords = searchQuery.toLowerCase().split(' ').filter(word => word.length > 2); // Only words longer than 2 chars
+    
+    return searchWords.some(word => 
+      job.title.toLowerCase().includes(word) ||
+      job.description.toLowerCase().includes(word) ||
+      job.location.toLowerCase().includes(word) ||
+      job.jobType.toLowerCase().includes(word)
     );
   });
 
