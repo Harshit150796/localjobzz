@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone } from 'lucide-react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
 
 const Category = () => {
   const { categoryName } = useParams();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
   const { jobs } = useJobs();
@@ -111,6 +113,19 @@ const Category = () => {
     ...mockJobListings
   ];
 
+  // Filter jobs based on search query
+  const filteredJobs = allJobs.filter(job => {
+    if (!searchQuery) return true;
+    
+    const query = searchQuery.toLowerCase();
+    return (
+      job.title.toLowerCase().includes(query) ||
+      job.description.toLowerCase().includes(query) ||
+      job.location.toLowerCase().includes(query) ||
+      job.jobType.toLowerCase().includes(query)
+    );
+  });
+
   const filters = {
     jobTypes: ['Household Work', 'Delivery', 'Construction', 'Retail', 'Security', 'Gardening'],
     salaryRanges: [
@@ -180,9 +195,14 @@ const Category = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Jobs Available Today
+            {searchQuery ? `Search Results for "${searchQuery}"` : 'Jobs Available Today'}
           </h1>
-          <p className="text-gray-600">{allJobs.length} jobs posted today • Updated every hour</p>
+          <p className="text-gray-600">
+            {searchQuery 
+              ? `${filteredJobs.length} jobs found` 
+              : `${allJobs.length} jobs posted today • Updated every hour`
+            }
+          </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -273,9 +293,16 @@ const Category = () => {
 
             {/* Job Listings */}
             <div className="space-y-6">
-              {allJobs.map((job) => (
-                <JobCard key={job.id} job={job} />
-              ))}
+              {filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">No jobs found matching your search.</p>
+                  <p className="text-gray-400 text-sm mt-2">Try adjusting your search terms or filters.</p>
+                </div>
+              )}
             </div>
 
             {/* Load More */}
