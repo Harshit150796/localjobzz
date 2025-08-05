@@ -16,6 +16,32 @@ const Category = () => {
   // Mock job listings data - will be combined with real jobs
   const mockJobListings = [
     {
+      id: 'mock-mathura-1',
+      title: 'Temple Cleaning - Krishna Janmabhoomi',
+      salary: '₹500/day',
+      location: 'Mathura, Uttar Pradesh',
+      timePosted: '2h ago',
+      jobType: 'Household Work',
+      description: 'Need person to clean temple premises daily. Morning shift work. Devotional environment.',
+      phone: '+91 98765 11111',
+      requirements: 'Respectful attitude, early morning availability',
+      timing: '5 AM - 9 AM',
+      featured: false
+    },
+    {
+      id: 'mock-mathura-2',
+      title: 'Sweet Shop Helper - Mathura Peda Shop',
+      salary: '₹600/day',
+      location: 'Holi Gate, Mathura',
+      timePosted: '4h ago',
+      jobType: 'Retail',
+      description: 'Help in famous peda sweet shop. Pack sweets, serve customers. Good for local people.',
+      phone: '+91 98765 22222',
+      requirements: 'Basic Hindi, sweet shop experience preferred',
+      timing: '8 AM - 6 PM',
+      featured: true
+    },
+    {
       id: 'mock-1',
       title: 'House Cleaning - Urgent Today',
       salary: '₹800/day',
