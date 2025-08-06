@@ -26,7 +26,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Load jobs from localStorage on mount
   useEffect(() => {
-    const savedJobs = localStorage.getItem('kamtabai-jobs');
+    const savedJobs = localStorage.getItem('localjobcart-jobs');
     if (savedJobs) {
       setJobs(JSON.parse(savedJobs));
     }
@@ -34,7 +34,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Save jobs to localStorage whenever jobs change
   useEffect(() => {
-    localStorage.setItem('kamtabai-jobs', JSON.stringify(jobs));
+    localStorage.setItem('localjobcart-jobs', JSON.stringify(jobs));
   }, [jobs]);
 
   const addJob = (jobData: Omit<Job, 'id' | 'timePosted' | 'featured'>) => {

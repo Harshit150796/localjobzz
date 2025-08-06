@@ -95,7 +95,7 @@ const HomePage = () => {
             <span className="block text-yellow-300">Get Paid Today</span>
           </h1>
           <p className="text-xl text-white/90 mb-12 max-w-2xl mx-auto">
-            India's fastest job platform for daily work. Find work in 3 clicks, post jobs in 2 steps.
+            The fastest job platform for daily work. Find work in 3 clicks, post jobs in 2 steps.
           </p>
           
           {/* Main Action Tiles */}
@@ -292,7 +292,7 @@ const HomePage = () => {
             Start Today, Earn Today
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of people finding daily work and earning money on kamtabai
+            Join thousands of people finding daily work and earning money on localjobcart
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 

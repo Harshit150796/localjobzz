@@ -12,12 +12,12 @@ const Footer = () => {
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
               <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg font-bold text-xl">
-                K
+                L
               </div>
-              <span className="text-2xl font-bold">kamtabai</span>
+              <span className="text-2xl font-bold">localjobcart</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
-              India's premier classifieds platform. Buy, sell, and discover amazing deals in your city.
+              Premier job platform for your city. Find work opportunities and hire workers instantly.
             </p>
             <div className="flex space-x-4">
               <Facebook className="h-5 w-5 text-gray-400 hover:text-blue-500 cursor-pointer transition-colors" />
@@ -51,7 +51,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 kamtabai.com. All rights reserved. Made with ❤️ for India</p>
+          <p>&copy; 2024 localjobcart.com. All rights reserved. Made with ❤️ for everyone</p>
         </div>
       </div>
     </footer>

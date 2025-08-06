@@ -26,7 +26,7 @@ const PostAd = () => {
     'Security Guard', 'Cooking', 'Cleaning', 'Gardening', 'Painting', 'Other'
   ];
 
-  const indianCitiesByState = {
+  const citiesByState = {
     'Andhra Pradesh': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Kadapa', 'Kakinada', 'Anantapur', 'Vizianagaram', 'Eluru', 'Ongole', 'Nandyal', 'Machilipatnam', 'Adoni', 'Tenali', 'Chittoor', 'Hindupur', 'Proddatur', 'Bhimavaram'],
     'Arunachal Pradesh': ['Itanagar', 'Naharlagun', 'Pasighat', 'Aalo', 'Bomdila', 'Tawang', 'Ziro', 'Basar', 'Khonsa', 'Tezu'],
     'Assam': ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon', 'Tinsukia', 'Tezpur', 'Bongaigaon', 'Dhubri', 'Karimganj', 'North Lakhimpur', 'Sivasagar', 'Goalpara', 'Barpeta', 'Mangaldoi'],
@@ -67,7 +67,7 @@ const PostAd = () => {
   };
 
   // Flatten all cities for easy mapping
-  const allCities = Object.entries(indianCitiesByState).flatMap(([state, cities]) => 
+  const allCities = Object.entries(citiesByState).flatMap(([state, cities]) => 
     cities.map(city => `${city}, ${state}`)
   );
 
