@@ -1,17 +1,26 @@
 
-import React, { useState } from 'react';
-import { MapPin, Search, Plus, Menu, X } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Search, Plus, Menu, X, Navigation } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('Mumbai');
+  const [selectedCity, setSelectedCity] = useState('City');
   const [searchQuery, setSearchQuery] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const navigate = useNavigate();
   
   const allCities = [
+    // United States cities
+    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose',
+    'Austin', 'Jacksonville', 'Fort Worth', 'Columbus', 'Charlotte', 'San Francisco', 'Indianapolis', 'Seattle', 'Denver', 'Washington DC',
+    'Boston', 'Nashville', 'Baltimore', 'Oklahoma City', 'Louisville', 'Portland', 'Las Vegas', 'Memphis', 'Detroit', 'Milwaukee',
+    'Albuquerque', 'Tucson', 'Fresno', 'Sacramento', 'Mesa', 'Kansas City', 'Atlanta', 'Long Beach', 'Colorado Springs', 'Raleigh',
+    'Miami', 'Virginia Beach', 'Omaha', 'Oakland', 'Minneapolis', 'Tulsa', 'Arlington', 'Tampa', 'New Orleans', 'Wichita',
+    
+    // Indian cities
     // Andhra Pradesh
     'Hyderabad', 'Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Kadapa', 'Kakinada', 'Tirupati',
     // Arunachal Pradesh
@@ -71,6 +80,56 @@ const Header = () => {
     // West Bengal
     'Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Malda', 'Bardhaman', 'Kharagpur', 'Haldia', 'Krishnanagar'
   ];
+
+  // Request location permission on component mount
+  useEffect(() => {
+    requestLocationPermission();
+  }, []);
+
+  const requestLocationPermission = () => {
+    if (navigator.geolocation) {
+      setIsDetectingLocation(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          // Get city from coordinates using reverse geocoding
+          reverseGeocode(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.log('Location access denied or failed:', error);
+          setIsDetectingLocation(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 600000 // 10 minutes
+        }
+      );
+    }
+  };
+
+  const reverseGeocode = async (lat: number, lng: number) => {
+    try {
+      // Using a free geocoding service - OpenStreetMap Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.address) {
+        const city = data.address.city || data.address.town || data.address.county || data.address.state;
+        if (city && allCities.some(c => c.toLowerCase().includes(city.toLowerCase()))) {
+          const matchedCity = allCities.find(c => c.toLowerCase().includes(city.toLowerCase()));
+          if (matchedCity) {
+            setSelectedCity(matchedCity);
+          }
+        }
+      }
+    } catch (error) {
+      console.log('Geocoding failed:', error);
+    } finally {
+      setIsDetectingLocation(false);
+    }
+  };
 
   const filteredCities = allCities.filter(city =>
     city.toLowerCase().includes(citySearch.toLowerCase())
