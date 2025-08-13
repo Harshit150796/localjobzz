@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Search, Plus, Menu, X, Navigation } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useLocation } from '../contexts/LocationContext';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -9,8 +10,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
-  const [isDetectingLocation, setIsDetectingLocation] = useState(false);
   const navigate = useNavigate();
+  const { country, isDetecting: isDetectingLocation } = useLocation();
   
   const allCities = [
     // United States cities
@@ -81,55 +82,16 @@ const Header = () => {
     'Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Malda', 'Bardhaman', 'Kharagpur', 'Haldia', 'Krishnanagar'
   ];
 
-  // Request location permission on component mount
+  // Update selected city when country changes
   useEffect(() => {
-    requestLocationPermission();
-  }, []);
-
-  const requestLocationPermission = () => {
-    if (navigator.geolocation) {
-      setIsDetectingLocation(true);
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          // Get city from coordinates using reverse geocoding
-          reverseGeocode(position.coords.latitude, position.coords.longitude);
-        },
-        (error) => {
-          console.log('Location access denied or failed:', error);
-          setIsDetectingLocation(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 600000 // 10 minutes
-        }
-      );
+    if (country === 'United States' || country === 'United States of America') {
+      // If US detected, set to a default US city
+      setSelectedCity('New York');
+    } else if (country === 'India') {
+      // If India detected, set to a default Indian city
+      setSelectedCity('Mumbai');
     }
-  };
-
-  const reverseGeocode = async (lat: number, lng: number) => {
-    try {
-      // Using a free geocoding service - OpenStreetMap Nominatim
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`
-      );
-      const data = await response.json();
-      
-      if (data && data.address) {
-        const city = data.address.city || data.address.town || data.address.county || data.address.state;
-        if (city && allCities.some(c => c.toLowerCase().includes(city.toLowerCase()))) {
-          const matchedCity = allCities.find(c => c.toLowerCase().includes(city.toLowerCase()));
-          if (matchedCity) {
-            setSelectedCity(matchedCity);
-          }
-        }
-      }
-    } catch (error) {
-      console.log('Geocoding failed:', error);
-    } finally {
-      setIsDetectingLocation(false);
-    }
-  };
+  }, [country]);
 
   const filteredCities = allCities.filter(city =>
     city.toLowerCase().includes(citySearch.toLowerCase())

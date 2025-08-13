@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { MapPin, Clock, Heart } from 'lucide-react';
+import { useLocation } from '../contexts/LocationContext';
 
 interface ListingCardProps {
   title: string;
@@ -19,6 +20,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
   image, 
   featured = false 
 }) => {
+  const { currencySymbol } = useLocation();
   return (
     <div className={`bg-white rounded-lg shadow-sm border ${featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group`}>
       {featured && (
@@ -44,7 +46,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
         </h3>
         
         <div className="flex items-center justify-between mb-2">
-          <span className="text-2xl font-bold text-green-600">₹{price}</span>
+          <span className="text-2xl font-bold text-green-600">{currencySymbol}{price}</span>
         </div>
         
         <div className="flex items-center text-gray-500 text-sm space-x-4">
