@@ -82,7 +82,6 @@ const Header = () => {
     'Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Malda', 'Bardhaman', 'Kharagpur', 'Haldia', 'Krishnanagar'
   ];
 
-  // Update selected city when country changes
   useEffect(() => {
     if (country === 'United States' || country === 'United States of America') {
       // If US detected, set to a default US city
@@ -90,6 +89,9 @@ const Header = () => {
     } else if (country === 'India') {
       // If India detected, set to a default Indian city
       setSelectedCity('Mumbai');
+    } else {
+      // Default to US city if no specific country match
+      setSelectedCity('New York');
     }
   }, [country]);
 

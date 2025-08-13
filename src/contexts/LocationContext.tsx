@@ -12,8 +12,8 @@ const LocationContext = createContext<LocationContextType | undefined>(undefined
 
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [country, setCountry] = useState<string | null>(null);
-  const [currency, setCurrency] = useState('INR');
-  const [currencySymbol, setCurrencySymbol] = useState('₹');
+  const [currency, setCurrency] = useState('USD');
+  const [currencySymbol, setCurrencySymbol] = useState('$');
   const [isDetecting, setIsDetecting] = useState(false);
 
   const detectLocation = () => {
@@ -26,10 +26,10 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         (error) => {
           console.log('Location access denied or failed:', error);
           setIsDetecting(false);
-          // Default to India if location detection fails
-          setCountry('India');
-          setCurrency('INR');
-          setCurrencySymbol('₹');
+          // Default to USA if location detection fails
+          setCountry('United States');
+          setCurrency('USD');
+          setCurrencySymbol('$');
         },
         {
           enableHighAccuracy: true,
@@ -66,10 +66,10 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       }
     } catch (error) {
       console.log('Geocoding failed:', error);
-      // Default to India if geocoding fails
-      setCountry('India');
-      setCurrency('INR');
-      setCurrencySymbol('₹');
+      // Default to USA if geocoding fails
+      setCountry('United States');
+      setCurrency('USD');
+      setCurrencySymbol('$');
     } finally {
       setIsDetecting(false);
     }
