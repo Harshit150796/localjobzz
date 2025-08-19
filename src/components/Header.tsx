@@ -90,8 +90,8 @@ const Header = () => {
       // If India detected, set to a default Indian city
       setSelectedCity('Mumbai');
     } else {
-      // Default to US city if no specific country match
-      setSelectedCity('New York');
+      // Default to Indian city if no specific country match
+      setSelectedCity('Mumbai');
     }
   }, [country]);
 
