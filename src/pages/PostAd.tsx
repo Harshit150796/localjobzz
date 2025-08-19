@@ -71,9 +71,10 @@ const PostAd = () => {
     cities.map(city => `${city}, ${state}`)
   );
 
-  // Filter cities based on search term
+  // Filter cities based on search term - use current input value if searching, otherwise show all
+  const searchTerm = citySearchTerm || formData.location;
   const filteredCities = allCities.filter(city =>
-    city.toLowerCase().includes(citySearchTerm.toLowerCase())
+    city.toLowerCase().includes(searchTerm.toLowerCase())
   ).slice(0, 10); // Limit to 10 results for performance
 
   const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +86,7 @@ const PostAd = () => {
 
   const handleCitySelect = (city: string) => {
     setFormData({...formData, location: city});
-    setCitySearchTerm(city);
+    setCitySearchTerm('');
     setShowCityDropdown(false);
   };
 
@@ -194,27 +195,30 @@ const PostAd = () => {
                     type="text"
                     value={formData.location}
                     onChange={handleCityInputChange}
-                    onFocus={() => setShowCityDropdown(formData.location.length > 0)}
+                    onFocus={() => setShowCityDropdown(true)}
                     onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                     placeholder="Type or select your city"
                     className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     required
                   />
                   
-                  {/* Dropdown List */}
-                  {showCityDropdown && filteredCities.length > 0 && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredCities.map((city, index) => (
-                        <div
-                          key={index}
-                          onClick={() => handleCitySelect(city)}
-                          className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
-                        >
-                          {city}
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                   {/* Dropdown List */}
+                   {showCityDropdown && filteredCities.length > 0 && (
+                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                       {filteredCities.map((city, index) => (
+                         <div
+                           key={index}
+                           onMouseDown={(e) => {
+                             e.preventDefault(); // Prevent blur event
+                             handleCitySelect(city);
+                           }}
+                           className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm border-b border-gray-100 last:border-b-0"
+                         >
+                           {city}
+                         </div>
+                       ))}
+                     </div>
+                   )}
                 </div>
               </div>
             </div>
