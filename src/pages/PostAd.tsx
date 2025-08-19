@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
+import JobSuccessModal from '../components/JobSuccessModal';
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ const PostAd = () => {
   
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearchTerm, setCitySearchTerm] = useState('');
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const jobTypes = [
     'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
@@ -105,8 +107,13 @@ const PostAd = () => {
     });
 
     console.log('Job posted:', formData);
-    alert('Job posted successfully! You can now see it in the job listings.');
     
+    // Show success modal
+    setShowSuccessModal(true);
+  };
+
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
     // Reset form
     setFormData({
       jobTitle: '',
@@ -117,11 +124,25 @@ const PostAd = () => {
       phone: '',
       urgency: 'normal'
     });
+  };
 
-    // Navigate to jobs page after 2 seconds
-    setTimeout(() => {
-      navigate('/category/jobs');
-    }, 2000);
+  const handleViewJob = () => {
+    setShowSuccessModal(false);
+    navigate('/category/jobs');
+  };
+
+  const handlePostAnother = () => {
+    setShowSuccessModal(false);
+    // Reset form
+    setFormData({
+      jobTitle: '',
+      jobType: '',
+      dailySalary: '',
+      location: '',
+      description: '',
+      phone: '',
+      urgency: 'normal'
+    });
   };
 
   return (
@@ -325,6 +346,14 @@ const PostAd = () => {
       </div>
 
       <Footer />
+      
+      {/* Success Modal */}
+      <JobSuccessModal
+        isOpen={showSuccessModal}
+        onClose={handleSuccessModalClose}
+        onViewJob={handleViewJob}
+        onPostAnother={handlePostAnother}
+      />
     </div>
   );
 };
