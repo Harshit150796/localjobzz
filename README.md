@@ -1,52 +1,48 @@
 Project Info
 URL: https://lovable.dev/projects/38c0e03b-25b1-4c11-a655-1d0f3c2f5356
 
-How to Edit the Code
-There are several ways to modify and work with the application code:
+Editing the Code
+You have multiple options for modifying and managing the application code:
 
-Using Your Preferred IDE
+Using Your Own IDE
 
-You can manage and update the codebase directly on your local machine:
+You can work locally by following these steps:
 
-Clone the repository using your project’s Git URL:
+Clone the repository to your system:
 
 text
 git clone <YOUR_GIT_URL>
-Move into the project directory:
+Navigate to the project directory:
 
 text
 cd <YOUR_PROJECT_NAME>
-Install all required dependencies:
+Install necessary dependencies:
 
 text
 npm i
-Launch the development server, which supports automatic reloading and instant preview:
+Start the development server with automatic reloading and live preview:
 
 text
 npm run dev
-Direct Editing on GitHub
+Direct GitHub Editing
 
-Open the relevant file(s) in the repository.
+Browse to the desired file(s) in your repository.
 
-Click the pencil icon (“Edit” button) at the top right of the file viewer.
+Click the pencil icon (“Edit”).
 
-Make your changes and commit them directly.
+Make your changes and commit them.
 
 Using GitHub Codespaces
 
-Go to the main page of the repository.
+Open the main repository page.
 
-Click the green “Code” button in the upper right.
+Click the green “Code” button.
 
-Select the “Codespaces” tab.
+Select “Codespaces” and click “New codespace” to launch an online development environment.
 
-Click “New codespace” to start a new environment.
-
-You can then edit the files and commit/push your changes from there.
+Edit files and commit/push changes as needed.
 
 Technologies Used
-This project leverages the following technologies:
-
 Vite
 
 TypeScript
@@ -57,10 +53,10 @@ shadcn-ui
 
 Tailwind CSS
 
-Deploying the Project
-To deploy, use the publishing features built into your chosen development or hosting system. Follow the on-screen instructions for sharing or making your application live.
+Deployment
+You can deploy the project through your chosen hosting provider or development workflow. Use build or publish features as provided by your environment to make the application accessible online.
 
-Connecting a Custom Domain
-You have the option to configure a custom domain for the deployed project. Go to the project’s settings under the Domains section and use "Connect Domain" to initiate setup.
+Custom Domain Setup
+To use a custom domain, access your deployment or project settings and locate the Domains section. Use the option to connect your desired domain.
 
-For step-by-step instructions, refer to documentation related to your hosting provider’s custom domain management.
+For further guidance, refer to the custom domain setup documentation provided by your hosting service.
