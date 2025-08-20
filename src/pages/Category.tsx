@@ -140,7 +140,48 @@ const Category = () => {
     ...mockJobListings
   ];
 
-  // Filter jobs based on search query and city
+  // Helper function to calculate city proximity score
+  const getCityProximityScore = (jobLocation: string, targetCity: string) => {
+    const jobLocationLower = jobLocation.toLowerCase();
+    const targetCityLower = targetCity.toLowerCase();
+    
+    // Exact city match gets highest score
+    if (jobLocationLower.includes(targetCityLower)) {
+      return 100;
+    }
+    
+    // State/region proximity for Indian cities
+    const stateProximity: { [key: string]: string[] } = {
+      'uttar pradesh': ['mathura', 'agra', 'lucknow', 'kanpur', 'varanasi', 'allahabad', 'meerut', 'ghaziabad', 'noida'],
+      'maharashtra': ['mumbai', 'pune', 'nagpur', 'nashik', 'aurangabad', 'solapur'],
+      'karnataka': ['bangalore', 'mysore', 'hubli', 'mangalore', 'belgaum'],
+      'tamil nadu': ['chennai', 'coimbatore', 'madurai', 'salem', 'tirunelveli'],
+      'delhi ncr': ['delhi', 'gurgaon', 'faridabad', 'ghaziabad', 'noida', 'greater noida'],
+      'gujarat': ['ahmedabad', 'surat', 'vadodara', 'rajkot', 'bhavnagar'],
+      'rajasthan': ['jaipur', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'bikaner']
+    };
+    
+    // Find which state/region the target city belongs to
+    let targetState = '';
+    for (const [state, cities] of Object.entries(stateProximity)) {
+      if (cities.some(city => targetCityLower.includes(city))) {
+        targetState = state;
+        break;
+      }
+    }
+    
+    // Check if job location is in same state/region
+    if (targetState) {
+      const samStateCities = stateProximity[targetState];
+      if (samStateCities.some(city => jobLocationLower.includes(city))) {
+        return 50; // Same state gets medium priority
+      }
+    }
+    
+    return 10; // Other locations get low priority
+  };
+
+  // Filter and sort jobs based on search query and city
   const filteredJobs = allJobs.filter(job => {
     // City filter
     if (cityFilter) {
@@ -163,6 +204,26 @@ const Category = () => {
     }
 
     return true;
+  }).sort((a, b) => {
+    // If city filter is applied, sort by proximity to that city
+    if (cityFilter) {
+      const scoreA = getCityProximityScore(a.location, cityFilter);
+      const scoreB = getCityProximityScore(b.location, cityFilter);
+      
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher score first
+      }
+    }
+    
+    // Secondary sort by featured status
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    
+    // Tertiary sort by time posted (newest first for "Just now", then others)
+    if (a.timePosted === 'Just now' && b.timePosted !== 'Just now') return -1;
+    if (a.timePosted !== 'Just now' && b.timePosted === 'Just now') return 1;
+    
+    return 0;
   });
 
   const filters = {

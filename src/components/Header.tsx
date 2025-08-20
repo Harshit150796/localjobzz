@@ -13,89 +13,68 @@ const Header = () => {
   const navigate = useNavigate();
   const { country, isDetecting: isDetectingLocation } = useLocation();
   
-  const allCities = [
-    // United States cities
+  const usCities = [
     'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose',
     'Austin', 'Jacksonville', 'Fort Worth', 'Columbus', 'Charlotte', 'San Francisco', 'Indianapolis', 'Seattle', 'Denver', 'Washington DC',
     'Boston', 'Nashville', 'Baltimore', 'Oklahoma City', 'Louisville', 'Portland', 'Las Vegas', 'Memphis', 'Detroit', 'Milwaukee',
     'Albuquerque', 'Tucson', 'Fresno', 'Sacramento', 'Mesa', 'Kansas City', 'Atlanta', 'Long Beach', 'Colorado Springs', 'Raleigh',
-    'Miami', 'Virginia Beach', 'Omaha', 'Oakland', 'Minneapolis', 'Tulsa', 'Arlington', 'Tampa', 'New Orleans', 'Wichita',
-    
-    // Indian cities
-    // Andhra Pradesh
-    'Hyderabad', 'Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Rajahmundry', 'Kadapa', 'Kakinada', 'Tirupati',
-    // Arunachal Pradesh
-    'Itanagar', 'Naharlagun', 'Pasighat', 'Tezpur', 'Bomdila',
-    // Assam
-    'Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon', 'Tinsukia', 'Tezpur', 'Bongaigaon', 'Dhubri', 'Diphu',
-    // Bihar
-    'Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Bihar Sharif', 'Purnia', 'Darbhanga', 'Arrah', 'Begusarai', 'Katihar',
-    // Chhattisgarh
-    'Raipur', 'Bhilai', 'Bilaspur', 'Korba', 'Durg', 'Rajnandgaon', 'Jagdalpur', 'Raigarh', 'Ambikapur', 'Mahasamund',
-    // Delhi
-    'Delhi', 'New Delhi', 'Gurgaon', 'Faridabad', 'Ghaziabad', 'Noida', 'Greater Noida',
-    // Goa
-    'Panaji', 'Margao', 'Vasco da Gama', 'Mapusa', 'Ponda', 'Bicholim',
-    // Gujarat
-    'Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Gandhinagar', 'Anand', 'Nadiad', 'Morbi',
-    // Haryana
-    'Faridabad', 'Gurgaon', 'Panipat', 'Ambala', 'Yamunanagar', 'Rohtak', 'Hisar', 'Karnal', 'Sonipat', 'Panchkula',
-    // Himachal Pradesh
-    'Shimla', 'Dharamshala', 'Solan', 'Mandi', 'Palampur', 'Baddi', 'Nahan', 'Paonta Sahib', 'Sundernagar', 'Chamba',
-    // Jharkhand
-    'Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Deoghar', 'Phusro', 'Hazaribagh', 'Giridih', 'Ramgarh', 'Medininagar',
-    // Karnataka
-    'Bangalore', 'Mysore', 'Hubli', 'Mangalore', 'Belgaum', 'Gulbarga', 'Davanagere', 'Bellary', 'Bijapur', 'Shimoga',
-    // Kerala
-    'Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam', 'Palakkad', 'Alappuzha', 'Malappuram', 'Kannur', 'Kasaragod',
-    // Madhya Pradesh
-    'Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa',
-    // Maharashtra
-    'Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Amravati', 'Kolhapur', 'Sangli', 'Malegaon',
-    // Manipur
-    'Imphal', 'Thoubal', 'Bishnupur', 'Churachandpur', 'Ukhrul',
-    // Meghalaya
-    'Shillong', 'Tura', 'Jowai', 'Nongpoh', 'Baghmara',
-    // Mizoram
-    'Aizawl', 'Lunglei', 'Saiha', 'Champhai', 'Kolasib',
-    // Nagaland
-    'Kohima', 'Dimapur', 'Mokokchung', 'Tuensang', 'Wokha',
-    // Odisha
-    'Bhubaneswar', 'Cuttack', 'Rourkela', 'Brahmapur', 'Sambalpur', 'Puri', 'Balasore', 'Bhadrak', 'Baripada', 'Jharsuguda',
-    // Punjab
-    'Chandigarh', 'Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali', 'Firozpur', 'Batala', 'Pathankot',
-    // Rajasthan
-    'Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur', 'Bhilwara', 'Alwar', 'Bharatpur', 'Sikar',
-    // Sikkim
-    'Gangtok', 'Namchi', 'Geyzing', 'Mangan',
-    // Tamil Nadu
-    'Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Tirupur', 'Vellore', 'Erode', 'Thoothukudi',
-    // Telangana
-    'Hyderabad', 'Warangal', 'Nizamabad', 'Khammam', 'Karimnagar', 'Ramagundam', 'Mahbubnagar', 'Nalgonda', 'Adilabad', 'Suryapet',
-    // Tripura
-    'Agartala', 'Dharmanagar', 'Udaipur', 'Kailashahar', 'Belonia',
-    // Uttar Pradesh
-    'Lucknow', 'Kanpur', 'Ghaziabad', 'Agra', 'Meerut', 'Varanasi', 'Allahabad', 'Bareilly', 'Aligarh', 'Moradabad', 'Mathura',
-    // Uttarakhand
-    'Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rudrapur', 'Kashipur', 'Rishikesh', 'Kotdwar', 'Pithoragarh', 'Almora',
-    // West Bengal
-    'Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Malda', 'Bardhaman', 'Kharagpur', 'Haldia', 'Krishnanagar'
+    'Miami', 'Virginia Beach', 'Omaha', 'Oakland', 'Minneapolis', 'Tulsa', 'Arlington', 'Tampa', 'New Orleans', 'Wichita'
   ];
 
-  useEffect(() => {
+  const indianCities = [
+    // Major cities first
+    'Mumbai', 'Delhi', 'Bangalore', 'Hyderabad', 'Chennai', 'Kolkata', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow',
+    // Uttar Pradesh
+    'Kanpur', 'Ghaziabad', 'Agra', 'Meerut', 'Varanasi', 'Allahabad', 'Bareilly', 'Aligarh', 'Moradabad', 'Mathura',
+    // Maharashtra
+    'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Amravati', 'Kolhapur', 'Sangli', 'Malegaon',
+    // Karnataka
+    'Mysore', 'Hubli', 'Mangalore', 'Belgaum', 'Gulbarga', 'Davanagere', 'Bellary', 'Bijapur', 'Shimoga',
+    // Gujarat
+    'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Gandhinagar', 'Anand', 'Nadiad', 'Morbi',
+    // Rajasthan
+    'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur', 'Bhilwara', 'Alwar', 'Bharatpur', 'Sikar',
+    // Tamil Nadu
+    'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Tirupur', 'Vellore', 'Erode', 'Thoothukudi',
+    // Andhra Pradesh & Telangana
+    'Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Warangal', 'Nizamabad', 'Khammam', 'Karimnagar', 'Tirupati',
+    // West Bengal
+    'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Malda', 'Bardhaman', 'Kharagpur', 'Haldia', 'Krishnanagar',
+    // Kerala
+    'Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam', 'Palakkad', 'Alappuzha', 'Malappuram', 'Kannur', 'Kasaragod',
+    // Punjab & Haryana
+    'Chandigarh', 'Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Faridabad', 'Gurgaon', 'Panipat', 'Ambala',
+    // Madhya Pradesh
+    'Bhopal', 'Indore', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas', 'Satna', 'Ratlam', 'Rewa',
+    // Odisha
+    'Bhubaneswar', 'Cuttack', 'Rourkela', 'Brahmapur', 'Sambalpur', 'Puri', 'Balasore', 'Bhadrak', 'Baripada', 'Jharsuguda',
+    // Other states
+    'Patna', 'Gaya', 'Ranchi', 'Jamshedpur', 'Dhanbad', 'Raipur', 'Bhilai', 'Noida', 'Greater Noida', 'Shimla', 'Dehradun'
+  ];
+
+  // Get relevant cities based on detected country
+  const getRelevantCities = () => {
     if (country === 'United States' || country === 'United States of America') {
-      // If US detected, set to a default US city
-      setSelectedCity('New York');
-    } else if (country === 'India') {
-      // If India detected, set to a default Indian city
-      setSelectedCity('Mumbai');
-    } else {
-      // Default to Indian city if no specific country match
-      setSelectedCity('Mumbai');
+      return usCities;
+    }
+    return indianCities;
+  };
+
+  useEffect(() => {
+    // Only set default city if no city is currently selected
+    if (selectedCity === 'City') {
+      if (country === 'United States' || country === 'United States of America') {
+        setSelectedCity('New York');
+      } else if (country === 'India') {
+        setSelectedCity('Mumbai');
+      } else {
+        setSelectedCity('Mumbai');
+      }
     }
   }, [country]);
 
-  const filteredCities = allCities.filter(city =>
+  const relevantCities = getRelevantCities();
+  const filteredCities = relevantCities.filter(city =>
     city.toLowerCase().includes(citySearch.toLowerCase())
   ).slice(0, 10);
 
