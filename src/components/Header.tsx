@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { MapPin, Search, Plus, Menu, X, Navigation } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation as useRouterLocation } from 'react-router-dom';
 import { useLocation } from '../contexts/LocationContext';
 
 const Header = () => {
@@ -11,6 +11,8 @@ const Header = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const routerLocation = useRouterLocation();
   const { country, isDetecting: isDetectingLocation } = useLocation();
   
   const usCities = [
@@ -60,9 +62,18 @@ const Header = () => {
     return indianCities;
   };
 
+  // Sync selectedCity with URL parameter
   useEffect(() => {
-    // Only set default city if no city is currently selected
-    if (selectedCity === 'City') {
+    const cityFromUrl = searchParams.get('city');
+    if (cityFromUrl) {
+      setSelectedCity(decodeURIComponent(cityFromUrl));
+    }
+  }, [searchParams, routerLocation.pathname]);
+
+  // Set default city based on country detection (only if no city in URL)
+  useEffect(() => {
+    const cityFromUrl = searchParams.get('city');
+    if (!cityFromUrl && selectedCity === 'City') {
       if (country === 'United States' || country === 'United States of America') {
         setSelectedCity('New York');
       } else if (country === 'India') {
@@ -71,7 +82,7 @@ const Header = () => {
         setSelectedCity('Mumbai');
       }
     }
-  }, [country]);
+  }, [country, searchParams]);
 
   const relevantCities = getRelevantCities();
   const filteredCities = relevantCities.filter(city =>
