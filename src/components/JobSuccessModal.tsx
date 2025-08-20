@@ -24,9 +24,9 @@ const JobSuccessModal: React.FC<JobSuccessModalProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md mx-4 overflow-hidden relative">
+      <DialogContent className="sm:max-w-md mx-4 overflow-hidden relative bg-white dark:bg-gray-900 border-2 shadow-2xl z-[100]">
         {/* Animated Confetti Background */}
-        <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="confetti-particle confetti-1"></div>
           <div className="confetti-particle confetti-2"></div>
           <div className="confetti-particle confetti-3"></div>
@@ -39,19 +39,19 @@ const JobSuccessModal: React.FC<JobSuccessModalProps> = ({
         <div className="relative z-10 text-center py-6">
           <DialogHeader className="space-y-4">
             {/* Success Icon with Animation */}
-            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center success-bounce">
+            <div className="mx-auto w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-full flex items-center justify-center success-bounce shadow-lg">
               <CheckCircle className="w-12 h-12 text-white animate-scale-in" />
             </div>
             
-            <DialogTitle className="text-2xl font-bold text-gray-900 animate-fade-in">
+            <DialogTitle className="text-2xl font-bold text-foreground animate-fade-in">
               Yay!! Congratulations! 🎉
             </DialogTitle>
             
-            <p className="text-lg text-gray-600 animate-fade-in delay-100">
+            <p className="text-lg text-muted-foreground animate-fade-in delay-100">
               You have successfully posted a new job!
             </p>
             
-            <div className="flex items-center justify-center space-x-2 text-green-600 animate-fade-in delay-200">
+            <div className="flex items-center justify-center space-x-2 text-emerald-600 animate-fade-in delay-200">
               <Briefcase className="w-5 h-5" />
               <span className="font-medium">Your job is now live and visible to workers</span>
             </div>
@@ -60,7 +60,7 @@ const JobSuccessModal: React.FC<JobSuccessModalProps> = ({
           <DialogFooter className="flex flex-col sm:flex-row gap-3 mt-8 pt-6">
             <Button
               onClick={onViewJob}
-              className="flex-1 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl animate-fade-in delay-300"
+              className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-medium py-3 px-6 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl animate-fade-in delay-300"
             >
               <Eye className="w-4 h-4 mr-2" />
               View My Job
@@ -69,7 +69,7 @@ const JobSuccessModal: React.FC<JobSuccessModalProps> = ({
             <Button
               onClick={onPostAnother}
               variant="outline"
-              className="flex-1 border-2 border-green-600 text-green-600 hover:bg-green-50 font-medium py-3 px-6 rounded-lg transition-all duration-200 animate-fade-in delay-400"
+              className="flex-1 border-2 border-emerald-600 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 font-medium py-3 px-6 rounded-lg transition-all duration-200 animate-fade-in delay-400"
             >
               <Plus className="w-4 h-4 mr-2" />
               Post Another Job
