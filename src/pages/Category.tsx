@@ -119,6 +119,32 @@ const Category = () => {
       requirements: 'No experience needed, will teach',
       timing: '9 AM - 6 PM',
       featured: false
+    },
+    {
+      id: 'hyderabad-1',
+      title: 'Office Cleaning - IT Park',
+      salary: '₹750/day',
+      location: 'Madhapur, Hyderabad',
+      timePosted: '3h ago',
+      jobType: 'Household Work',
+      description: 'Clean IT office premises. Night shift work. Good pay.',
+      phone: '+91 98765 55555',
+      requirements: 'Night shift availability, basic cleaning experience',
+      timing: '10 PM - 6 AM',
+      featured: true
+    },
+    {
+      id: 'hyderabad-2',
+      title: 'Delivery Boy - Food App',
+      salary: '₹800/day',
+      location: 'Jubilee Hills, Hyderabad',
+      timePosted: '1h ago',
+      jobType: 'Delivery',
+      description: 'Food delivery in Jubilee Hills area. Own bike required.',
+      phone: '+91 98765 66666',
+      requirements: 'Own vehicle, smartphone, local area knowledge',
+      timing: '11 AM - 11 PM',
+      featured: false
     }
   ];
 
@@ -158,7 +184,15 @@ const Category = () => {
       'tamil nadu': ['chennai', 'coimbatore', 'madurai', 'salem', 'tirunelveli'],
       'delhi ncr': ['delhi', 'gurgaon', 'faridabad', 'ghaziabad', 'noida', 'greater noida'],
       'gujarat': ['ahmedabad', 'surat', 'vadodara', 'rajkot', 'bhavnagar'],
-      'rajasthan': ['jaipur', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'bikaner']
+      'rajasthan': ['jaipur', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'bikaner'],
+      'telangana': ['hyderabad', 'warangal', 'nizamabad', 'khammam', 'karimnagar'],
+      'andhra pradesh': ['visakhapatnam', 'vijayawada', 'guntur', 'nellore', 'kurnool', 'tirupati'],
+      'west bengal': ['kolkata', 'howrah', 'durgapur', 'asansol', 'siliguri'],
+      'kerala': ['thiruvananthapuram', 'kochi', 'kozhikode', 'thrissur', 'kollam'],
+      'punjab': ['chandigarh', 'ludhiana', 'amritsar', 'jalandhar', 'patiala'],
+      'haryana': ['faridabad', 'gurgaon', 'panipat', 'ambala'],
+      'madhya pradesh': ['bhopal', 'indore', 'jabalpur', 'gwalior', 'ujjain'],
+      'odisha': ['bhubaneswar', 'cuttack', 'rourkela', 'brahmapur']
     };
     
     // Find which state/region the target city belongs to
