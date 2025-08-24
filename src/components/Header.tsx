@@ -67,22 +67,11 @@ const Header = () => {
     const cityFromUrl = searchParams.get('city');
     if (cityFromUrl) {
       setSelectedCity(decodeURIComponent(cityFromUrl));
+    } else {
+      // Reset to "City" if no city in URL
+      setSelectedCity('City');
     }
   }, [searchParams, routerLocation.pathname]);
-
-  // Set default city based on country detection (only if no city in URL)
-  useEffect(() => {
-    const cityFromUrl = searchParams.get('city');
-    if (!cityFromUrl && selectedCity === 'City') {
-      if (country === 'United States' || country === 'United States of America') {
-        setSelectedCity('New York');
-      } else if (country === 'India') {
-        setSelectedCity('Mumbai');
-      } else {
-        setSelectedCity('Mumbai');
-      }
-    }
-  }, [country, searchParams]);
 
   const relevantCities = getRelevantCities();
   const filteredCities = relevantCities.filter(city =>
