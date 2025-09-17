@@ -7,6 +7,7 @@ import { Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import PostAd from "./pages/PostAd";
 import Category from "./pages/Category";
+import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
         <Route path="/" element={<Index />} />
         <Route path="/post" element={<PostAd />} />
         <Route path="/category/:categoryName" element={<Category />} />
+        <Route path="/about" element={<About />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
       </Routes>
