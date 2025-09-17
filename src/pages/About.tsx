@@ -123,11 +123,11 @@ const About = () => {
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <MapPin className="h-5 w-5 text-primary" />
-                      <span>Based in India</span>
+                      <span>Based in India & USA</span>
                     </div>
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <Calendar className="h-5 w-5 text-primary" />
-                      <span>Founded LocalJobzz in 2024</span>
+                      <span>Founded LocalJobzz in 2025</span>
                     </div>
                   </div>
                 </div>
