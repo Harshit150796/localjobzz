@@ -10,6 +10,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
+  const [cityInputValue, setCityInputValue] = useState('City');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const routerLocation = useRouterLocation();
@@ -66,10 +67,13 @@ const Header = () => {
   useEffect(() => {
     const cityFromUrl = searchParams.get('city');
     if (cityFromUrl) {
-      setSelectedCity(decodeURIComponent(cityFromUrl));
+      const decodedCity = decodeURIComponent(cityFromUrl);
+      setSelectedCity(decodedCity);
+      setCityInputValue(decodedCity);
     } else {
       // Reset to "City" if no city in URL
       setSelectedCity('City');
+      setCityInputValue('City');
     }
   }, [searchParams, routerLocation.pathname]);
 
@@ -88,10 +92,16 @@ const Header = () => {
 
   const handleCitySelect = (city: string) => {
     setSelectedCity(city);
+    setCityInputValue(city);
     setCitySearch('');
     setShowCityDropdown(false);
     // Navigate to jobs page filtered by city
     navigate(`/category/all?city=${encodeURIComponent(city)}`);
+  };
+
+  const handleCityInputFocus = () => {
+    setCitySearch(cityInputValue === 'City' ? '' : cityInputValue);
+    setShowCityDropdown(true);
   };
 
   return (
@@ -112,9 +122,9 @@ const Header = () => {
             <div className="relative">
               <input
                 type="text"
-                value={showCityDropdown ? citySearch : selectedCity}
+                value={showCityDropdown ? citySearch : cityInputValue}
                 onChange={(e) => setCitySearch(e.target.value)}
-                onFocus={() => setShowCityDropdown(true)}
+                onFocus={handleCityInputFocus}
                 onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                 placeholder="Select city..."
                 className="bg-transparent text-sm font-medium focus:outline-none w-32"
@@ -176,9 +186,9 @@ const Header = () => {
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    value={showCityDropdown ? citySearch : selectedCity}
+                    value={showCityDropdown ? citySearch : cityInputValue}
                     onChange={(e) => setCitySearch(e.target.value)}
-                    onFocus={() => setShowCityDropdown(true)}
+                    onFocus={handleCityInputFocus}
                     onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                     placeholder="Select city..."
                     className="bg-transparent text-sm font-medium focus:outline-none w-full"
