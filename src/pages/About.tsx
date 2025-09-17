@@ -137,8 +137,201 @@ const About = () => {
         </div>
       </section>
 
-      {/* Contact CTA */}
+      {/* How It Works Section */}
       <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              How LocalJobzz Works
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Simple, efficient, and powered by intelligent matching
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">1. Create Profile</h3>
+                <p className="text-muted-foreground">
+                  Build your professional profile with skills, experience, and career goals. Our AI learns your preferences.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Target className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">2. Get Matched</h3>
+                <p className="text-muted-foreground">
+                  Receive personalized job recommendations based on your profile, location, and career aspirations.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="text-center">
+              <CardContent className="p-8">
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Heart className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-semibold mb-4">3. Land Your Job</h3>
+                <p className="text-muted-foreground">
+                  Apply directly, communicate with employers, and secure your ideal local position faster than ever.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Our Values Section */}
+      <section className="py-16 px-4 bg-muted/50">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Our Core Values
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              The principles that guide everything we do at LocalJobzz
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Target className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Innovation</h3>
+              <p className="text-muted-foreground">
+                Continuously improving our AI-powered matching technology to deliver better results.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Users className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Community</h3>
+              <p className="text-muted-foreground">
+                Building stronger local economies by connecting talent with opportunity.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Heart className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Integrity</h3>
+              <p className="text-muted-foreground">
+                Maintaining transparency, honesty, and ethical practices in all our operations.
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Mail className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Support</h3>
+              <p className="text-muted-foreground">
+                Providing exceptional support to help every user achieve their career goals.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose LocalJobzz */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Why Choose LocalJobzz?
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              We're not just another job board – we're your career growth partner
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-8">
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Target className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">AI-Powered Precision</h3>
+                  <p className="text-muted-foreground">
+                    Our advanced algorithms learn from your preferences to deliver increasingly accurate job matches.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <MapPin className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Local Focus</h3>
+                  <p className="text-muted-foreground">
+                    Reduce commute times and strengthen your community connections with local opportunities.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Verified Opportunities</h3>
+                  <p className="text-muted-foreground">
+                    Every employer and job posting is verified to ensure legitimate, quality opportunities.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex gap-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Heart className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold mb-2">Success-Driven</h3>
+                  <p className="text-muted-foreground">
+                    95% success rate in matching qualified candidates with their ideal positions.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-6">
+              <Card className="p-6 text-center bg-gradient-to-br from-primary/5 to-primary/10">
+                <div className="text-3xl font-bold text-primary mb-2">2025</div>
+                <div className="text-sm text-muted-foreground">Founded with Vision</div>
+              </Card>
+              <Card className="p-6 text-center bg-gradient-to-br from-secondary/5 to-secondary/10">
+                <div className="text-3xl font-bold text-primary mb-2">24/7</div>
+                <div className="text-sm text-muted-foreground">Platform Availability</div>
+              </Card>
+              <Card className="p-6 text-center bg-gradient-to-br from-accent/5 to-accent/10">
+                <div className="text-3xl font-bold text-primary mb-2">2</div>
+                <div className="text-sm text-muted-foreground">Countries Served</div>
+              </Card>
+              <Card className="p-6 text-center bg-gradient-to-br from-muted/5 to-muted/10">
+                <div className="text-3xl font-bold text-primary mb-2">$0</div>
+                <div className="text-sm text-muted-foreground">Cost for Job Seekers</div>
+              </Card>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact CTA */}
+      <section className="py-16 px-4 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
             Ready to Transform Your Career?
@@ -147,7 +340,7 @@ const About = () => {
             Join thousands of professionals who have found their perfect local job through our platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Card className="p-6 bg-primary text-primary-foreground">
+            <Card className="p-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer">
               <div className="flex items-center gap-3">
                 <Mail className="h-6 w-6" />
                 <div className="text-left">
