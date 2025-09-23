@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
+import { HelmetProvider } from 'react-helmet-async';
 import Index from "./pages/Index";
 import PostAd from "./pages/PostAd";
 import Category from "./pages/Category";
@@ -18,14 +19,18 @@ import Terms from "./pages/Terms";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
 import NotFound from "./pages/NotFound";
+import CityJobs from "./pages/CityJobs";
+import CategoryCityJobs from "./pages/CategoryCityJobs";
+import CityJobsLanding from "./pages/CityJobsLanding";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+    <HelmetProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/post" element={<PostAd />} />
@@ -40,10 +45,14 @@ const App = () => (
         <Route path="/terms" element={<Terms />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/jobs/:city" element={<CityJobs />} />
+        <Route path="/jobs/:city/:category" element={<CategoryCityJobs />} />
+        <Route path="/cities" element={<CityJobsLanding />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
+        </Routes>
+      </TooltipProvider>
+    </HelmetProvider>
   </QueryClientProvider>
 );
 

@@ -14,34 +14,12 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ListingCard from '../components/ListingCard';
+import SEOHead from '../components/SEOHead';
+import { createOrganizationSchema, createWebsiteSchema, createJobPostingSchema } from '../components/StructuredData';
+import { useJobCategories } from '../hooks/useJobCategories';
 
 const HomePage = () => {
-  const jobCategories = [
-    {
-      title: 'Household Work',
-      subtitle: 'Cleaning, Cooking, Gardening',
-      count: '500+ jobs today',
-      gradient: 'bg-gradient-to-br from-blue-500 to-blue-700'
-    },
-    {
-      title: 'Delivery & Transport',
-      subtitle: 'Food Delivery, Package, Driving',
-      count: '300+ jobs today',
-      gradient: 'bg-gradient-to-br from-green-500 to-green-700'
-    },
-    {
-      title: 'Construction',
-      subtitle: 'Labour, Painting, Plumbing',
-      count: '200+ jobs today',
-      gradient: 'bg-gradient-to-br from-orange-500 to-red-500'
-    },
-    {
-      title: 'Shop Assistant',
-      subtitle: 'Sales, Cashier, Helper',
-      count: '150+ jobs today',
-      gradient: 'bg-gradient-to-br from-purple-500 to-purple-700'
-    }
-  ];
+  const { categories: jobCategories } = useJobCategories();
 
   const todaysJobs = [
     {
@@ -83,8 +61,33 @@ const HomePage = () => {
     { icon: Shield, label: 'Verified Employers', value: '2K+' }
   ];
 
+  // Structured Data for Homepage
+  const organizationSchema = createOrganizationSchema();
+  const websiteSchema = createWebsiteSchema();
+  
+  // Job postings structured data
+  const jobPostingsSchema = todaysJobs.map(job => createJobPostingSchema({
+    title: job.title,
+    location: job.location,
+    salary: job.price,
+    datePosted: new Date().toISOString(),
+    employmentType: 'FULL_TIME'
+  }));
+
+  const combinedStructuredData = {
+    "@context": "https://schema.org",
+    "@graph": [organizationSchema, websiteSchema, ...jobPostingsSchema]
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEOHead
+        title="localjobzz - Find Daily Work & Hire Workers Instantly"
+        description="Find daily work opportunities or hire workers instantly. Join thousands of people making smart employment decisions on localjobzz.com - the fastest job platform."
+        keywords="local jobs, daily work, hire workers, job platform, employment, part time jobs, full time jobs, gig work, household work, delivery jobs, construction work"
+        structuredData={combinedStructuredData}
+        canonicalUrl="https://localjobzz.com/"
+      />
       <Header />
       
       {/* Hero Section */}
@@ -176,7 +179,7 @@ const HomePage = () => {
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {jobCategories.map((category, index) => (
-              <Link key={index} to="/category/jobs" className="group">
+              <Link key={index} to={`/category/${category.id}`} className="group">
                 <div className={`relative overflow-hidden rounded-xl ${category.gradient} p-6 transition-all duration-300 transform group-hover:scale-105 group-hover:shadow-lg`}>
                   <div className="flex items-center justify-between mb-4">
                     <Briefcase className="h-8 w-8 text-white" />
