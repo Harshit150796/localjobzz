@@ -111,20 +111,20 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-orange-100">
+    <header className="bg-background shadow-sm border-b border-border">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg font-bold text-xl">
+            <div className="bg-brand text-brand-foreground px-2.5 py-1 rounded-lg font-bold text-lg">
               L
             </div>
-            <span className="text-2xl font-bold text-gray-800">localjobzz</span>
+            <span className="text-xl font-bold text-foreground">localjobzz</span>
           </Link>
 
           {/* City Selector - Desktop */}
-          <div className="hidden md:flex items-center space-x-2 bg-gray-50 rounded-lg px-3 py-2 relative">
-            <MapPin className="h-4 w-4 text-orange-500" />
+          <div className="hidden md:flex items-center space-x-2 bg-surface rounded-lg px-3 py-1.5 relative">
+            <MapPin className="h-4 w-4 text-brand" />
             <div className="relative">
               <input
                 type="text"
@@ -133,14 +133,14 @@ const Header = () => {
                 onFocus={handleCityInputFocus}
                 onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                 placeholder="Select city..."
-                className="bg-transparent text-sm font-medium focus:outline-none w-32"
+                className="bg-transparent text-sm font-medium focus:outline-none w-28"
               />
               {showCityDropdown && (
-                <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
+                <div className="absolute top-full left-0 right-0 bg-popover border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto z-50 mt-1">
                   {filteredCities.map((city, index) => (
                     <div
                       key={index}
-                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      className="px-3 py-2 hover:bg-accent cursor-pointer text-sm"
                       onClick={() => handleCitySelect(city)}
                     >
                       {city}
@@ -152,21 +152,21 @@ const Header = () => {
           </div>
 
           {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-md mx-6">
+          <div className="hidden md:flex flex-1 max-w-lg mx-4">
             <form onSubmit={handleSearch} className="relative w-full">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for jobs..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background"
               />
-              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             </form>
           </div>
 
           {/* Auth/User Section */}
-          <div className="hidden md:flex items-center space-x-3">
+          <div className="hidden md:flex items-center space-x-2">
             {user ? (
               <UserMenu />
             ) : (
@@ -176,7 +176,7 @@ const Header = () => {
                     setAuthMode('login');
                     setShowAuthModal(true);
                   }}
-                  className="flex items-center space-x-2 text-gray-600 hover:text-orange-500 px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                  className="flex items-center space-x-1.5 text-muted-foreground hover:text-brand px-2 py-1.5 rounded hover:bg-surface transition-colors text-sm"
                 >
                   <LogIn className="h-4 w-4" />
                   <span className="font-medium">Sign In</span>
@@ -187,7 +187,7 @@ const Header = () => {
                     setAuthMode('register');
                     setShowAuthModal(true);
                   }}
-                  className="flex items-center space-x-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors"
+                  className="flex items-center space-x-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm hover:bg-primary/90 transition-colors"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span className="font-medium">Sign Up</span>
@@ -199,10 +199,10 @@ const Header = () => {
           {/* Post Ad Button */}
           <Link 
             to="/post"
-            className="hidden md:flex items-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-105"
+            className="hidden md:flex items-center space-x-1.5 bg-brand text-brand-foreground px-3 py-1.5 rounded text-sm hover:bg-brand-light transition-colors"
           >
             <Plus className="h-4 w-4" />
-            <span className="font-medium">Post Free Ad</span>
+            <span className="font-medium">Post Ad</span>
           </Link>
 
           {/* Mobile Menu Button */}

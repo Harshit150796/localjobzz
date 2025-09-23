@@ -38,6 +38,16 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
 
+    /* Brand colors */
+    --brand: 22 100% 56%;
+    --brand-foreground: 0 0% 100%;
+    --brand-light: 22 100% 65%;
+    --brand-secondary: 5 88% 55%;
+    
+    /* Surface colors */
+    --surface: 0 0% 99%;
+    --surface-subtle: 210 40% 98%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
