@@ -1,5 +1,5 @@
 Project Info
-URL: https://lovable.dev/projects/38c0e03b-25b1-4c11-a655-1d0f3c2f5356
+URL: localjobzz.com
 
 Editing the Code
 You have multiple options for modifying and managing the application code:
