@@ -292,7 +292,7 @@ const HomePage = () => {
             Start Today, Earn Today
           </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of people finding daily work and earning money on localjobcart
+            Join thousands of people finding daily work and earning money on localjobzz
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 

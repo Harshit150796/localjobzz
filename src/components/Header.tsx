@@ -113,7 +113,7 @@ const Header = () => {
             <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg font-bold text-xl">
               L
             </div>
-            <span className="text-2xl font-bold text-gray-800">localjobcart</span>
+            <span className="text-2xl font-bold text-gray-800">localjobzz</span>
           </Link>
 
           {/* City Selector - Desktop */}

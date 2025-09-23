@@ -14,7 +14,7 @@ const Footer = () => {
               <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-lg font-bold text-xl">
                 L
               </div>
-              <span className="text-2xl font-bold">localjobcart</span>
+              <span className="text-2xl font-bold">localjobzz</span>
             </div>
             <p className="text-gray-400 mb-4 max-w-md">
               Premier job platform for your city. Find work opportunities and hire workers instantly.
@@ -51,7 +51,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2024 localjobcart.com. All rights reserved. Made with ❤️ for everyone</p>
+          <p>&copy; 2024 localjobzz.com. All rights reserved. Made with ❤️ for everyone</p>
         </div>
       </div>
     </footer>
