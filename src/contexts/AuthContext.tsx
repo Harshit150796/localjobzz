@@ -1,28 +1,34 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 // Types for our auth system
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone: string;
-  avatar?: string;
-  createdAt: string;
+  phone?: string;
+  avatar_url?: string;
+  bio?: string;
+  location?: string;
+  skills?: string[];
+  created_at: string;
 }
 
 interface AuthContextType {
   user: User | null;
+  session: Session | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>;
 }
 
 interface RegisterData {
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   password: string;
 }
 
@@ -42,57 +48,83 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for saved user session on app start
+  // Set up auth state listeners and check for existing session
   useEffect(() => {
-    const savedUser = localStorage.getItem('localjobzz_user');
-    if (savedUser) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch (error) {
-        localStorage.removeItem('localjobzz_user');
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        if (session?.user) {
+          await fetchUserProfile(session.user.id);
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
       }
-    }
-    setIsLoading(false);
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Mock API calls - replace with your actual backend API
+  // Fetch user profile from profiles table
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
+      }
+
+      setUser({
+        id: data.user_id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        avatar_url: data.avatar_url,
+        bio: data.bio,
+        location: data.location,
+        skills: data.skills,
+        created_at: data.created_at
+      });
+    } catch (error) {
+      console.error('Error in fetchUserProfile:', error);
+    }
+  };
+
   const login = async (email: string, password: string): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true);
     
     try {
-      // Replace this with actual API call to your backend
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
 
-      if (response.ok) {
-        const userData = await response.json();
-        setUser(userData.user);
-        localStorage.setItem('localjobzz_user', JSON.stringify(userData.user));
-        return { success: true, message: 'Login successful!' };
-      } else {
-        const error = await response.json();
-        return { success: false, message: error.message || 'Login failed' };
+      if (error) {
+        return { success: false, message: error.message };
       }
+
+      return { success: true, message: 'Login successful!' };
     } catch (error) {
-      // For demo purposes - remove this and uncomment the API call above
-      if (email === 'demo@test.com' && password === 'demo123') {
-        const demoUser: User = {
-          id: 'demo-user-id',
-          name: 'Demo User',
-          email: 'demo@test.com',
-          phone: '+1234567890',
-          createdAt: new Date().toISOString()
-        };
-        setUser(demoUser);
-        localStorage.setItem('localjobzz_user', JSON.stringify(demoUser));
-        return { success: true, message: 'Login successful!' };
-      }
-      return { success: false, message: 'Invalid email or password' };
+      return { success: false, message: 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);
     }
@@ -102,72 +134,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsLoading(true);
     
     try {
-      // Replace this with actual API call to your backend
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email,
+        password: userData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: userData.name,
+            phone: userData.phone
+          }
+        }
       });
 
-      if (response.ok) {
-        const responseData = await response.json();
-        setUser(responseData.user);
-        localStorage.setItem('localjobzz_user', JSON.stringify(responseData.user));
-        return { success: true, message: 'Account created successfully!' };
-      } else {
-        const error = await response.json();
-        return { success: false, message: error.message || 'Registration failed' };
+      if (error) {
+        return { success: false, message: error.message };
       }
+
+      return { success: true, message: 'Account created successfully! Please check your email to verify your account.' };
     } catch (error) {
-      // For demo purposes - remove this and uncomment the API call above
-      const newUser: User = {
-        id: 'user-' + Date.now(),
-        name: userData.name,
-        email: userData.email,
-        phone: userData.phone,
-        createdAt: new Date().toISOString()
-      };
-      setUser(newUser);
-      localStorage.setItem('localjobzz_user', JSON.stringify(newUser));
-      return { success: true, message: 'Account created successfully!' };
+      return { success: false, message: 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('localjobzz_user');
+    setSession(null);
   };
 
   const updateProfile = async (userData: Partial<User>): Promise<{ success: boolean; message: string }> => {
-    if (!user) return { success: false, message: 'No user logged in' };
+    if (!user || !session) return { success: false, message: 'No user logged in' };
 
     setIsLoading(true);
     
     try {
-      // Replace this with actual API call to your backend
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+          phone: userData.phone,
+          bio: userData.bio,
+          location: userData.location,
+          skills: userData.skills,
+          avatar_url: userData.avatar_url
+        })
+        .eq('user_id', user.id);
 
-      if (response.ok) {
-        const updatedUser = await response.json();
-        setUser(updatedUser.user);
-        localStorage.setItem('localjobzz_user', JSON.stringify(updatedUser.user));
-        return { success: true, message: 'Profile updated successfully!' };
-      } else {
-        const error = await response.json();
-        return { success: false, message: error.message || 'Update failed' };
+      if (error) {
+        return { success: false, message: error.message };
       }
-    } catch (error) {
-      // For demo purposes - remove this and uncomment the API call above
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('localjobzz_user', JSON.stringify(updatedUser));
+
+      // Refresh user profile
+      await fetchUserProfile(user.id);
       return { success: true, message: 'Profile updated successfully!' };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);
     }
@@ -175,6 +198,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
+    session,
     isLoading,
     login,
     register,

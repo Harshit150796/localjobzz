@@ -1,54 +1,117 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from './AuthContext';
 
 interface Job {
   id: string;
+  user_id: string;
   title: string;
-  jobType: string;
-  dailySalary: string;
+  job_type: string;
+  daily_salary: string;
   location: string;
   description: string;
   phone: string;
   urgency: 'normal' | 'urgent' | 'immediate';
-  timePosted: string;
+  status: 'active' | 'completed' | 'expired';
   featured: boolean;
+  category?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface JobFormData {
+  title: string;
+  job_type: string;
+  daily_salary: string;
+  location: string;
+  description: string;
+  phone: string;
+  urgency: 'normal' | 'urgent' | 'immediate';
+  category?: string;
 }
 
 interface JobContextType {
   jobs: Job[];
-  addJob: (jobData: Omit<Job, 'id' | 'timePosted' | 'featured'>) => void;
+  isLoading: boolean;
+  addJob: (jobData: JobFormData) => Promise<{ success: boolean; message: string }>;
+  refreshJobs: () => Promise<void>;
 }
 
 const JobContext = createContext<JobContextType | undefined>(undefined);
 
 export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const { session } = useAuth();
 
-  // Load jobs from localStorage on mount
+  // Load jobs when component mounts
   useEffect(() => {
-    const savedJobs = localStorage.getItem('localjobzz-jobs');
-    if (savedJobs) {
-      setJobs(JSON.parse(savedJobs));
-    }
+    refreshJobs();
   }, []);
 
-  // Save jobs to localStorage whenever jobs change
-  useEffect(() => {
-    localStorage.setItem('localjobzz-jobs', JSON.stringify(jobs));
-  }, [jobs]);
+  const refreshJobs = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('status', 'active')
+        .order('created_at', { ascending: false });
 
-  const addJob = (jobData: Omit<Job, 'id' | 'timePosted' | 'featured'>) => {
-    const newJob: Job = {
-      ...jobData,
-      id: Date.now().toString(),
-      timePosted: 'Just now',
-      featured: jobData.urgency === 'urgent' || jobData.urgency === 'immediate'
-    };
-    setJobs(prevJobs => [newJob, ...prevJobs]);
+      if (error) {
+        console.error('Error fetching jobs:', error);
+        return;
+      }
+
+      setJobs((data || []) as Job[]);
+    } catch (error) {
+      console.error('Error in refreshJobs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const addJob = async (jobData: JobFormData): Promise<{ success: boolean; message: string }> => {
+    if (!session?.user) {
+      return { success: false, message: 'You must be logged in to post a job' };
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .insert({
+          user_id: session.user.id,
+          title: jobData.title,
+          job_type: jobData.job_type,
+          daily_salary: jobData.daily_salary,
+          location: jobData.location,
+          description: jobData.description,
+          phone: jobData.phone,
+          urgency: jobData.urgency,
+          category: jobData.category,
+          featured: jobData.urgency === 'urgent' || jobData.urgency === 'immediate'
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+
+      // Refresh jobs list
+      await refreshJobs();
+      return { success: true, message: 'Job posted successfully!' };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred' };
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <JobContext.Provider value={{ jobs, addJob }}>
+    <JobContext.Provider value={{ jobs, isLoading, addJob, refreshJobs }}>
       {children}
     </JobContext.Provider>
   );

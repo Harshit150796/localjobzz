@@ -148,15 +148,15 @@ const Category = () => {
     }
   ];
 
-  // Combine real jobs with mock jobs
+  // Combine real jobs with mock jobs  
   const allJobs = [
     ...jobs.map(job => ({
       id: job.id,
       title: job.title,
-      salary: `₹${job.dailySalary}/day`,
+      salary: `₹${job.daily_salary}/day`,
       location: job.location,
-      timePosted: job.timePosted,
-      jobType: job.jobType,
+      timePosted: new Date(job.created_at).toLocaleDateString(),
+      jobType: job.job_type,
       description: job.description,
       phone: job.phone,
       requirements: 'As discussed',

@@ -92,24 +92,28 @@ const PostAd = () => {
     setShowCityDropdown(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Add job to context
-    addJob({
+    const result = await addJob({
       title: formData.jobTitle,
-      jobType: formData.jobType,
-      dailySalary: formData.dailySalary,
+      job_type: formData.jobType,
+      daily_salary: formData.dailySalary,
       location: formData.location,
       description: formData.description,
       phone: formData.phone,
       urgency: formData.urgency
     });
 
-    console.log('Job posted:', formData);
-    
-    // Show success modal
-    setShowSuccessModal(true);
+    if (result.success) {
+      console.log('Job posted successfully');
+      // Show success modal
+      setShowSuccessModal(true);
+    } else {
+      console.error('Error posting job:', result.message);
+      // You can add error handling here later
+    }
   };
 
   const handleSuccessModalClose = () => {
