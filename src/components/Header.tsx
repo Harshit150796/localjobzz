@@ -1,8 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
-import { MapPin, Search, Plus, Menu, X, Navigation } from 'lucide-react';
+import { MapPin, Search, Plus, Menu, X, Navigation, LogIn, UserPlus } from 'lucide-react';
 import { Link, useNavigate, useSearchParams, useLocation as useRouterLocation } from 'react-router-dom';
 import { useLocation } from '../contexts/LocationContext';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './auth/AuthModal';
+import UserMenu from './UserMenu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,10 +14,13 @@ const Header = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearch, setCitySearch] = useState('');
   const [cityInputValue, setCityInputValue] = useState('City');
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const routerLocation = useRouterLocation();
   const { country, isDetecting: isDetectingLocation } = useLocation();
+  const { user } = useAuth();
   
   const usCities = [
     'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Dallas', 'San Jose',
@@ -159,6 +165,37 @@ const Header = () => {
             </form>
           </div>
 
+          {/* Auth/User Section */}
+          <div className="hidden md:flex items-center space-x-3">
+            {user ? (
+              <UserMenu />
+            ) : (
+              <>
+                <button
+                  onClick={() => {
+                    setAuthMode('login');
+                    setShowAuthModal(true);
+                  }}
+                  className="flex items-center space-x-2 text-gray-600 hover:text-orange-500 px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                >
+                  <LogIn className="h-4 w-4" />
+                  <span className="font-medium">Sign In</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    setAuthMode('register');
+                    setShowAuthModal(true);
+                  }}
+                  className="flex items-center space-x-2 bg-gray-800 text-white px-4 py-2 rounded-lg hover:bg-gray-900 transition-colors"
+                >
+                  <UserPlus className="h-4 w-4" />
+                  <span className="font-medium">Sign Up</span>
+                </button>
+              </>
+            )}
+          </div>
+
           {/* Post Ad Button */}
           <Link 
             to="/post"
@@ -220,6 +257,53 @@ const Header = () => {
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
               </form>
               
+              {/* Mobile Auth Buttons */}
+              {user ? (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-3">Welcome back, {user.name}!</p>
+                  <div className="flex space-x-2">
+                    <Link 
+                      to="/profile"
+                      className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg text-center"
+                    >
+                      My Profile
+                    </Link>
+                    <Link 
+                      to="/messages"
+                      className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg text-center"
+                    >
+                      Messages
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      setAuthMode('login');
+                      setShowAuthModal(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex-1 flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    <span>Sign In</span>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setAuthMode('register');
+                      setShowAuthModal(true);
+                      setIsMenuOpen(false);
+                    }}
+                    className="flex-1 flex items-center justify-center space-x-2 bg-gray-800 text-white px-4 py-3 rounded-lg"
+                  >
+                    <UserPlus className="h-4 w-4" />
+                    <span>Sign Up</span>
+                  </button>
+                </div>
+              )}
+              
               <Link 
                 to="/post"
                 className="flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg w-full"
@@ -231,6 +315,13 @@ const Header = () => {
           </div>
         )}
       </div>
+      
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        initialMode={authMode}
+      />
     </header>
   );
 };
