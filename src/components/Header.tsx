@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, ChevronDown } from 'lucide-react';
+import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
@@ -12,17 +12,24 @@ const Header = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const [selectedCity, setSelectedCity] = useState('');
+  const [cityInputValue, setCityInputValue] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
   const cityDropdownRef = useRef<HTMLDivElement>(null);
 
-  const popularCities = [
-    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia',
-    'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville',
-    'Fort Worth', 'Columbus', 'Charlotte', 'Seattle', 'Denver', 'Boston',
-    'Detroit', 'Memphis', 'Portland', 'Las Vegas', 'Louisville', 'Baltimore'
+  const popularIndianCities = [
+    'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 
+    'Pune', 'Ahmedabad', 'Surat', 'Jaipur', 'Lucknow', 'Kanpur', 
+    'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna', 
+    'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 'Faridabad', 
+    'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Aurangabad', 'Dhanbad', 
+    'Amritsar', 'Allahabad', 'Ranchi', 'Howrah', 'Coimbatore', 'Jabalpur'
   ];
+
+  // Filter cities based on input
+  const filteredCities = popularIndianCities.filter(city =>
+    city.toLowerCase().includes(cityInputValue.toLowerCase())
+  ).slice(0, 8); // Limit to 8 results for better UX
   
 
   const handleSearch = (e: React.FormEvent) => {
@@ -33,11 +40,25 @@ const Header = () => {
     }
   };
 
+  const handleCityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCityInputValue(value);
+    setShowCityDropdown(value.length > 0);
+  };
+
   const handleCitySelect = (city: string) => {
-    setSelectedCity(city);
+    setCityInputValue(city);
     setShowCityDropdown(false);
     // Navigate to city jobs page using existing route structure
     navigate(`/jobs/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`);
+  };
+
+  const handleCityFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (cityInputValue.trim()) {
+      setShowCityDropdown(false);
+      navigate(`/jobs/${encodeURIComponent(cityInputValue.trim().toLowerCase().replace(/\s+/g, '-'))}`);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -69,26 +90,28 @@ const Header = () => {
           {/* Search & City Selector - Desktop */}
           <div className="hidden md:flex flex-1 max-w-3xl mx-4 space-x-3">
             {/* City Selector */}
-            <div className="relative min-w-48" ref={cityDropdownRef}>
-              <button
-                onClick={() => setShowCityDropdown(!showCityDropdown)}
-                className="flex items-center justify-between w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background hover:bg-surface transition-colors"
-              >
-                <span className={selectedCity ? 'text-foreground' : 'text-muted-foreground'}>
-                  {selectedCity || 'Select city...'}
-                </span>
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
-              </button>
-              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div className="relative min-w-36" ref={cityDropdownRef}>
+              <form onSubmit={handleCityFormSubmit}>
+                <input
+                  type="text"
+                  value={cityInputValue}
+                  onChange={handleCityInputChange}
+                  onFocus={() => setShowCityDropdown(cityInputValue.length > 0)}
+                  onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                  placeholder="City..."
+                  className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background text-sm"
+                />
+              </form>
+              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               
               {/* City Dropdown */}
-              {showCityDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                  <div className="p-2">
-                    {popularCities.map((city) => (
+              {showCityDropdown && filteredCities.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                  <div className="p-1">
+                    {filteredCities.map((city) => (
                       <button
                         key={city}
-                        onClick={() => handleCitySelect(city)}
+                        onMouseDown={() => handleCitySelect(city)}
                         className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
                       >
                         {city}
@@ -168,24 +191,26 @@ const Header = () => {
               
               {/* Mobile City Selector */}
               <div className="relative">
-                <button
-                  onClick={() => setShowCityDropdown(!showCityDropdown)}
-                  className="flex items-center justify-between w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background"
-                >
-                  <span className={selectedCity ? 'text-foreground' : 'text-muted-foreground'}>
-                    {selectedCity || 'Select city...'}
-                  </span>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
-                </button>
-                <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                <form onSubmit={handleCityFormSubmit}>
+                  <input
+                    type="text"
+                    value={cityInputValue}
+                    onChange={handleCityInputChange}
+                    onFocus={() => setShowCityDropdown(cityInputValue.length > 0)}
+                    onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
+                    placeholder="City..."
+                    className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background text-sm"
+                  />
+                </form>
+                <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                 
-                {showCityDropdown && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
-                    <div className="p-2">
-                      {popularCities.slice(0, 12).map((city) => (
+                {showCityDropdown && filteredCities.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                    <div className="p-1">
+                      {filteredCities.slice(0, 6).map((city) => (
                         <button
                           key={city}
-                          onClick={() => {
+                          onMouseDown={() => {
                             handleCitySelect(city);
                             setIsMenuOpen(false);
                           }}
