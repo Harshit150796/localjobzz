@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Routes, Route } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import ScrollToTop from "@/components/ScrollToTop";
 import Index from "./pages/Index";
 import PostAd from "./pages/PostAd";
 import Category from "./pages/Category";
@@ -29,6 +30,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
       <TooltipProvider>
+        <ScrollToTop />
         <Toaster />
         <Sonner />
       <Routes>
