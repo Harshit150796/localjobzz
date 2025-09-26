@@ -1,6 +1,6 @@
 
-import React, { useState } from 'react';
-import { Search, Plus, Menu, X, LogIn, UserPlus } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
@@ -11,8 +11,18 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const [selectedCity, setSelectedCity] = useState('');
   const navigate = useNavigate();
   const { user } = useAuth();
+  const cityDropdownRef = useRef<HTMLDivElement>(null);
+
+  const popularCities = [
+    'New York', 'Los Angeles', 'Chicago', 'Houston', 'Phoenix', 'Philadelphia',
+    'San Antonio', 'San Diego', 'Dallas', 'San Jose', 'Austin', 'Jacksonville',
+    'Fort Worth', 'Columbus', 'Charlotte', 'Seattle', 'Denver', 'Boston',
+    'Detroit', 'Memphis', 'Portland', 'Las Vegas', 'Louisville', 'Baltimore'
+  ];
   
 
   const handleSearch = (e: React.FormEvent) => {
@@ -22,6 +32,25 @@ const Header = () => {
       navigate(`/category/all?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
+
+  const handleCitySelect = (city: string) => {
+    setSelectedCity(city);
+    setShowCityDropdown(false);
+    // Navigate to city jobs page using existing route structure
+    navigate(`/jobs/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(event.target as Node)) {
+        setShowCityDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
 
   return (
@@ -37,9 +66,41 @@ const Header = () => {
           </Link>
 
 
-          {/* Search Bar - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-lg mx-4">
-            <form onSubmit={handleSearch} className="relative w-full">
+          {/* Search & City Selector - Desktop */}
+          <div className="hidden md:flex flex-1 max-w-3xl mx-4 space-x-3">
+            {/* City Selector */}
+            <div className="relative min-w-48" ref={cityDropdownRef}>
+              <button
+                onClick={() => setShowCityDropdown(!showCityDropdown)}
+                className="flex items-center justify-between w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background hover:bg-surface transition-colors"
+              >
+                <span className={selectedCity ? 'text-foreground' : 'text-muted-foreground'}>
+                  {selectedCity || 'Select city...'}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
+              </button>
+              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              
+              {/* City Dropdown */}
+              {showCityDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  <div className="p-2">
+                    {popularCities.map((city) => (
+                      <button
+                        key={city}
+                        onClick={() => handleCitySelect(city)}
+                        className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+                      >
+                        {city}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Search Bar */}
+            <form onSubmit={handleSearch} className="relative flex-1">
               <input
                 type="text"
                 value={searchQuery}
@@ -102,8 +163,41 @@ const Header = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t">
+          <div className="md:hidden py-4 border-t border-border">
             <div className="space-y-4">
+              
+              {/* Mobile City Selector */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowCityDropdown(!showCityDropdown)}
+                  className="flex items-center justify-between w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background"
+                >
+                  <span className={selectedCity ? 'text-foreground' : 'text-muted-foreground'}>
+                    {selectedCity || 'Select city...'}
+                  </span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showCityDropdown ? 'rotate-180' : ''}`} />
+                </button>
+                <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                
+                {showCityDropdown && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-popover border border-border rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                    <div className="p-2">
+                      {popularCities.slice(0, 12).map((city) => (
+                        <button
+                          key={city}
+                          onClick={() => {
+                            handleCitySelect(city);
+                            setIsMenuOpen(false);
+                          }}
+                          className="w-full text-left px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
+                        >
+                          {city}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               
               <form onSubmit={handleSearch} className="relative">
                 <input
@@ -111,9 +205,9 @@ const Header = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search for jobs..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background"
                 />
-                <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </form>
               
               {/* Mobile Auth Buttons */}
