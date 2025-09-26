@@ -101,8 +101,8 @@ const Header = () => {
     setCityInputValue(city);
     setCitySearch('');
     setShowCityDropdown(false);
-    // Navigate to jobs page filtered by city
-    navigate(`/category/all?city=${encodeURIComponent(city)}`);
+    // Navigate to city jobs page showing all jobs in that city
+    navigate(`/jobs/${encodeURIComponent(city.toLowerCase().replace(/\s+/g, '-'))}`);
   };
 
   const handleCityInputFocus = () => {
