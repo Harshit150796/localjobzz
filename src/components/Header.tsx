@@ -36,8 +36,8 @@ const Header = () => {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to category page with search query
-      navigate(`/category/all?search=${encodeURIComponent(searchQuery.trim())}`);
+      // Navigate to jobs page with search query
+      navigate(`/jobs/all?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 

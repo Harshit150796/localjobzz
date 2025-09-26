@@ -105,7 +105,7 @@ const HomePage = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16 max-w-5xl mx-auto">
             {/* Look for Job Tile */}
             <Link 
-              to="/category/jobs"
+              to="/jobs/all"
               className="group transform hover:scale-105 transition-all duration-300"
             >
               <div className="bg-white rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
@@ -217,7 +217,7 @@ const HomePage = () => {
           
           <div className="text-center mt-8">
             <Link 
-              to="/category/jobs"
+              to="/jobs/all"
               className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-105"
             >
               View All Today's Jobs
@@ -299,7 +299,7 @@ const HomePage = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link 
-              to="/category/jobs"
+              to="/jobs/all"
               className="bg-white text-gray-800 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-100 transition-all duration-200 transform hover:scale-105"
             >
               Find Work Now

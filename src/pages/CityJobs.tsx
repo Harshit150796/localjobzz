@@ -10,24 +10,27 @@ import { useJobs } from '../contexts/JobContext';
 
 const CityJobs = () => {
   const { city } = useParams<{ city: string }>();
-  const cityName = city?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown City';
+  const isAllJobs = city === 'all';
+  const cityName = isAllJobs ? 'All Cities' : (city?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown City');
   const [searchParams] = useSearchParams();
   const searchQuery = searchParams.get('search') || '';
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
   const { jobs, isLoading } = useJobs();
 
-  // Convert Supabase jobs to display format and filter by city
+  // Convert Supabase jobs to display format and filter by city (or show all if city is 'all')
   const cityJobs = useMemo(() => {
-    const cityKeywords = cityName.toLowerCase().split(' ');
-    return jobs.filter(job => {
+    const filteredJobs = isAllJobs ? jobs : jobs.filter(job => {
+      const cityKeywords = cityName.toLowerCase().split(' ');
       const jobLocation = job.location.toLowerCase();
       // Check if any part of the city name matches the job location
       return cityKeywords.some(keyword => 
         jobLocation.includes(keyword) || 
         keyword.includes(jobLocation.split(',')[0].trim())
       );
-    }).map(job => ({
+    });
+    
+    return filteredJobs.map(job => ({
       id: job.id,
       title: job.title,
       salary: job.daily_salary,
@@ -40,7 +43,7 @@ const CityJobs = () => {
       timing: 'As per job details',
       featured: job.featured
     }));
-  }, [jobs, cityName]);
+  }, [jobs, cityName, isAllJobs]);
 
   // Helper function to calculate city proximity score
   const getCityProximityScore = (jobLocation: string, targetCity: string) => {
@@ -106,12 +109,15 @@ const CityJobs = () => {
 
     return true;
   }).sort((a, b) => {
-    // Sort by proximity to city
-    const scoreA = getCityProximityScore(a.location, cityName);
-    const scoreB = getCityProximityScore(b.location, cityName);
-    
-    if (scoreA !== scoreB) {
-      return scoreB - scoreA; // Higher score first
+    // For "all" jobs, skip city proximity sorting
+    if (!isAllJobs) {
+      // Sort by proximity to city
+      const scoreA = getCityProximityScore(a.location, cityName);
+      const scoreB = getCityProximityScore(b.location, cityName);
+      
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA; // Higher score first
+      }
     }
     
     // Secondary sort by featured status
@@ -141,8 +147,8 @@ const CityJobs = () => {
   const organizationSchema = createOrganizationSchema();
   const breadcrumbSchema = createBreadcrumbSchema([
     { name: 'Home', url: 'https://localjobzz.com/' },
-    { name: 'Jobs', url: 'https://localjobzz.com/category/all' },
-    { name: `Jobs in ${cityName}`, url: `https://localjobzz.com/jobs/${city}` }
+    { name: 'Jobs', url: 'https://localjobzz.com/jobs/all' },
+    { name: isAllJobs ? 'All Jobs' : `Jobs in ${cityName}`, url: `https://localjobzz.com/jobs/${city}` }
   ]);
 
   const combinedStructuredData = {
@@ -151,8 +157,8 @@ const CityJobs = () => {
   };
 
   const breadcrumbItems = [
-    { name: 'Jobs', url: '/category/all' },
-    { name: `${cityName}` }
+    { name: 'Jobs', url: '/jobs/all' },
+    { name: isAllJobs ? 'All Jobs' : `${cityName}` }
   ];
 
   const JobCard = ({ job }: { job: any }) => (
@@ -208,9 +214,9 @@ const CityJobs = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <SEOHead
-        title={`Jobs in ${cityName} - Find Local Work Today`}
-        description={`Find local jobs in ${cityName}. Browse daily work opportunities including household work, delivery, construction, and more. Start earning today!`}
-        keywords={`jobs in ${cityName}, ${cityName} employment, ${cityName} work opportunities, daily jobs ${cityName}, local work ${cityName}`}
+        title={isAllJobs ? 'All Jobs - Find Local Work Today' : `Jobs in ${cityName} - Find Local Work Today`}
+        description={isAllJobs ? 'Find local jobs across all cities. Browse daily work opportunities including household work, delivery, construction, and more. Start earning today!' : `Find local jobs in ${cityName}. Browse daily work opportunities including household work, delivery, construction, and more. Start earning today!`}
+        keywords={isAllJobs ? 'jobs, employment, work opportunities, daily jobs, local work, all cities' : `jobs in ${cityName}, ${cityName} employment, ${cityName} work opportunities, daily jobs ${cityName}, local work ${cityName}`}
         city={cityName}
         structuredData={combinedStructuredData}
         canonicalUrl={`https://localjobzz.com/jobs/${city}`}
@@ -224,12 +230,12 @@ const CityJobs = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
-            Jobs in {cityName}
+            {isAllJobs ? 'All Jobs' : `Jobs in ${cityName}`}
           </h1>
           <p className="text-gray-600">
             {searchQuery
               ? `${filteredJobs.length} jobs found for "${searchQuery}"`
-              : `${filteredJobs.length} jobs available in ${cityName}`
+              : `${filteredJobs.length} jobs available${isAllJobs ? '' : ` in ${cityName}`}`
             }
           </p>
         </div>
@@ -333,8 +339,8 @@ const CityJobs = () => {
                 ))
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">No jobs found in {cityName}.</p>
-                  <p className="text-gray-400 text-sm mt-2">Try searching in nearby cities or post a job to attract workers.</p>
+                  <p className="text-gray-500 text-lg">No jobs found{isAllJobs ? '' : ` in ${cityName}`}.</p>
+                  <p className="gray-400 text-sm mt-2">{isAllJobs ? 'Try adjusting your search or post a job to attract workers.' : 'Try searching in nearby cities or post a job to attract workers.'}</p>
                 </div>
               )}
             </div>
