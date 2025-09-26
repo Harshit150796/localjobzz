@@ -7,6 +7,7 @@ import AuthModal from './auth/AuthModal';
 import UserMenu from './UserMenu';
 
 const Header = () => {
+  // City selector component for job location search
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showAuthModal, setShowAuthModal] = useState(false);
