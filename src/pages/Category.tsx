@@ -14,157 +14,21 @@ const Category = () => {
   const [sortBy, setSortBy] = useState('newest');
   const { jobs } = useJobs();
 
-  // Mock job listings data - will be combined with real jobs
-  const mockJobListings = [
-    {
-      id: 'mock-mathura-1',
-      title: 'Temple Cleaning - Krishna Janmabhoomi',
-      salary: '₹500/day',
-      location: 'Mathura, Uttar Pradesh',
-      timePosted: '2h ago',
-      jobType: 'Household Work',
-      description: 'Need person to clean temple premises daily. Morning shift work. Devotional environment.',
-      phone: '+91 98765 11111',
-      requirements: 'Respectful attitude, early morning availability',
-      timing: '5 AM - 9 AM',
-      featured: false
-    },
-    {
-      id: 'mock-mathura-2',
-      title: 'Sweet Shop Helper - Mathura Peda Shop',
-      salary: '₹600/day',
-      location: 'Holi Gate, Mathura',
-      timePosted: '4h ago',
-      jobType: 'Retail',
-      description: 'Help in famous peda sweet shop. Pack sweets, serve customers. Good for local people.',
-      phone: '+91 98765 22222',
-      requirements: 'Basic Hindi, sweet shop experience preferred',
-      timing: '8 AM - 6 PM',
-      featured: true
-    },
-    {
-      id: 'mock-1',
-      title: 'House Cleaning - Urgent Today',
-      salary: '₹800/day',
-      location: 'Bandra West, Mumbai',
-      timePosted: '15 min ago',
-      jobType: 'Household Work',
-      description: 'Need someone to clean 2BHK apartment. Must start today. Work for 4-5 hours.',
-      phone: '+91 98765 43210',
-      requirements: 'Experience preferred, own cleaning supplies',
-      timing: '10 AM - 3 PM',
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Food Delivery - Swiggy Partner',
-      salary: '₹600-1000/day',
-      location: 'Koramangala, Bangalore',
-      timePosted: '30 min ago',
-      jobType: 'Delivery',
-      description: 'Looking for delivery partner with own bike. Flexible hours, good earnings.',
-      phone: '+91 87654 32109',
-      requirements: 'Own vehicle, smartphone, driving license',
-      timing: 'Flexible - 8 hours',
-      featured: false
-    },
-    {
-      id: 3,
-      title: 'Construction Helper - Building Site',
-      salary: '₹700/day',
-      location: 'Sector 14, Gurgaon',
-      timePosted: '45 min ago',
-      jobType: 'Construction',
-      description: 'Need 3 helpers for construction work. Daily payment guaranteed.',
-      phone: '+91 76543 21098',
-      requirements: 'Physical fitness required, no experience needed',
-      timing: '8 AM - 5 PM',
-      featured: true
-    },
-    {
-      id: 4,
-      title: 'Shop Assistant - Grocery Store',
-      salary: '₹500/day',
-      location: 'Hitech City, Hyderabad',
-      timePosted: '1h ago',
-      jobType: 'Retail',
-      description: 'Part-time help needed in grocery store. Good for students.',
-      phone: '+91 65432 10987',
-      requirements: 'Basic math, customer handling',
-      timing: '2 PM - 8 PM',
-      featured: false
-    },
-    {
-      id: 5,
-      title: 'Cook for Small Family',
-      salary: '₹600/day',
-      location: 'Andheri East, Mumbai',
-      timePosted: '1h ago',
-      jobType: 'Household Work',
-      description: 'Cook lunch and dinner for family of 3. Simple home food.',
-      phone: '+91 54321 09876',
-      requirements: 'Know basic cooking, vegetarian food',
-      timing: '11 AM - 2 PM, 6 PM - 8 PM',
-      featured: false
-    },
-    {
-      id: 6,
-      title: 'Painter Helper - Apartment Painting',
-      salary: '₹650/day',
-      location: 'Whitefield, Bangalore',
-      timePosted: '2h ago',
-      jobType: 'Construction',
-      description: 'Help main painter in 3BHK apartment painting. 2-3 days work.',
-      phone: '+91 43210 98765',
-      requirements: 'No experience needed, will teach',
-      timing: '9 AM - 6 PM',
-      featured: false
-    },
-    {
-      id: 'hyderabad-1',
-      title: 'Office Cleaning - IT Park',
-      salary: '₹750/day',
-      location: 'Madhapur, Hyderabad',
-      timePosted: '3h ago',
-      jobType: 'Household Work',
-      description: 'Clean IT office premises. Night shift work. Good pay.',
-      phone: '+91 98765 55555',
-      requirements: 'Night shift availability, basic cleaning experience',
-      timing: '10 PM - 6 AM',
-      featured: true
-    },
-    {
-      id: 'hyderabad-2',
-      title: 'Delivery Boy - Food App',
-      salary: '₹800/day',
-      location: 'Jubilee Hills, Hyderabad',
-      timePosted: '1h ago',
-      jobType: 'Delivery',
-      description: 'Food delivery in Jubilee Hills area. Own bike required.',
-      phone: '+91 98765 66666',
-      requirements: 'Own vehicle, smartphone, local area knowledge',
-      timing: '11 AM - 11 PM',
-      featured: false
-    }
-  ];
+  // Convert Supabase jobs to display format
+  const allJobs = jobs.map(job => ({
+    id: job.id,
+    title: job.title,
+    salary: job.daily_salary,
+    location: job.location,
+    timePosted: new Date(job.created_at).toLocaleDateString(),
+    jobType: job.job_type,
+    description: job.description,
+    phone: job.phone,
+    requirements: 'As per job requirements',
+    timing: 'As per job details',
+    featured: job.featured
+  }));
 
-  // Combine real jobs with mock jobs  
-  const allJobs = [
-    ...jobs.map(job => ({
-      id: job.id,
-      title: job.title,
-      salary: `₹${job.daily_salary}/day`,
-      location: job.location,
-      timePosted: new Date(job.created_at).toLocaleDateString(),
-      jobType: job.job_type,
-      description: job.description,
-      phone: job.phone,
-      requirements: 'As discussed',
-      timing: 'Flexible',
-      featured: job.featured
-    })),
-    ...mockJobListings
-  ];
 
   // Helper function to calculate city proximity score
   const getCityProximityScore = (jobLocation: string, targetCity: string) => {

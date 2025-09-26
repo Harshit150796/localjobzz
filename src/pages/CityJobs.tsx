@@ -1,20 +1,23 @@
-import React, { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React, { useState, useMemo } from 'react';
+import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone } from 'lucide-react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
-import ListingCard from '../components/ListingCard';
 import SEOHead from '../components/SEOHead';
 import BreadcrumbNavigation from '../components/Breadcrumb';
 import { createLocalBusinessSchema, createBreadcrumbSchema, createOrganizationSchema } from '../components/StructuredData';
 import { useJobs } from '../contexts/JobContext';
-import { Plus } from 'lucide-react';
 
 const CityJobs = () => {
   const { city } = useParams<{ city: string }>();
   const cityName = city?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown City';
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [sortBy, setSortBy] = useState('newest');
   const { jobs, isLoading } = useJobs();
 
-  // Filter jobs by the selected city with improved matching
+  // Convert Supabase jobs to display format and filter by city
   const cityJobs = useMemo(() => {
     const cityKeywords = cityName.toLowerCase().split(' ');
     return jobs.filter(job => {
@@ -24,8 +27,114 @@ const CityJobs = () => {
         jobLocation.includes(keyword) || 
         keyword.includes(jobLocation.split(',')[0].trim())
       );
-    });
+    }).map(job => ({
+      id: job.id,
+      title: job.title,
+      salary: job.daily_salary,
+      location: job.location,
+      timePosted: new Date(job.created_at).toLocaleDateString(),
+      jobType: job.job_type,
+      description: job.description,
+      phone: job.phone,
+      requirements: 'As per job requirements',
+      timing: 'As per job details',
+      featured: job.featured
+    }));
   }, [jobs, cityName]);
+
+  // Helper function to calculate city proximity score
+  const getCityProximityScore = (jobLocation: string, targetCity: string) => {
+    const jobLocationLower = jobLocation.toLowerCase();
+    const targetCityLower = targetCity.toLowerCase();
+    
+    // Exact city match gets highest score
+    if (jobLocationLower.includes(targetCityLower)) {
+      return 100;
+    }
+    
+    // State/region proximity for Indian cities
+    const stateProximity: { [key: string]: string[] } = {
+      'uttar pradesh': ['mathura', 'agra', 'lucknow', 'kanpur', 'varanasi', 'allahabad', 'meerut', 'ghaziabad', 'noida'],
+      'maharashtra': ['mumbai', 'pune', 'nagpur', 'nashik', 'aurangabad', 'solapur'],
+      'karnataka': ['bangalore', 'mysore', 'hubli', 'mangalore', 'belgaum'],
+      'tamil nadu': ['chennai', 'coimbatore', 'madurai', 'salem', 'tirunelveli'],
+      'delhi ncr': ['delhi', 'gurgaon', 'faridabad', 'ghaziabad', 'noida', 'greater noida'],
+      'gujarat': ['ahmedabad', 'surat', 'vadodara', 'rajkot', 'bhavnagar'],
+      'rajasthan': ['jaipur', 'jodhpur', 'udaipur', 'kota', 'ajmer', 'bikaner'],
+      'telangana': ['hyderabad', 'warangal', 'nizamabad', 'khammam', 'karimnagar'],
+      'andhra pradesh': ['visakhapatnam', 'vijayawada', 'guntur', 'nellore', 'kurnool', 'tirupati'],
+      'west bengal': ['kolkata', 'howrah', 'durgapur', 'asansol', 'siliguri'],
+      'kerala': ['thiruvananthapuram', 'kochi', 'kozhikode', 'thrissur', 'kollam'],
+      'punjab': ['chandigarh', 'ludhiana', 'amritsar', 'jalandhar', 'patiala'],
+      'haryana': ['faridabad', 'gurgaon', 'panipat', 'ambala'],
+      'madhya pradesh': ['bhopal', 'indore', 'jabalpur', 'gwalior', 'ujjain'],
+      'odisha': ['bhubaneswar', 'cuttack', 'rourkela', 'brahmapur']
+    };
+    
+    // Find which state/region the target city belongs to
+    let targetState = '';
+    for (const [state, cities] of Object.entries(stateProximity)) {
+      if (cities.some(city => targetCityLower.includes(city))) {
+        targetState = state;
+        break;
+      }
+    }
+    
+    // Check if job location is in same state/region
+    if (targetState) {
+      const samStateCities = stateProximity[targetState];
+      if (samStateCities.some(city => jobLocationLower.includes(city))) {
+        return 50; // Same state gets medium priority
+      }
+    }
+    
+    return 10; // Other locations get low priority
+  };
+
+  // Filter and sort jobs based on search query
+  const filteredJobs = cityJobs.filter(job => {
+    // Search filter
+    if (searchQuery) {
+      const searchWords = searchQuery.toLowerCase().split(' ').filter(word => word.length > 2);
+      return searchWords.some(word => 
+        job.title.toLowerCase().includes(word) ||
+        job.description.toLowerCase().includes(word) ||
+        job.location.toLowerCase().includes(word) ||
+        job.jobType.toLowerCase().includes(word)
+      );
+    }
+
+    return true;
+  }).sort((a, b) => {
+    // Sort by proximity to city
+    const scoreA = getCityProximityScore(a.location, cityName);
+    const scoreB = getCityProximityScore(b.location, cityName);
+    
+    if (scoreA !== scoreB) {
+      return scoreB - scoreA; // Higher score first
+    }
+    
+    // Secondary sort by featured status
+    if (a.featured && !b.featured) return -1;
+    if (!a.featured && b.featured) return 1;
+    
+    // Tertiary sort by time posted (newest first for "Just now", then others)
+    if (a.timePosted === 'Just now' && b.timePosted !== 'Just now') return -1;
+    if (a.timePosted !== 'Just now' && b.timePosted === 'Just now') return 1;
+    
+    return 0;
+  });
+
+  const filters = {
+    jobTypes: ['Household Work', 'Delivery', 'Construction', 'Retail', 'Security', 'Gardening'],
+    salaryRanges: [
+      { label: 'Under ₹500/day', min: 0, max: 500 },
+      { label: '₹500 - ₹700/day', min: 500, max: 700 },
+      { label: '₹700 - ₹1000/day', min: 700, max: 1000 },
+      { label: 'Above ₹1000/day', min: 1000, max: Infinity }
+    ],
+    timing: ['Morning Shift', 'Evening Shift', 'Full Day', 'Flexible Hours']
+  };
 
   // Structured Data
   const localBusinessSchema = createLocalBusinessSchema(cityName);
@@ -46,11 +155,61 @@ const CityJobs = () => {
     { name: `${cityName}` }
   ];
 
+  const JobCard = ({ job }: { job: any }) => (
+    <div className={`bg-white rounded-lg shadow-sm border ${job.featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 p-6`}>
+      {job.featured && (
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2 py-1 rounded mb-4 inline-block">
+          Urgent Job
+        </div>
+      )}
+      
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex-1">
+          <h3 className="font-bold text-xl text-gray-800 mb-2">{job.title}</h3>
+          <div className="text-2xl font-bold text-green-600 mb-2">{job.salary}</div>
+          
+          <div className="flex flex-wrap items-center text-gray-600 text-sm space-x-4 mb-3">
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-4 w-4" />
+              <span>{job.location}</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Clock className="h-4 w-4" />
+              <span>{job.timePosted}</span>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded inline-block mb-3">
+            {job.jobType}
+          </div>
+          
+          <p className="text-gray-700 mb-3">{job.description}</p>
+          
+          <div className="space-y-2 text-sm text-gray-600">
+            <div><strong>Timing:</strong> {job.timing}</div>
+            <div><strong>Requirements:</strong> {job.requirements}</div>
+          </div>
+        </div>
+        
+        <div className="mt-4 lg:mt-0 lg:ml-6">
+          <a 
+            href={`tel:${job.phone}`}
+            className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 no-underline"
+          >
+            <Phone className="h-4 w-4" />
+            <span>Call Now</span>
+          </a>
+          <div className="text-center text-sm text-gray-600 mt-2">{job.phone}</div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="min-h-screen bg-surface">
+    <div className="min-h-screen bg-gray-50">
       <SEOHead
         title={`Jobs in ${cityName} - Find Local Work Today`}
-        description={`Find local jobs in ${cityName}. Browse hundreds of daily work opportunities including household work, delivery, construction, and more. Start earning today!`}
+        description={`Find local jobs in ${cityName}. Browse daily work opportunities including household work, delivery, construction, and more. Start earning today!`}
         keywords={`jobs in ${cityName}, ${cityName} employment, ${cityName} work opportunities, daily jobs ${cityName}, local work ${cityName}`}
         city={cityName}
         structuredData={combinedStructuredData}
@@ -58,110 +217,130 @@ const CityJobs = () => {
       />
       
       <Header />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <BreadcrumbNavigation items={breadcrumbItems} />
 
-        {/* Hero Section */}
-        <section className="mb-12">
-          <div className="bg-gradient-to-r from-brand to-brand-secondary rounded-2xl p-8 text-center text-white">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Jobs in {cityName}
-            </h1>
-            <p className="text-xl mb-6 opacity-90">
-              Find local work opportunities in your area. {cityJobs.length > 0 ? `${cityJobs.length} jobs available today!` : 'Be the first to post a job in this city!'}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">{cityJobs.length}</div>
-                <div className="text-sm opacity-80">Active Jobs</div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">₹500-₹1000</div>
-                <div className="text-sm opacity-80">Daily Earnings</div>
-              </div>
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
-                <div className="text-3xl font-bold">&lt; 2hrs</div>
-                <div className="text-sm opacity-80">Avg Response Time</div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-800 mb-2">
+            Jobs in {cityName}
+          </h1>
+          <p className="text-gray-600">
+            {searchQuery
+              ? `${filteredJobs.length} jobs found for "${searchQuery}"`
+              : `${filteredJobs.length} jobs available in ${cityName}`
+            }
+          </p>
+        </div>
 
-        {/* Job Categories for this city */}
-        <section className="mb-12">
-          <h2 className="text-3xl font-bold text-foreground mb-8">Popular Job Categories in {cityName}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: 'Household Work', count: '150+ jobs', link: `/jobs/${city}/household-work` },
-              { name: 'Delivery & Transport', count: '120+ jobs', link: `/jobs/${city}/delivery-transport` },
-              { name: 'Construction', count: '80+ jobs', link: `/jobs/${city}/construction` },
-              { name: 'Shop Assistant', count: '60+ jobs', link: `/jobs/${city}/shop-assistant` }
-            ].map((category, index) => (
-              <a 
-                key={index} 
-                href={category.link}
-                className="block bg-card rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:scale-105 border border-border"
-              >
-                <h3 className="text-lg font-semibold text-card-foreground mb-2">{category.name}</h3>
-                <p className="text-muted-foreground text-sm">{category.count}</p>
-              </a>
-            ))}
-          </div>
-        </section>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Filters Sidebar */}
+          <div className="lg:w-64 bg-white rounded-lg shadow-sm border border-gray-200 p-6 h-fit">
+            <div className="flex items-center space-x-2 mb-6">
+              <SlidersHorizontal className="h-5 w-5 text-gray-600" />
+              <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+            </div>
 
-        {/* Available Jobs */}
-        <section>
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold text-foreground">Available Jobs</h2>
-            <div className="text-muted-foreground">
-              {cityJobs.length > 0 ? `Showing ${cityJobs.length} jobs` : 'No jobs found'}
+            {/* Job Type */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-3">Job Type</h3>
+              <div className="space-y-2">
+                {filters.jobTypes.map((type, index) => (
+                  <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
+                    <span className="text-sm text-gray-600">{type}</span>
+                  </label>
+                ))}
+              </div>
             </div>
+
+            {/* Salary Range */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-3">Daily Salary</h3>
+              <div className="space-y-2">
+                {filters.salaryRanges.map((range, index) => (
+                  <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
+                    <span className="text-sm text-gray-600">{range.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Timing */}
+            <div className="mb-6">
+              <h3 className="font-medium text-gray-700 mb-3">Work Timing</h3>
+              <div className="space-y-2">
+                {filters.timing.map((time, index) => (
+                  <label key={index} className="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" className="rounded text-orange-500 focus:ring-orange-500" />
+                    <span className="text-sm text-gray-600">{time}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-2 px-4 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all">
+              Apply Filters
+            </button>
           </div>
-          
-          {isLoading ? (
-            <div className="text-center py-12">
-              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand"></div>
-              <p className="mt-4 text-muted-foreground">Loading jobs...</p>
-            </div>
-          ) : cityJobs.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {cityJobs.map((job) => (
-                <ListingCard 
-                  key={job.id} 
-                  title={job.title}
-                  price={job.daily_salary}
-                  location={job.location}
-                  timePosted={new Date(job.created_at).toLocaleDateString()}
-                  featured={job.featured}
-                  image="photo-1556740749-887f6717d7e4"
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <div className="max-w-md mx-auto">
-                <div className="mb-6">
-                  <div className="w-24 h-24 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-                    <Plus className="h-12 w-12 text-muted-foreground" />
-                  </div>
-                  <h3 className="text-2xl font-semibold text-foreground mb-3">No Jobs Available Currently</h3>
-                  <p className="text-muted-foreground mb-8">
-                    Be the first to post a job in {cityName}! Help local workers find opportunities in your area.
-                  </p>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {/* Sort and View Controls */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 mb-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+                <div className="flex items-center space-x-4">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                  >
+                    <option value="newest">Newest Jobs First</option>
+                    <option value="salaryHigh">Highest Salary First</option>
+                    <option value="salaryLow">Lowest Salary First</option>
+                  </select>
                 </div>
-                <Link 
-                  to="/post" 
-                  className="inline-flex items-center space-x-2 bg-brand hover:bg-brand-light text-brand-foreground px-6 py-3 rounded-lg font-semibold transition-colors duration-200"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Post a Job</span>
-                </Link>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-lg ${viewMode === 'grid' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-lg ${viewMode === 'list' ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             </div>
-          )}
-        </section>
-      </main>
+
+            {/* Job Listings */}
+            <div className="space-y-6">
+              {isLoading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                  <p className="mt-4 text-gray-600">Loading jobs...</p>
+                </div>
+              ) : filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <JobCard key={job.id} job={job} />
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 text-lg">No jobs found in {cityName}.</p>
+                  <p className="text-gray-400 text-sm mt-2">Try searching in nearby cities or post a job to attract workers.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
 
       <Footer />
     </div>
