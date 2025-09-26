@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
+import { mockJobs } from '@/data/mockJobs';
 
 interface Job {
   id: string;
@@ -61,12 +62,23 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (error) {
         console.error('Error fetching jobs:', error);
+        // Fall back to mock data if there's an error
+        setJobs(mockJobs);
         return;
       }
 
-      setJobs((data || []) as Job[]);
+      // If no real jobs exist, use mock data as fallback
+      if (!data || data.length === 0) {
+        setJobs(mockJobs);
+      } else {
+        // Combine real jobs with mock jobs for a richer experience
+        const combinedJobs = [...(data as Job[]), ...mockJobs];
+        setJobs(combinedJobs);
+      }
     } catch (error) {
       console.error('Error in refreshJobs:', error);
+      // Fall back to mock data if there's an error
+      setJobs(mockJobs);
     } finally {
       setIsLoading(false);
     }

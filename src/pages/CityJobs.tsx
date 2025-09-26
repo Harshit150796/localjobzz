@@ -14,11 +14,17 @@ const CityJobs = () => {
   const cityName = city?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown City';
   const { jobs, isLoading } = useJobs();
 
-  // Filter jobs by the selected city
+  // Filter jobs by the selected city with improved matching
   const cityJobs = useMemo(() => {
-    return jobs.filter(job => 
-      job.location.toLowerCase().includes(cityName.toLowerCase())
-    );
+    const cityKeywords = cityName.toLowerCase().split(' ');
+    return jobs.filter(job => {
+      const jobLocation = job.location.toLowerCase();
+      // Check if any part of the city name matches the job location
+      return cityKeywords.some(keyword => 
+        jobLocation.includes(keyword) || 
+        keyword.includes(jobLocation.split(',')[0].trim())
+      );
+    });
   }, [jobs, cityName]);
 
   // Structured Data
