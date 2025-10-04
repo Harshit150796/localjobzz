@@ -53,6 +53,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const refreshJobs = async () => {
     setIsLoading(true);
     try {
+      console.log('Fetching jobs from Supabase...');
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
@@ -64,6 +65,8 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
+      console.log('Jobs fetched from Supabase:', data?.length || 0);
+      console.log('Sample job:', data?.[0]);
       setJobs((data || []) as Job[]);
     } catch (error) {
       console.error('Error in refreshJobs:', error);

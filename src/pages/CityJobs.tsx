@@ -20,15 +20,25 @@ const CityJobs = () => {
 
   // Convert Supabase jobs to display format and filter by city (or show all if city is 'all')
   const cityJobs = useMemo(() => {
+    console.log('Total jobs from context:', jobs.length);
+    console.log('City param:', city);
+    console.log('City name:', cityName);
+    console.log('Is all jobs:', isAllJobs);
+    
     const filteredJobs = isAllJobs ? jobs : jobs.filter(job => {
-      const cityKeywords = cityName.toLowerCase().split(' ');
-      const jobLocation = job.location.toLowerCase();
-      // Check if any part of the city name matches the job location
-      return cityKeywords.some(keyword => 
-        jobLocation.includes(keyword) || 
-        keyword.includes(jobLocation.split(',')[0].trim())
-      );
+      const jobLocationLower = job.location.toLowerCase();
+      const cityNameLower = cityName.toLowerCase();
+      
+      console.log(`Checking job: ${job.title} in ${job.location} against ${cityName}`);
+      
+      // Direct match - city name is in job location
+      const directMatch = jobLocationLower.includes(cityNameLower);
+      console.log(`Direct match result: ${directMatch}`);
+      
+      return directMatch;
     });
+    
+    console.log('Filtered jobs count:', filteredJobs.length);
     
     return filteredJobs.map(job => ({
       id: job.id,
