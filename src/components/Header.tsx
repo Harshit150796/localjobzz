@@ -141,9 +141,9 @@ const Header = () => {
 
 
           {/* Search & City Selector - Desktop */}
-          <div className="hidden md:flex flex-1 max-w-3xl mx-4 space-x-3">
+          <div className="hidden md:flex flex-1 max-w-3xl mx-4 space-x-2">
             {/* City Selector */}
-            <div className="relative min-w-36" ref={cityDropdownRef}>
+            <div className="relative w-32" ref={cityDropdownRef}>
               <form onSubmit={handleCityFormSubmit}>
                 <input
                   type="text"
@@ -152,10 +152,10 @@ const Header = () => {
                   onFocus={() => setShowCityDropdown(cityInputValue.length > 0)}
                   onBlur={() => setTimeout(() => setShowCityDropdown(false), 200)}
                   placeholder="City..."
-                  className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background text-sm"
+                  className="w-full pl-9 pr-2 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background text-sm"
                 />
               </form>
-              <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
               
               {/* City Dropdown */}
               {showCityDropdown && filteredCities.length > 0 && (
@@ -182,9 +182,9 @@ const Header = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search for jobs..."
-                className="w-full pl-10 pr-4 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background"
+                className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background shadow-sm"
               />
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
             </form>
           </div>
 
