@@ -1,12 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone } from 'lucide-react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
 import BreadcrumbNavigation from '../components/Breadcrumb';
 import { createLocalBusinessSchema, createBreadcrumbSchema, createOrganizationSchema } from '../components/StructuredData';
 import { useJobs } from '../contexts/JobContext';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from '../components/auth/AuthModal';
+import { useToast } from '../hooks/use-toast';
+import { createOrFindConversation } from '../utils/messageHelpers';
 
 const CityJobs = () => {
   const { city } = useParams<{ city: string }>();
@@ -17,6 +21,12 @@ const CityJobs = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
   const { jobs, isLoading } = useJobs();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
+  const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
   // Convert Supabase jobs to display format and filter by city (or show all if city is 'all')
   const cityJobs = useMemo(() => {
@@ -171,6 +181,46 @@ const CityJobs = () => {
     { name: isAllJobs ? 'All Jobs' : `${cityName}` }
   ];
 
+  const handleSendMessage = async (job: any) => {
+    if (!user) {
+      setPendingJobId(job.id);
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    setIsCreatingConversation(true);
+    
+    try {
+      // Find the job owner from the original jobs array
+      const originalJob = jobs.find(j => j.id === job.id);
+      if (!originalJob) {
+        toast({ title: "Error", description: "Job not found", variant: "destructive" });
+        return;
+      }
+
+      const result = await createOrFindConversation(
+        job.id,
+        originalJob.user_id,
+        user.id
+      );
+
+      if (result.success && result.conversationId) {
+        navigate(`/messages?conversation=${result.conversationId}`);
+      } else {
+        toast({ 
+          title: "Error", 
+          description: result.error || "Failed to start conversation",
+          variant: "destructive" 
+        });
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      toast({ title: "Error", description: "Failed to start conversation", variant: "destructive" });
+    } finally {
+      setIsCreatingConversation(false);
+    }
+  };
+
   const JobCard = ({ job }: { job: any }) => (
     <div className={`bg-white rounded-lg shadow-sm border ${job.featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 p-6`}>
       {job.featured && (
@@ -207,15 +257,22 @@ const CityJobs = () => {
           </div>
         </div>
         
-        <div className="mt-4 lg:mt-0 lg:ml-6">
+        <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col space-y-2">
           <a 
             href={`tel:${job.phone}`}
             className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 no-underline"
           >
             <Phone className="h-4 w-4" />
-            <span>Call Now</span>
+            <span>Call {job.phone}</span>
           </a>
-          <div className="text-center text-sm text-gray-600 mt-2">{job.phone}</div>
+          <button
+            onClick={() => handleSendMessage(job)}
+            disabled={isCreatingConversation}
+            className="w-full lg:w-auto bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <MessageCircle className="h-4 w-4" />
+            <span>{isCreatingConversation ? 'Loading...' : 'Send Message'}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -359,6 +416,15 @@ const CityJobs = () => {
       </div>
 
       <Footer />
+      
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          setPendingJobId(null);
+        }}
+        initialMode="login"
+      />
     </div>
   );
 };

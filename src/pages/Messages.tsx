@@ -1,63 +1,176 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageCircle, Send, ArrowLeft, Phone } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data for demonstration
-const mockConversations = [
-  {
-    id: '1',
-    otherUser: { name: 'Rajesh Kumar', avatar: 'RK' },
-    lastMessage: 'When can you start the cleaning work?',
-    lastMessageTime: '2m ago',
-    unread: 2,
-    jobTitle: 'House Cleaning - Urgent Need'
-  },
-  {
-    id: '2',
-    otherUser: { name: 'Priya Sharma', avatar: 'PS' },
-    lastMessage: 'The delivery address is correct?',
-    lastMessageTime: '1h ago',
-    unread: 0,
-    jobTitle: 'Food Delivery Partner'
-  },
-  {
-    id: '3',
-    otherUser: { name: 'Mohammed Ali', avatar: 'MA' },
-    lastMessage: 'Thank you for the great work!',
-    lastMessageTime: '3h ago',
-    unread: 0,
-    jobTitle: 'Construction Helper Required'
-  }
-];
+interface Conversation {
+  id: string;
+  job_id: string;
+  employer_id: string;
+  worker_id: string;
+  otherUser: {
+    name: string;
+    avatar: string;
+  };
+  jobTitle: string;
+  lastMessage: string;
+  lastMessageTime: string;
+  unread: number;
+}
 
-const mockMessages = [
-  {
-    id: '1',
-    senderId: 'other',
-    text: 'Hi! I saw your job post for house cleaning.',
-    timestamp: '10:30 AM'
-  },
-  {
-    id: '2',
-    senderId: 'me',
-    text: 'Hello! Yes, I need someone to clean my 2BHK apartment.',
-    timestamp: '10:32 AM'
-  },
-  {
-    id: '3',
-    senderId: 'other',
-    text: 'When can you start the cleaning work?',
-    timestamp: '10:35 AM'
-  }
-];
+interface Message {
+  id: string;
+  sender_id: string;
+  content: string;
+  created_at: string;
+  senderId: 'me' | 'other';
+  timestamp: string;
+}
 
 const Messages: React.FC = () => {
   const { user } = useAuth();
-  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const conversationIdFromUrl = searchParams.get('conversation');
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(conversationIdFromUrl);
   const [newMessage, setNewMessage] = useState('');
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const { toast } = useToast();
+
+  // Fetch conversations
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchConversations = async () => {
+      try {
+        const { data: convData, error } = await supabase
+          .from('conversations')
+          .select(`
+            id,
+            job_id,
+            employer_id,
+            worker_id,
+            jobs (title),
+            messages (content, created_at)
+          `)
+          .or(`employer_id.eq.${user.id},worker_id.eq.${user.id}`)
+          .order('updated_at', { ascending: false });
+
+        if (error) throw error;
+
+        // Format conversations
+        const formattedConvs = await Promise.all(
+          (convData || []).map(async (conv: any) => {
+            const otherUserId = conv.employer_id === user.id ? conv.worker_id : conv.employer_id;
+            
+            // Fetch other user's profile
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', otherUserId)
+              .single();
+
+            const lastMsg = conv.messages?.[conv.messages.length - 1];
+            const initials = profile?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
+
+            return {
+              id: conv.id,
+              job_id: conv.job_id,
+              employer_id: conv.employer_id,
+              worker_id: conv.worker_id,
+              otherUser: {
+                name: profile?.name || 'Unknown User',
+                avatar: initials
+              },
+              jobTitle: conv.jobs?.title || 'Job',
+              lastMessage: lastMsg?.content || 'No messages yet',
+              lastMessageTime: lastMsg?.created_at 
+                ? new Date(lastMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                : '',
+              unread: 0
+            };
+          })
+        );
+
+        setConversations(formattedConvs);
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+        toast({ title: "Error", description: "Failed to load conversations", variant: "destructive" });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchConversations();
+  }, [user, toast]);
+
+  // Fetch messages for selected conversation
+  useEffect(() => {
+    if (!selectedConversation || !user) return;
+
+    const fetchMessages = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('messages')
+          .select('*')
+          .eq('conversation_id', selectedConversation)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        const formattedMsgs = (data || []).map((msg: any): Message => ({
+          id: msg.id,
+          sender_id: msg.sender_id,
+          content: msg.content,
+          created_at: msg.created_at,
+          senderId: (msg.sender_id === user.id ? 'me' : 'other') as 'me' | 'other',
+          timestamp: new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        }));
+
+        setMessages(formattedMsgs);
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    fetchMessages();
+
+    // Subscribe to new messages
+    const channel = supabase
+      .channel(`messages:${selectedConversation}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'messages',
+          filter: `conversation_id=eq.${selectedConversation}`
+        },
+        (payload) => {
+          const newMsg = payload.new as any;
+          const formattedMsg: Message = {
+            id: newMsg.id,
+            sender_id: newMsg.sender_id,
+            content: newMsg.content,
+            created_at: newMsg.created_at,
+            senderId: (newMsg.sender_id === user.id ? 'me' : 'other') as 'me' | 'other',
+            timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          setMessages(prev => [...prev, formattedMsg]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedConversation, user]);
 
   if (!user) {
     return (
@@ -74,13 +187,29 @@ const Messages: React.FC = () => {
     );
   }
 
-  const selectedConv = mockConversations.find(c => c.id === selectedConversation);
+  const selectedConv = conversations.find(c => c.id === selectedConversation);
 
-  const sendMessage = () => {
-    if (newMessage.trim()) {
-      // In real app, send message to backend
-      console.log('Sending message:', newMessage);
+  const sendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation || !user) return;
+
+    setIsSending(true);
+    try {
+      const { error } = await supabase
+        .from('messages')
+        .insert({
+          conversation_id: selectedConversation,
+          sender_id: user.id,
+          content: newMessage.trim()
+        });
+
+      if (error) throw error;
+
       setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -110,7 +239,12 @@ const Messages: React.FC = () => {
               </div>
               
               <div className="overflow-y-auto h-full">
-                {mockConversations.map((conversation) => (
+                {isLoading ? (
+                  <div className="p-4 text-center text-gray-500">Loading conversations...</div>
+                ) : conversations.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">No conversations yet</div>
+                ) : (
+                  conversations.map((conversation) => (
                   <div
                     key={conversation.id}
                     onClick={() => setSelectedConversation(conversation.id)}
@@ -152,7 +286,8 @@ const Messages: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
@@ -181,7 +316,10 @@ const Messages: React.FC = () => {
 
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {mockMessages.map((message) => (
+                    {messages.length === 0 ? (
+                      <div className="text-center text-gray-500 mt-8">No messages yet. Start the conversation!</div>
+                    ) : (
+                      messages.map((message) => (
                       <div
                         key={message.id}
                         className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
@@ -193,7 +331,7 @@ const Messages: React.FC = () => {
                               : 'bg-gray-100 text-gray-800'
                           }`}
                         >
-                          <p className="text-sm">{message.text}</p>
+                          <p className="text-sm">{message.content}</p>
                           <p
                             className={`text-xs mt-1 ${
                               message.senderId === 'me' ? 'text-orange-100' : 'text-gray-500'
@@ -203,7 +341,8 @@ const Messages: React.FC = () => {
                           </p>
                         </div>
                       </div>
-                    ))}
+                      ))
+                    )}
                   </div>
 
                   {/* Message Input */}
@@ -219,7 +358,8 @@ const Messages: React.FC = () => {
                       />
                       <button
                         onClick={sendMessage}
-                        className="bg-orange-500 text-white p-2 rounded-lg hover:bg-orange-600 transition-colors"
+                        disabled={isSending || !newMessage.trim()}
+                        className="bg-orange-500 text-white p-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <Send className="h-5 w-5" />
                       </button>
