@@ -4,11 +4,17 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
+import { useAuth } from '../contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 import JobSuccessModal from '../components/JobSuccessModal';
+import AuthModal from '../components/auth/AuthModal';
 
 const PostAd = () => {
   const navigate = useNavigate();
   const { addJob } = useJobs();
+  const { session, user } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: '',
     jobType: '',
@@ -95,24 +101,52 @@ const PostAd = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Add job to context
-    const result = await addJob({
-      title: formData.jobTitle,
-      job_type: formData.jobType,
-      daily_salary: formData.dailySalary,
-      location: formData.location,
-      description: formData.description,
-      phone: formData.phone,
-      urgency: formData.urgency
-    });
+    // Check if user is authenticated
+    if (!session || !user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to post a job.",
+        variant: "destructive",
+      });
+      setShowAuthModal(true);
+      return;
+    }
 
-    if (result.success) {
-      console.log('Job posted successfully');
-      // Show success modal
-      setShowSuccessModal(true);
-    } else {
-      console.error('Error posting job:', result.message);
-      // You can add error handling here later
+    setIsSubmitting(true);
+    
+    try {
+      // Add job to context
+      const result = await addJob({
+        title: formData.jobTitle,
+        job_type: formData.jobType,
+        daily_salary: formData.dailySalary,
+        location: formData.location,
+        description: formData.description,
+        phone: formData.phone,
+        urgency: formData.urgency
+      });
+
+      if (result.success) {
+        toast({
+          title: "Success!",
+          description: "Your job has been posted successfully.",
+        });
+        setShowSuccessModal(true);
+      } else {
+        toast({
+          title: "Error",
+          description: result.message || "Failed to post job. Please try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -332,14 +366,24 @@ const PostAd = () => {
               </div>
             </div>
 
+            {/* Authentication Status */}
+            {!session && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                <p className="text-sm text-amber-800">
+                  ⚠️ You need to be signed in to post a job. Click the button below to sign in.
+                </p>
+              </div>
+            )}
+
             {/* Submit Button */}
             <div className="pt-6 border-t">
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center space-x-2"
+                disabled={isSubmitting}
+                className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <Briefcase className="h-5 w-5" />
-                <span>Post Job - Completely FREE</span>
+                <span>{isSubmitting ? 'Posting Job...' : 'Post Job - Completely FREE'}</span>
               </button>
               <p className="text-center text-sm text-gray-500 mt-3">
                 Your job will be visible to thousands of workers immediately
@@ -357,6 +401,13 @@ const PostAd = () => {
         onClose={handleSuccessModalClose}
         onViewJob={handleViewJob}
         onPostAnother={handlePostAnother}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        initialMode="login"
       />
     </div>
   );
