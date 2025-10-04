@@ -12,6 +12,7 @@ interface AuthModalProps {
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -19,37 +20,42 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     password: ''
   });
 
-  const { login, register, isLoading } = useAuth();
+  const { login, register } = useAuth();
   const { toast } = useToast();
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
-    if (mode === 'login') {
-      const result = await login(formData.email, formData.password);
-      if (result.success) {
-        toast({ title: "Welcome back!", description: result.message });
-        onClose();
-        setFormData({ name: '', email: '', phone: '', password: '' });
+    try {
+      if (mode === 'login') {
+        const result = await login(formData.email, formData.password);
+        if (result.success) {
+          toast({ title: "Welcome back!", description: result.message });
+          onClose();
+          setFormData({ name: '', email: '', phone: '', password: '' });
+        } else {
+          toast({ title: "Login failed", description: result.message, variant: "destructive" });
+        }
       } else {
-        toast({ title: "Login failed", description: result.message, variant: "destructive" });
+        if (!formData.name || !formData.phone) {
+          toast({ title: "Please fill all fields", variant: "destructive" });
+          return;
+        }
+        
+        const result = await register(formData);
+        if (result.success) {
+          toast({ title: "Account created!", description: result.message });
+          onClose();
+          setFormData({ name: '', email: '', phone: '', password: '' });
+        } else {
+          toast({ title: "Registration failed", description: result.message, variant: "destructive" });
+        }
       }
-    } else {
-      if (!formData.name || !formData.phone) {
-        toast({ title: "Please fill all fields", variant: "destructive" });
-        return;
-      }
-      
-      const result = await register(formData);
-      if (result.success) {
-        toast({ title: "Account created!", description: result.message });
-        onClose();
-        setFormData({ name: '', email: '', phone: '', password: '' });
-      } else {
-        toast({ title: "Registration failed", description: result.message, variant: "destructive" });
-      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -163,10 +169,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Please wait...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
+            {isSubmitting ? 'Please wait...' : (mode === 'login' ? 'Sign In' : 'Create Account')}
           </button>
         </form>
 
