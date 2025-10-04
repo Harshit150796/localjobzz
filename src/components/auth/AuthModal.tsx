@@ -187,15 +187,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               }}
               className="ml-2 text-orange-500 font-semibold hover:text-orange-600"
             >
-              {mode === 'login' ? 'Sign Up' : 'Sign In'}
+          {mode === 'login' ? 'Sign Up' : 'Sign In'}
             </button>
           </p>
-          
-          {mode === 'login' && (
-            <p className="text-sm text-gray-500 mt-2">
-              Demo: email: demo@test.com, password: demo123
-            </p>
-          )}
         </div>
       </div>
     </div>
