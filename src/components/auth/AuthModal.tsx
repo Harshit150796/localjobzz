@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
@@ -22,6 +22,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
   const { login, register } = useAuth();
   const { toast } = useToast();
+
+  // Sync mode with initialMode prop when modal opens or initialMode changes
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setFormData({ name: '', email: '', phone: '', password: '' });
+      setShowPassword(false);
+      setIsSubmitting(false);
+    }
+  }, [isOpen, initialMode]);
 
   if (!isOpen) return null;
 
