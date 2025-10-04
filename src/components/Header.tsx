@@ -27,10 +27,30 @@ const Header = () => {
     'Amritsar', 'Allahabad', 'Ranchi', 'Howrah', 'Coimbatore', 'Jabalpur'
   ];
 
-  // Filter cities based on input
-  const filteredCities = popularIndianCities.filter(city =>
-    city.toLowerCase().includes(cityInputValue.toLowerCase())
-  ).slice(0, 8); // Limit to 8 results for better UX
+  // Filter and sort cities based on input - prioritize matches at the start
+  const filteredCities = cityInputValue.trim() 
+    ? popularIndianCities
+        .filter(city => city.toLowerCase().includes(cityInputValue.toLowerCase()))
+        .sort((a, b) => {
+          const aLower = a.toLowerCase();
+          const bLower = b.toLowerCase();
+          const searchLower = cityInputValue.toLowerCase();
+          
+          // Exact match comes first
+          if (aLower === searchLower) return -1;
+          if (bLower === searchLower) return 1;
+          
+          // Starts with search term comes next
+          const aStarts = aLower.startsWith(searchLower);
+          const bStarts = bLower.startsWith(searchLower);
+          if (aStarts && !bStarts) return -1;
+          if (!aStarts && bStarts) return 1;
+          
+          // Alphabetical order for the rest
+          return a.localeCompare(b);
+        })
+        .slice(0, 15) // Show more results
+    : [];
   
 
   const handleSearch = (e: React.FormEvent) => {
