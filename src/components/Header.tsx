@@ -199,7 +199,7 @@ const Header = () => {
                     setAuthMode('login');
                     setShowAuthModal(true);
                   }}
-                  className="flex items-center space-x-1.5 text-muted-foreground hover:text-brand px-2 py-1.5 rounded hover:bg-surface transition-colors text-sm"
+                  className="flex items-center space-x-1.5 bg-brand text-brand-foreground px-3 py-1.5 rounded text-sm hover:bg-brand-light transition-colors"
                 >
                   <LogIn className="h-4 w-4" />
                   <span className="font-medium">Sign In</span>
@@ -218,15 +218,6 @@ const Header = () => {
               </>
             )}
           </div>
-
-          {/* Post Ad Button */}
-          <Link 
-            to="/post"
-            className="hidden md:flex items-center space-x-1.5 bg-brand text-brand-foreground px-3 py-1.5 rounded text-sm hover:bg-brand-light transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="font-medium">Post Ad</span>
-          </Link>
 
           {/* Mobile Menu Button */}
           <button
@@ -315,7 +306,7 @@ const Header = () => {
                       setShowAuthModal(true);
                       setIsMenuOpen(false);
                     }}
-                    className="flex-1 flex items-center justify-center space-x-2 border border-gray-300 text-gray-700 px-4 py-3 rounded-lg"
+                    className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg"
                   >
                     <LogIn className="h-4 w-4" />
                     <span>Sign In</span>
@@ -334,14 +325,6 @@ const Header = () => {
                   </button>
                 </div>
               )}
-              
-              <Link 
-                to="/post"
-                className="flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg w-full"
-              >
-                <Plus className="h-4 w-4" />
-                <span className="font-medium">Post Free Ad</span>
-              </Link>
             </div>
           </div>
         )}
