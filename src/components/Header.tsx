@@ -19,12 +19,44 @@ const Header = () => {
   const cityDropdownRef = useRef<HTMLDivElement>(null);
 
   const popularIndianCities = [
-    'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 
-    'Pune', 'Ahmedabad', 'Surat', 'Jaipur', 'Lucknow', 'Kanpur', 
-    'Nagpur', 'Indore', 'Thane', 'Bhopal', 'Visakhapatnam', 'Patna', 
-    'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 'Faridabad', 
-    'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Aurangabad', 'Dhanbad', 
-    'Amritsar', 'Allahabad', 'Ranchi', 'Howrah', 'Coimbatore', 'Jabalpur'
+    // Major Metros
+    'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad',
+    
+    // Tier 1 Cities
+    'Surat', 'Jaipur', 'Lucknow', 'Kanpur', 'Nagpur', 'Indore', 'Thane', 'Bhopal', 
+    'Visakhapatnam', 'Patna', 'Vadodara', 'Ghaziabad', 'Ludhiana', 'Agra', 'Nashik', 
+    'Faridabad', 'Meerut', 'Rajkot', 'Varanasi', 'Srinagar', 'Aurangabad', 'Dhanbad',
+    'Amritsar', 'Allahabad', 'Ranchi', 'Howrah', 'Coimbatore', 'Jabalpur', 'Gwalior',
+    'Vijayawada', 'Jodhpur', 'Madurai', 'Raipur', 'Kota', 'Chandigarh', 'Guwahati',
+    
+    // Tier 2 Cities
+    'Hubli', 'Dharwad', 'Mysore', 'Mangalore', 'Belgaum', 'Gulbarga', 'Shimoga', 'Davangere',
+    'Bellary', 'Bijapur', 'Tumkur', 'Raichur', 'Tirupati', 'Guntur', 'Nellore', 'Kakinada',
+    'Rajahmundry', 'Warangal', 'Khammam', 'Karimnagar', 'Nizamabad', 'Anantapur', 'Kurnool',
+    'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Erode', 'Vellore', 'Thoothukudi', 'Thanjavur',
+    'Dindigul', 'Kanchipuram', 'Tiruppur', 'Cuddalore', 'Karur', 'Puducherry', 'Kochi',
+    'Thiruvananthapuram', 'Kozhikode', 'Kollam', 'Thrissur', 'Palakkad', 'Alappuzha',
+    'Malappuram', 'Kannur', 'Kottayam', 'Gurgaon', 'Noida', 'Greater Noida', 'Rohtak',
+    'Panipat', 'Karnal', 'Sonipat', 'Hisar', 'Yamunanagar', 'Panchkula', 'Ambala', 'Kurukshetra',
+    'Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rudrapur', 'Rishikesh', 'Jammu', 
+    'Udhampur', 'Kathua', 'Anantnag', 'Baramulla', 'Shimla', 'Dharamshala', 'Mandi', 'Solan',
+    'Kullu', 'Hamirpur', 'Bilaspur', 'Ratlam', 'Ujjain', 'Dewas', 'Satna', 'Guna', 'Burhanpur',
+    'Khandwa', 'Mandsaur', 'Bhind', 'Chhindwara', 'Guna', 'Shivpuri', 'Udaipur', 'Kota',
+    'Bikaner', 'Ajmer', 'Alwar', 'Bharatpur', 'Bhilwara', 'Sri Ganganagar', 'Pali', 'Sikar',
+    'Tonk', 'Kishangarh', 'Bhiwadi', 'Durgapur', 'Asansol', 'Siliguri', 'Bardhaman', 'Haldia',
+    'Burdwan', 'Kharagpur', 'Malda', 'Jalpaiguri', 'Darjeeling', 'Purulia', 'Raiganj',
+    'Muzaffarpur', 'Purnia', 'Darbhanga', 'Gaya', 'Bhagalpur', 'Arrah', 'Bihar Sharif',
+    'Chapra', 'Sasaram', 'Motihari', 'Begusarai', 'Saharsa', 'Dehri', 'Bettiah', 'Cuttack',
+    'Rourkela', 'Berhampur', 'Sambalpur', 'Balasore', 'Bhubaneswar', 'Puri', 'Brahmapur',
+    'Jamshedpur', 'Bokaro', 'Giridih', 'Ramgarh', 'Medininagar', 'Hazaribagh', 'Phusro',
+    'Jhansi', 'Aligarh', 'Moradabad', 'Saharanpur', 'Gorakhpur', 'Bareilly', 'Firozabad',
+    'Jhansi', 'Muzaffarnagar', 'Mathura', 'Rampur', 'Shahjahanpur', 'Farrukhabad', 'Maunath Bhanjan',
+    'Hapur', 'Ayodhya', 'Etawah', 'Mirzapur', 'Bulandshahr', 'Sambhal', 'Amroha', 'Hardoi',
+    'Fatehpur', 'Raebareli', 'Orai', 'Bahraich', 'Unnao', 'Lakhimpur', 'Sitapur', 'Itarsi',
+    'Sagar', 'Rewa', 'Katni', 'Singrauli', 'Morena', 'Vidisha', 'Seoni', 'Balaghat', 'Daman',
+    'Silvassa', 'Vapi', 'Anand', 'Bharuch', 'Jamnagar', 'Junagadh', 'Gandhinagar', 'Gandhidham',
+    'Bhavnagar', 'Mehsana', 'Morbi', 'Navsari', 'Porbandar', 'Surendranagar', 'Palanpur',
+    'Veraval', 'Godhra', 'Bhuj', 'Dahod', 'Botad', 'Amreli'
   ];
 
   // Filter and sort cities based on input - prioritize matches at the start
