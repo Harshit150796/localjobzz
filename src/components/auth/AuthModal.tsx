@@ -15,8 +15,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
-    phone: '',
+    emailOrPhone: '',
     password: ''
   });
 
@@ -27,11 +26,21 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   useEffect(() => {
     if (isOpen) {
       setMode(initialMode);
-      setFormData({ name: '', email: '', phone: '', password: '' });
+      setFormData({ name: '', emailOrPhone: '', password: '' });
       setShowPassword(false);
       setIsSubmitting(false);
     }
   }, [isOpen, initialMode]);
+
+  // Detect if input is email or phone
+  const isEmail = (input: string) => {
+    return input.includes('@');
+  };
+
+  const isPhone = (input: string) => {
+    // Basic phone validation: contains mostly numbers and possibly +, -, (), spaces
+    return /^[\d\s\-\+\(\)]+$/.test(input) && input.replace(/\D/g, '').length >= 10;
+  };
 
   if (!isOpen) return null;
 
@@ -41,25 +50,58 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     
     try {
       if (mode === 'login') {
-        const result = await login(formData.email, formData.password);
+        // For login, accept both email and phone
+        let loginEmail = formData.emailOrPhone;
+        
+        // If it's a phone number, convert to synthetic email format
+        if (isPhone(formData.emailOrPhone)) {
+          const cleanPhone = formData.emailOrPhone.replace(/\D/g, '');
+          loginEmail = `${cleanPhone}@phone.localjobzz`;
+        }
+        
+        const result = await login(loginEmail, formData.password);
         if (result.success) {
           toast({ title: "Welcome back!", description: result.message });
           onClose();
-          setFormData({ name: '', email: '', phone: '', password: '' });
+          setFormData({ name: '', emailOrPhone: '', password: '' });
         } else {
           toast({ title: "Login failed", description: result.message, variant: "destructive" });
         }
       } else {
-        if (!formData.name || !formData.phone) {
+        if (!formData.name || !formData.emailOrPhone) {
           toast({ title: "Please fill all fields", variant: "destructive" });
           return;
         }
         
-        const result = await register(formData);
+        // Determine if input is email or phone
+        let email = formData.emailOrPhone;
+        let phone: string | undefined;
+        
+        if (isPhone(formData.emailOrPhone)) {
+          // User entered phone - create synthetic email
+          const cleanPhone = formData.emailOrPhone.replace(/\D/g, '');
+          email = `${cleanPhone}@phone.localjobzz`;
+          phone = formData.emailOrPhone;
+        } else if (!isEmail(formData.emailOrPhone)) {
+          toast({ 
+            title: "Invalid input", 
+            description: "Please enter a valid email or phone number",
+            variant: "destructive" 
+          });
+          return;
+        }
+        
+        const result = await register({
+          name: formData.name,
+          email: email,
+          phone: phone,
+          password: formData.password
+        });
+        
         if (result.success) {
           toast({ title: "Account created!", description: result.message });
           onClose();
-          setFormData({ name: '', email: '', phone: '', password: '' });
+          setFormData({ name: '', emailOrPhone: '', password: '' });
         } else {
           toast({ title: "Registration failed", description: result.message, variant: "destructive" });
         }
@@ -116,41 +158,25 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email
+              {mode === 'register' ? 'Email or Phone Number' : 'Email or Phone'}
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              {formData.emailOrPhone && isPhone(formData.emailOrPhone) ? (
+                <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              ) : (
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+              )}
               <input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                name="emailOrPhone"
+                value={formData.emailOrPhone}
                 onChange={handleInputChange}
-                placeholder="Enter your email"
+                placeholder={mode === 'register' ? 'Enter your email or phone number' : 'Enter your email or phone'}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                 required
               />
             </div>
           </div>
-
-          {mode === 'register' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  placeholder="Enter your phone number"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  required
-                />
-              </div>
-            </div>
-          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -193,7 +219,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             <button
               onClick={() => {
                 setMode(mode === 'login' ? 'register' : 'login');
-                setFormData({ name: '', email: '', phone: '', password: '' });
+                setFormData({ name: '', emailOrPhone: '', password: '' });
               }}
               className="ml-2 text-orange-500 font-semibold hover:text-orange-600"
             >
