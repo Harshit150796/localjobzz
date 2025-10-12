@@ -18,7 +18,7 @@ interface Message {
 const AIAssistant = () => {
   const [mode, setMode] = useState<'text' | 'voice'>('voice');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Hi! I can help you post a job or find work. What would you like to do today?' }
+    { role: 'assistant', content: "Hi! I'm your voice assistant. You can tell me to post a job or help you find work. Just start speaking!" }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -161,7 +161,7 @@ const AIAssistant = () => {
             </div>
             <div>
               <h1 className="text-lg font-bold text-foreground">AI Assistant</h1>
-              <p className="text-xs text-muted-foreground">Post jobs or find work instantly</p>
+              <p className="text-xs text-muted-foreground">Talk to me about jobs - I'm here to help!</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
@@ -190,7 +190,7 @@ const AIAssistant = () => {
                 }}
               />
               <p className="text-center text-sm text-muted-foreground max-w-md">
-                Click the orb to start a voice conversation
+                Tap to start talking! Say "I want to post a job" or "Find me work in Bangalore"
               </p>
             </div>
           </div>
@@ -249,25 +249,6 @@ const AIAssistant = () => {
           </div>
         )}
 
-        {/* Quick actions */}
-        <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/post-ad')}
-            className="backdrop-blur-xl bg-background/80 border-border/50 shadow-lg"
-          >
-            Post Job
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate('/')}
-            className="backdrop-blur-xl bg-background/80 border-border/50 shadow-lg"
-          >
-            Browse Jobs
-          </Button>
-        </div>
       </main>
 
       {/* Transcript overlay for voice mode */}

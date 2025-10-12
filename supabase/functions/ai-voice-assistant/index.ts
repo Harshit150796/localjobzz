@@ -6,6 +6,28 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
+  // Extract token from URL query parameters
+  const url = new URL(req.url);
+  const token = url.searchParams.get('token');
+  
+  if (!token) {
+    console.error('No authentication token provided');
+    return new Response('Unauthorized: No token provided', { status: 401 });
+  }
+
+  // Initialize Supabase client and verify token
+  const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+  // Verify the JWT token and get user
+  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+  
+  if (authError || !user) {
+    console.error('Authentication failed:', authError);
+    return new Response('Unauthorized: Invalid token', { status: 401 });
+  }
+
+  console.log('Authenticated user:', user.id, user.email);
+
   const { headers } = req;
   const upgradeHeader = headers.get("upgrade") || "";
 
@@ -48,26 +70,32 @@ serve(async (req) => {
             type: 'session.update',
             session: {
               modalities: ['text', 'audio'],
-              instructions: `You are a helpful AI assistant for localjobzz, a daily job platform in India. 
-Your role is to help users in two ways:
+              instructions: `You are a helpful AI voice assistant for LocalJobzz, a local job marketplace in India. You're talking to ${user.email}.
+            
+Your role is to have natural, conversational interactions to help users:
+1. POST JOBS - Collect all details conversationally, then confirm before posting
+2. FIND WORK - Help users search for jobs based on their needs
 
-1. POSTING JOBS: If user wants to post a job, collect these details conversationally:
-   - Job title (what work needs to be done)
-   - Job category (Household Work, Delivery, Construction, etc.)
-   - Location (city, state in India)
-   - Daily salary in ₹
-   - Job description
-   - Phone number
-   - Urgency (normal, urgent, immediate)
+POSTING A JOB - Collect these details naturally:
+- Job title (what role? e.g., "Cook", "Driver", "Security Guard")
+- Job type (full-time, part-time, or contract?)
+- Daily salary (how much per day? Accept: "500", "500-600", "₹500")
+- Location (which city/area?)
+- Description (what will they do?)
+- Phone number (contact number)
+- Urgency (is it urgent or normal?)
 
-2. FINDING JOBS: If user is looking for work, ask about:
-   - What type of work they want
-   - Preferred location
-   - Expected salary range
-   Then search the jobs database and recommend matches.
+Common job categories in India: Cook, Driver, Security Guard, Housekeeping, Delivery, Construction Worker, Electrician, Plumber, Carpenter, Painter
 
-Be conversational, friendly, and efficient. Speak in English but understand Hindi/Hinglish.
-Once you have all required information, use the appropriate tool to help the user.`,
+IMPORTANT: Before posting, ALWAYS summarize all details and ask "Should I post this job?" Wait for confirmation.
+
+SEARCHING JOBS - Ask for:
+- What type of work? (job type)
+- Where? (location)
+- Expected salary range?
+Then describe the results conversationally.
+
+Be warm, friendly, and speak naturally like a helpful friend. Handle interruptions gracefully. If the user changes their mind, adapt smoothly.`,
               voice: 'alloy',
               input_audio_format: 'pcm16',
               output_audio_format: 'pcm16',
@@ -131,10 +159,10 @@ Once you have all required information, use the appropriate tool to help the use
           let result = { error: 'Unknown function' };
 
           if (data.name === 'create_job_post') {
-            const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
             const { data: jobData, error } = await supabase
               .from('jobs')
               .insert({
+                user_id: user.id, // Use authenticated user's ID
                 title: args.title,
                 job_type: args.job_type,
                 location: args.location,
@@ -147,9 +175,21 @@ Once you have all required information, use the appropriate tool to help the use
               .select()
               .single();
 
-            result = error ? { error: error.message } : { success: true, job_id: jobData.id };
+            if (error) {
+              console.error('Error creating job:', error);
+              result = { 
+                error: 'Failed to create job. Please try again.',
+                details: error.message 
+              };
+            } else {
+              console.log('Job created successfully:', jobData);
+              result = { 
+                success: true, 
+                job_id: jobData.id,
+                message: `Job posted successfully! Job ID: ${jobData.id}. Users can now see it on LocalJobzz.`
+              };
+            }
           } else if (data.name === 'search_jobs') {
-            const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
             let query = supabase
               .from('jobs')
               .select('*')
@@ -170,7 +210,29 @@ Once you have all required information, use the appropriate tool to help the use
             }
 
             const { data: jobs, error } = await query.limit(5);
-            result = error ? { error: error.message } : { jobs: jobs || [] };
+            
+            if (error) {
+              console.error('Error searching jobs:', error);
+              result = { 
+                error: 'Failed to search jobs. Please try again.',
+                details: error.message 
+              };
+            } else {
+              console.log('Jobs found:', jobs?.length || 0);
+              if (jobs && jobs.length > 0) {
+                result = { 
+                  success: true, 
+                  jobs: jobs,
+                  message: `Found ${jobs.length} job(s). Let me tell you about them.`
+                };
+              } else {
+                result = { 
+                  success: true, 
+                  jobs: [],
+                  message: 'No jobs found matching your criteria. Try a different location or job type.'
+                };
+              }
+            }
           }
 
           // Send function result back to OpenAI

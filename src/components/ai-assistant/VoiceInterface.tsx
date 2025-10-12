@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { AudioRecorder, encodeAudioForAPI } from '@/utils/VoiceRecorder';
 import { AudioQueue } from '@/utils/AudioQueue';
 import { VoiceOrb } from './VoiceOrb';
@@ -14,6 +15,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuth();
   
   const wsRef = useRef<WebSocket | null>(null);
   const recorderRef = useRef<AudioRecorder | null>(null);
@@ -23,12 +25,23 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
   const startVoiceChat = async () => {
     try {
+      // Check authentication
+      if (!session?.access_token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to use the voice assistant",
+          variant: "destructive",
+        });
+        return;
+      }
+
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       audioQueueRef.current = new AudioQueue(audioContextRef.current);
 
-      const ws = new WebSocket('wss://fztiznsyknofxoplyirz.supabase.co/functions/v1/ai-voice-assistant');
+      // Pass auth token via WebSocket URL
+      const ws = new WebSocket(`wss://fztiznsyknofxoplyirz.supabase.co/functions/v1/ai-voice-assistant?token=${session.access_token}`);
       wsRef.current = ws;
 
       ws.onopen = () => {
