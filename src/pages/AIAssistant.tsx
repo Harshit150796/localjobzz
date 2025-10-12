@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Bot, User, Mic, MessageSquare } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Loader2, Send, Bot } from 'lucide-react';
 import { toast } from 'sonner';
-import { VoiceChat } from '@/components/VoiceChat';
+import { VoiceInterface } from '@/components/ai-assistant/VoiceInterface';
+import { ModeSwitcher } from '@/components/ai-assistant/ModeSwitcher';
+import { MessageBubble } from '@/components/ai-assistant/MessageBubble';
+import { TranscriptOverlay } from '@/components/ai-assistant/TranscriptOverlay';
+import { StatusIndicator } from '@/components/ai-assistant/StatusIndicator';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -15,14 +16,13 @@ interface Message {
 }
 
 const AIAssistant = () => {
-  const [mode, setMode] = useState<'text' | 'voice'>('text');
+  const [mode, setMode] = useState<'text' | 'voice'>('voice');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Hi! I can help you post a job or find work. What would you like to do today?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   const scrollToBottom = () => {
@@ -65,7 +65,6 @@ const AIAssistant = () => {
       let buffer = '';
       let assistantMessage = '';
 
-      // Add empty assistant message that we'll update
       setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
       while (true) {
@@ -147,151 +146,134 @@ const AIAssistant = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header />
-      
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
-        <div className="mb-6 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 mb-4">
-            <Bot className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold mb-2">AI Job Assistant</h1>
-          <p className="text-muted-foreground">Tell me what you need, and I'll help you post or find jobs</p>
-          
-          <div className="flex gap-2 justify-center mt-4">
-            <Button
-              variant={mode === 'text' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('text')}
-              className="gap-2"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Text Chat
-            </Button>
-            <Button
-              variant={mode === 'voice' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setMode('voice')}
-              className="gap-2"
-            >
-              <Mic className="w-4 h-4" />
-              Voice Chat
-            </Button>
-          </div>
-        </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="fixed inset-0 bg-gradient-to-br from-background via-ai-primary/5 to-ai-secondary/5 -z-10" />
+      <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(262,83%,58%,0.1),transparent_50%)] -z-10 animate-pulse" 
+           style={{ animationDuration: '4s' }} />
 
-        {mode === 'voice' ? (
-          <div className="bg-card border border-border rounded-lg shadow-lg flex flex-col h-[600px]">
-            <div className="flex-1 flex items-center justify-center">
-              <VoiceChat onTranscript={(text) => {
-                setMessages(prev => [...prev, { 
-                  role: text.startsWith('User:') ? 'user' : 'assistant', 
-                  content: text.replace(/^(User:|AI:)\s*/, '')
-                }]);
-              }} />
+      {/* Floating header */}
+      <header className="fixed top-0 left-0 right-0 z-40 backdrop-blur-xl bg-background/60 border-b border-border/50">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ai-primary to-ai-secondary flex items-center justify-center shadow-lg">
+              <Bot className="w-6 h-6 text-white" />
             </div>
-            {messages.length > 1 && (
-              <div className="border-t border-border p-4 max-h-40 overflow-y-auto">
-                <p className="text-xs text-muted-foreground mb-2">Conversation transcript:</p>
-                <div className="space-y-1">
-                  {messages.slice(1).map((msg, idx) => (
-                    <p key={idx} className="text-xs">
-                      <span className="font-medium">{msg.role === 'user' ? 'You' : 'AI'}:</span> {msg.content.slice(0, 100)}
-                      {msg.content.length > 100 && '...'}
-                    </p>
-                  ))}
-                </div>
-              </div>
-            )}
+            <div>
+              <h1 className="text-lg font-bold text-foreground">AI Assistant</h1>
+              <p className="text-xs text-muted-foreground">Post jobs or find work instantly</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => navigate('/')}>
+            Back
+          </Button>
+        </div>
+      </header>
+
+      {/* Mode switcher */}
+      <ModeSwitcher mode={mode} onModeChange={setMode} />
+
+      {/* Status indicator */}
+      <StatusIndicator status={isLoading ? 'thinking' : 'idle'} />
+
+      {/* Main content */}
+      <main className="container mx-auto px-4 pt-32 pb-8 min-h-screen flex flex-col items-center justify-center">
+        {mode === 'voice' ? (
+          <div className="flex-1 flex items-center justify-center w-full">
+            <div className="flex flex-col items-center gap-8">
+              <VoiceInterface
+                onTranscript={(text) => {
+                  setMessages(prev => [...prev, { 
+                    role: text.startsWith('User:') ? 'user' : 'assistant', 
+                    content: text.replace(/^(User:|AI:)\s*/, '')
+                  }]);
+                }}
+              />
+              <p className="text-center text-sm text-muted-foreground max-w-md">
+                Click the orb to start a voice conversation
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="bg-card border border-border rounded-lg shadow-lg flex flex-col h-[600px]">
+          <div className="w-full max-w-3xl flex-1 flex flex-col">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
-            {messages.map((message, idx) => (
-              <div
-                key={idx}
-                className={`flex gap-3 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-              >
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  message.role === 'user' 
-                    ? 'bg-primary' 
-                    : 'bg-gradient-to-r from-purple-500 to-pink-500'
-                }`}>
-                  {message.role === 'user' ? (
-                    <User className="w-5 h-5 text-primary-foreground" />
-                  ) : (
+            <div className="flex-1 overflow-y-auto pb-32 space-y-4">
+              {messages.map((message, idx) => (
+                <MessageBubble
+                  key={idx}
+                  role={message.role}
+                  content={message.content}
+                  isStreaming={idx === messages.length - 1 && isLoading}
+                />
+              ))}
+              {isLoading && messages[messages.length - 1]?.content === '' && (
+                <div className="flex gap-3">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-ai-primary to-ai-secondary flex items-center justify-center shadow-lg">
                     <Bot className="w-5 h-5 text-white" />
-                  )}
+                  </div>
+                  <div className="bg-background/60 backdrop-blur-sm border border-border/50 rounded-2xl rounded-tl-sm px-4 py-3">
+                    <Loader2 className="w-5 h-5 animate-spin text-ai-primary" />
+                  </div>
                 </div>
-                <div
-                  className={`rounded-lg px-4 py-3 max-w-[80%] ${
-                    message.role === 'user'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted'
-                  }`}
-                >
-                  <p className="whitespace-pre-wrap text-sm">{message.content}</p>
-                </div>
-              </div>
-            ))}
-            {isLoading && (
-              <div className="flex gap-3">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <div className="bg-muted rounded-lg px-4 py-3">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="border-t border-border p-4">
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type your message..."
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5" />
-                )}
-              </Button>
+              )}
+              <div ref={messagesEndRef} />
             </div>
-          </div>
+
+            {/* Input */}
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-3xl px-4 z-30">
+              <div className="backdrop-blur-xl bg-background/80 border border-border/50 rounded-2xl shadow-2xl p-3">
+                <div className="flex gap-2">
+                  <Input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                    className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="bg-gradient-to-br from-ai-primary to-ai-secondary hover:opacity-90 shadow-lg"
+                  >
+                    {isLoading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <Send className="w-5 h-5" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="mt-6 text-center space-y-2">
-          <p className="text-sm text-muted-foreground">Quick actions:</p>
-          <div className="flex gap-2 justify-center flex-wrap">
-            <Button variant="outline" size="sm" onClick={() => navigate('/post-ad')}>
-              Post Job Manually
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/')}>
-              Browse All Jobs
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate('/profile')}>
-              My Profile
-            </Button>
-          </div>
+        {/* Quick actions */}
+        <div className="fixed bottom-6 right-6 z-30 flex flex-col gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/post-ad')}
+            className="backdrop-blur-xl bg-background/80 border-border/50 shadow-lg"
+          >
+            Post Job
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/')}
+            className="backdrop-blur-xl bg-background/80 border-border/50 shadow-lg"
+          >
+            Browse Jobs
+          </Button>
         </div>
       </main>
 
-      <Footer />
+      {/* Transcript overlay for voice mode */}
+      {mode === 'voice' && (
+        <TranscriptOverlay messages={messages.slice(1)} isVisible={messages.length > 1} />
+      )}
     </div>
   );
 };

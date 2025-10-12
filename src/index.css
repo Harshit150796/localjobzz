@@ -48,6 +48,12 @@ All colors MUST be HSL.
     --surface: 0 0% 99%;
     --surface-subtle: 210 40% 98%;
 
+    /* AI Assistant theme */
+    --ai-primary: 262 83% 58%;
+    --ai-secondary: 280 87% 65%;
+    --ai-accent: 291 64% 42%;
+    --ai-glow: 262 83% 58%;
+
     --sidebar-background: 0 0% 98%;
 
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -101,6 +107,12 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+
+    /* AI Assistant theme - dark mode */
+    --ai-primary: 262 83% 58%;
+    --ai-secondary: 280 87% 65%;
+    --ai-accent: 291 64% 42%;
+    --ai-glow: 262 83% 58%;
   }
 }
 

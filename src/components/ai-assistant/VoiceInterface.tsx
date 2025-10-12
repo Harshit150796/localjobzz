@@ -1,15 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Volume2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AudioRecorder, encodeAudioForAPI } from '@/utils/VoiceRecorder';
 import { AudioQueue } from '@/utils/AudioQueue';
+import { VoiceOrb } from './VoiceOrb';
+import { AudioVisualizer } from './AudioVisualizer';
 
-interface VoiceChatProps {
+interface VoiceInterfaceProps {
   onTranscript?: (text: string) => void;
 }
 
-export const VoiceChat = ({ onTranscript }: VoiceChatProps) => {
+export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -23,14 +23,11 @@ export const VoiceChat = ({ onTranscript }: VoiceChatProps) => {
 
   const startVoiceChat = async () => {
     try {
-      // Request microphone permission
       await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Initialize audio context and queue
       audioContextRef.current = new AudioContext({ sampleRate: 24000 });
       audioQueueRef.current = new AudioQueue(audioContextRef.current);
 
-      // Connect to WebSocket
       const ws = new WebSocket('wss://fztiznsyknofxoplyirz.supabase.co/functions/v1/ai-voice-assistant');
       wsRef.current = ws;
 
@@ -149,52 +146,23 @@ export const VoiceChat = ({ onTranscript }: VoiceChatProps) => {
     };
   }, []);
 
+  const handleOrbClick = () => {
+    if (isConnected) {
+      endVoiceChat();
+    } else {
+      startVoiceChat();
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center gap-6 py-8">
-      {!isConnected ? (
-        <Button
-          onClick={startVoiceChat}
-          size="lg"
-          className="rounded-full w-20 h-20 bg-primary hover:bg-primary/90"
-        >
-          <Mic className="w-8 h-8" />
-        </Button>
-      ) : (
-        <div className="flex flex-col items-center gap-4">
-          <div className="relative">
-            <Button
-              onClick={endVoiceChat}
-              size="lg"
-              className="rounded-full w-20 h-20 bg-destructive hover:bg-destructive/90"
-            >
-              <MicOff className="w-8 h-8" />
-            </Button>
-            {isSpeaking && (
-              <div className="absolute -top-2 -right-2 bg-primary rounded-full p-2 animate-pulse">
-                <Volume2 className="w-4 h-4 text-white" />
-              </div>
-            )}
-          </div>
-          
-          <div className="flex flex-col items-center gap-2">
-            {isRecording && (
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                <span className="text-sm text-muted-foreground">Listening...</span>
-              </div>
-            )}
-            {isSpeaking && (
-              <span className="text-sm text-primary font-medium">AI is speaking...</span>
-            )}
-          </div>
-        </div>
-      )}
-      
-      <p className="text-center text-sm text-muted-foreground max-w-md">
-        {!isConnected 
-          ? "Click to start voice conversation with AI assistant" 
-          : "Speak naturally to post jobs or find work. End call to stop."}
-      </p>
+    <div className="relative flex items-center justify-center">
+      <VoiceOrb
+        isConnected={isConnected}
+        isListening={isRecording && !isSpeaking}
+        isSpeaking={isSpeaking}
+        onClick={handleOrbClick}
+      />
+      <AudioVisualizer isActive={isConnected} isSpeaking={isSpeaking} />
     </div>
   );
 };
