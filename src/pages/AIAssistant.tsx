@@ -4,9 +4,10 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Bot, User } from 'lucide-react';
+import { Loader2, Send, Bot, User, Mic, MessageSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { VoiceChat } from '@/components/VoiceChat';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -14,6 +15,7 @@ interface Message {
 }
 
 const AIAssistant = () => {
+  const [mode, setMode] = useState<'text' | 'voice'>('text');
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Hi! I can help you post a job or find work. What would you like to do today?' }
   ]);
@@ -155,11 +157,57 @@ const AIAssistant = () => {
           </div>
           <h1 className="text-3xl font-bold mb-2">AI Job Assistant</h1>
           <p className="text-muted-foreground">Tell me what you need, and I'll help you post or find jobs</p>
+          
+          <div className="flex gap-2 justify-center mt-4">
+            <Button
+              variant={mode === 'text' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('text')}
+              className="gap-2"
+            >
+              <MessageSquare className="w-4 h-4" />
+              Text Chat
+            </Button>
+            <Button
+              variant={mode === 'voice' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMode('voice')}
+              className="gap-2"
+            >
+              <Mic className="w-4 h-4" />
+              Voice Chat
+            </Button>
+          </div>
         </div>
 
-        <div className="bg-card border border-border rounded-lg shadow-lg flex flex-col h-[600px]">
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {mode === 'voice' ? (
+          <div className="bg-card border border-border rounded-lg shadow-lg flex flex-col h-[600px]">
+            <div className="flex-1 flex items-center justify-center">
+              <VoiceChat onTranscript={(text) => {
+                setMessages(prev => [...prev, { 
+                  role: text.startsWith('User:') ? 'user' : 'assistant', 
+                  content: text.replace(/^(User:|AI:)\s*/, '')
+                }]);
+              }} />
+            </div>
+            {messages.length > 1 && (
+              <div className="border-t border-border p-4 max-h-40 overflow-y-auto">
+                <p className="text-xs text-muted-foreground mb-2">Conversation transcript:</p>
+                <div className="space-y-1">
+                  {messages.slice(1).map((msg, idx) => (
+                    <p key={idx} className="text-xs">
+                      <span className="font-medium">{msg.role === 'user' ? 'You' : 'AI'}:</span> {msg.content.slice(0, 100)}
+                      {msg.content.length > 100 && '...'}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-lg shadow-lg flex flex-col h-[600px]">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
             {messages.map((message, idx) => (
               <div
                 key={idx}
@@ -224,7 +272,8 @@ const AIAssistant = () => {
               </Button>
             </div>
           </div>
-        </div>
+          </div>
+        )}
 
         <div className="mt-6 text-center space-y-2">
           <p className="text-sm text-muted-foreground">Quick actions:</p>
