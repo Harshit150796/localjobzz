@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import CityJobs from "./pages/CityJobs";
 import CategoryCityJobs from "./pages/CategoryCityJobs";
 import CityJobsLanding from "./pages/CityJobsLanding";
+import AIAssistant from "./pages/AIAssistant";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
         <Route path="/jobs/:city" element={<CityJobs />} />
         <Route path="/jobs/:city/:category" element={<CategoryCityJobs />} />
         <Route path="/cities" element={<CityJobsLanding />} />
+        <Route path="/ai-assistant" element={<AIAssistant />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
         </Routes>

@@ -10,7 +10,7 @@ import {
   Plus,
   Bot
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ListingCard from '../components/ListingCard';
@@ -20,6 +20,7 @@ import { useJobCategories } from '../hooks/useJobCategories';
 
 const HomePage = () => {
   const { categories: jobCategories } = useJobCategories();
+  const navigate = useNavigate();
 
   const todaysJobs = [
     {
@@ -138,15 +139,18 @@ const HomePage = () => {
             </Link>
 
             {/* AI Post Job Tile */}
-            <div className="group transform hover:scale-105 transition-all duration-300 cursor-pointer">
+            <div 
+              onClick={() => navigate('/ai-assistant')}
+              className="group transform hover:scale-105 transition-all duration-300 cursor-pointer"
+            >
               <div className="bg-white rounded-2xl p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
                 <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Bot className="h-10 w-10 text-white" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-3">Post Job using AI</h3>
-                <p className="text-gray-600 mb-4">Just tell us what you need. AI will create the perfect job post.</p>
+                <h3 className="text-2xl font-bold text-gray-800 mb-3">AI Job Assistant</h3>
+                <p className="text-gray-600 mb-4">Chat with AI to post jobs or find work. Simple and fast!</p>
                 <div className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg text-sm font-semibold">
-                  Coming Soon
+                  Try Now - FREE
                 </div>
               </div>
             </div>

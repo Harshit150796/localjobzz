@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin } from 'lucide-react';
+import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, Sparkles, MessageCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
@@ -188,8 +188,16 @@ const Header = () => {
             </form>
           </div>
 
-          {/* Auth/User Section */}
-          <div className="hidden md:flex items-center space-x-2">
+          {/* Navigation & Auth Section */}
+          <div className="hidden md:flex items-center space-x-4">
+            <Link 
+              to="/ai-assistant" 
+              className="flex items-center space-x-1.5 text-foreground/80 hover:text-foreground transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="font-medium text-sm">AI Assistant</span>
+            </Link>
+            
             {user ? (
               <UserMenu />
             ) : (
@@ -278,6 +286,16 @@ const Header = () => {
                 />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </form>
+              
+              {/* AI Assistant Link */}
+              <Link 
+                to="/ai-assistant"
+                onClick={() => setIsMenuOpen(false)}
+                className="flex items-center justify-center space-x-2 bg-purple-500 text-white px-4 py-3 rounded-lg"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span>AI Job Assistant</span>
+              </Link>
               
               {/* Mobile Auth Buttons */}
               {user ? (
