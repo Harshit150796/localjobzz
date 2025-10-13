@@ -40,23 +40,20 @@ serve(async (req) => {
   let openAISocket: WebSocket | null = null;
   let sessionId: string | null = null;
 
-  socket.onopen = async () => {
+  socket.onopen = () => {
     console.log("Client WebSocket connected");
     
-    // Connect to OpenAI Realtime API using Deno.connectWebSocket
+    // Connect to OpenAI Realtime API using WebSocket subprotocol authentication
+    const openAIUrl = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';
+    
     try {
-      const { socket: openAISocketConnection } = await Deno.connectWebSocket(
-        "wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17",
-        {
-          headers: {
-            "Authorization": `Bearer ${OPENAI_API_KEY}`,
-            "OpenAI-Beta": "realtime=v1"
-          }
-        }
-      );
-      openAISocket = openAISocketConnection;
+      openAISocket = new WebSocket(openAIUrl, [
+        'realtime',
+        `openai-insecure-api-key.${OPENAI_API_KEY}`,
+        'openai-beta.realtime-v1',
+      ]);
     } catch (error) {
-      console.error("Failed to connect to OpenAI:", error);
+      console.error("Failed to create OpenAI WebSocket:", error);
       socket.send(JSON.stringify({ type: 'error', message: 'Failed to connect to AI assistant' }));
       socket.close();
       return;
