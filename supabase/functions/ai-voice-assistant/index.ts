@@ -5,6 +5,16 @@ const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+if (!OPENAI_API_KEY) {
+  console.error('CRITICAL: OPENAI_API_KEY environment variable is not set');
+}
+if (!SUPABASE_URL) {
+  console.error('CRITICAL: SUPABASE_URL environment variable is not set');
+}
+if (!SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('CRITICAL: SUPABASE_SERVICE_ROLE_KEY environment variable is not set');
+}
+
 serve(async (req) => {
   // Extract token from URL query parameters
   const url = new URL(req.url);
@@ -43,18 +53,44 @@ serve(async (req) => {
   socket.onopen = () => {
     console.log("Client WebSocket connected");
     
+    // Validate API key before attempting connection
+    if (!OPENAI_API_KEY) {
+      console.error("OPENAI_API_KEY is not configured - cannot connect to OpenAI");
+      socket.send(JSON.stringify({ 
+        type: 'error', 
+        message: 'Server configuration error: OpenAI API key not set' 
+      }));
+      socket.close();
+      return;
+    }
+    
+    // Log API key format for debugging (first 7 chars only)
+    console.log(`Using OpenAI API key: ${OPENAI_API_KEY.substring(0, 7)}...`);
+    console.log(`API key length: ${OPENAI_API_KEY.length} characters`);
+    
     // Connect to OpenAI Realtime API using WebSocket subprotocol authentication
     const openAIUrl = 'wss://api.openai.com/v1/realtime?model=gpt-4o-realtime-preview-2024-12-17';
+    console.log(`Connecting to: ${openAIUrl}`);
     
     try {
-      openAISocket = new WebSocket(openAIUrl, [
+      const protocols = [
         'realtime',
         `openai-insecure-api-key.${OPENAI_API_KEY}`,
         'openai-beta.realtime-v1',
-      ]);
+      ];
+      console.log(`WebSocket protocols: ${JSON.stringify(protocols.map(p => p.substring(0, 30)))}`);
+      
+      openAISocket = new WebSocket(openAIUrl, protocols);
+      console.log("WebSocket object created successfully");
     } catch (error) {
       console.error("Failed to create OpenAI WebSocket:", error);
-      socket.send(JSON.stringify({ type: 'error', message: 'Failed to connect to AI assistant' }));
+      console.error("Error name:", error.name);
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+      socket.send(JSON.stringify({ 
+        type: 'error', 
+        message: `Failed to connect to AI assistant: ${error.message}` 
+      }));
       socket.close();
       return;
     }
