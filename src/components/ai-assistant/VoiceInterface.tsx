@@ -15,6 +15,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentTranscript, setCurrentTranscript] = useState('');
+  const [conversationHistory, setConversationHistory] = useState<Array<{role: string, content: string}>>([]);
   const { toast } = useToast();
 
   const recognitionRef = useRef<VoiceSpeechRecognition | null>(null);
@@ -112,55 +113,103 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
   const processTranscript = async (transcript: string) => {
     try {
-      // Stop listening while processing
       setIsListening(false);
+      
+      // Build conversation with history
+      const newMessage = { role: 'user', content: transcript };
+      const messagesToSend = [...conversationHistory, newMessage];
 
-      console.log('Sending to AI:', transcript);
-
-      // Call the existing ai-job-assistant edge function
-      const { data, error } = await supabase.functions.invoke('ai-job-assistant', {
-        body: { 
-          messages: [
-            { role: 'user', content: transcript }
-          ]
-        },
-      });
-
-      if (error) throw error;
-
-      console.log('AI response:', data);
-
-      // Extract text response
-      let responseText = '';
-      if (data.response) {
-        responseText = data.response;
-      } else if (data.content) {
-        responseText = data.content;
-      } else if (typeof data === 'string') {
-        responseText = data;
-      }
-
-      // Speak the response
-      if (responseText && ttsRef.current) {
-        ttsRef.current.speak(responseText);
-      }
-
-      // Resume listening after speaking
-      setTimeout(() => {
-        if (isConnected) {
-          setIsListening(true);
+      const response = await fetch(
+        'https://fztiznsyknofxoplyirz.supabase.co/functions/v1/ai-job-assistant',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6dGl6bnN5a25vZnhvcGx5aXJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg2MDM3OTUsImV4cCI6MjA3NDE3OTc5NX0.Vz_qhPD2YkH1vnirQka1SkFPYq0VkzUTgoj9KC7fZcY`,
+          },
+          body: JSON.stringify({ messages: messagesToSend }),
         }
+      );
+
+      if (!response.ok || !response.body) throw new Error('Failed to get AI response');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullResponse = '';
+      let jobsFound: any[] = [];
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(data);
+            
+            // Handle tool results
+            if (parsed.tool_result === 'jobs_found') {
+              jobsFound = parsed.jobs || [];
+              // Let AI narrate the jobs
+            } else if (parsed.tool_result === 'job_details') {
+              // Job details will be narrated by the AI
+              const job = parsed.job;
+              console.log('Got job details:', job);
+            } else if (parsed.error) {
+              console.error('AI Error:', parsed.error);
+              toast({
+                title: 'AI Error',
+                description: parsed.error,
+                variant: 'destructive',
+              });
+            }
+            
+            // Handle regular content
+            if (parsed.choices?.[0]?.delta?.content) {
+              fullResponse += parsed.choices[0].delta.content;
+            }
+          } catch (e) {
+            console.error('Parse error:', e);
+          }
+        }
+      }
+
+      // Update conversation history
+      setConversationHistory([
+        ...messagesToSend,
+        { role: 'assistant', content: fullResponse }
+      ]);
+
+      // Speak the complete response
+      if (fullResponse && ttsRef.current) {
+        ttsRef.current.speak(fullResponse);
+      }
+
+      // Show jobs found
+      if (jobsFound.length > 0 && onTranscript) {
+        onTranscript(JSON.stringify({ found: jobsFound.length, jobs: jobsFound }, null, 2));
+      }
+
+      // Resume listening
+      setTimeout(() => {
+        if (isConnected) setIsListening(true);
       }, 500);
 
     } catch (error) {
-      console.error('Error processing transcript:', error);
+      console.error('Error:', error);
       toast({
         title: 'AI Error',
-        description: error instanceof Error ? error.message : 'Failed to process your request',
+        description: error instanceof Error ? error.message : 'Failed',
         variant: 'destructive',
       });
-
-      // Resume listening
       setIsListening(true);
     }
   };

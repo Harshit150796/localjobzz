@@ -105,6 +105,23 @@ CULTURAL CONTEXT:
 - Help bridge language gaps between employers and workers
 - Be encouraging: "Zaroor milega kaam" (You'll definitely find work)
 
+HANDLING FOLLOW-UP QUESTIONS:
+- When you show job results, REMEMBER the job IDs and details
+- If user says "yes", "tell me more", "first one", "number 1", "1", "2", "option 1", etc:
+  * Use the get_job_details tool with the job ID they're referring to
+  * Show full details: description, phone number, ALL info
+- If user mentions a job by title (e.g., "dieali cleaning"):
+  * Use get_job_details with the job title
+  * Provide complete information including contact details
+- Always be context-aware of what you JUST told the user
+- DON'T ask for job IDs - you already know them from your previous search results!
+- Number the jobs when presenting search results (1, 2, 3, etc.)
+
+EXAMPLE FOLLOW-UP FLOW:
+You: "I found these jobs: 1. Cook in Mathura ₹500/day, 2. Maid in Mathura ₹400/day"
+User: "tell me more about 1" OR "first one" OR "yes" OR "cook"
+You: [Use get_job_details with the job ID] "Here are the full details: [description, phone, urgency, etc.]"
+
 PRACTICAL EXAMPLES:
 User: "Maid chahiye ghar ke liye"
 You: "Ji bilkul! Aapko kya kaam karwana hai? Full day ya part time? Aur aap kahan rehte hain?"
@@ -148,6 +165,26 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
               location: { type: "string", description: "Location to search in" },
               min_salary: { type: "string", description: "Minimum daily salary" },
               max_salary: { type: "string", description: "Maximum daily salary" }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_job_details",
+          description: "Get full details of a specific job by ID or title. Use when user asks for more info about a specific job, says 'yes', 'tell me more', '1', '2', 'first one', etc., or mentions a job by name.",
+          parameters: {
+            type: "object",
+            properties: {
+              job_id: { 
+                type: "string", 
+                description: "The job ID to look up (use this if you know the ID from previous search)" 
+              },
+              job_title: { 
+                type: "string", 
+                description: "Job title to search for if ID not available" 
+              }
             }
           }
         }
@@ -264,14 +301,52 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
                     if (!error && jobs) {
                       controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
                         tool_result: "jobs_found",
-                        jobs: jobs.map(j => ({
+                        jobs: jobs.map((j, index) => ({
+                          number: index + 1,
                           id: j.id,
                           title: j.title,
                           location: j.location,
                           daily_salary: j.daily_salary,
                           job_type: j.job_type,
+                          category: j.category,
                           created_at: j.created_at
-                        }))
+                        })),
+                        instruction: "Present these jobs with numbers (1, 2, 3...). When user refers to a number, 'yes', 'tell me more', or job name, use get_job_details tool with the job ID."
+                      })}\n\n`));
+                    }
+                  } else if (toolCall.function?.name === 'get_job_details') {
+                    const args = JSON.parse(toolCall.function.arguments);
+                    let query = supabase.from('jobs').select('*').eq('status', 'active');
+                    
+                    if (args.job_id) {
+                      query = query.eq('id', args.job_id);
+                    } else if (args.job_title) {
+                      query = query.ilike('title', `%${args.job_title}%`);
+                    }
+                    
+                    const { data: job, error } = await query.maybeSingle();
+                    
+                    if (!error && job) {
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        tool_result: "job_details",
+                        job: {
+                          id: job.id,
+                          title: job.title,
+                          location: job.location,
+                          daily_salary: job.daily_salary,
+                          job_type: job.job_type,
+                          description: job.description,
+                          phone: job.phone,
+                          urgency: job.urgency,
+                          category: job.category,
+                          created_at: job.created_at
+                        },
+                        instruction: "Present ALL details including description and phone number. User wants complete information."
+                      })}\n\n`));
+                    } else {
+                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                        tool_result: "job_not_found",
+                        message: "Sorry, I couldn't find that specific job. It may have been filled or removed."
                       })}\n\n`));
                     }
                   }
