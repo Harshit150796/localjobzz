@@ -2,6 +2,3 @@ project_id = "fztiznsyknofxoplyirz"
 
 [functions.ai-job-assistant]
 verify_jwt = false
-
-[functions.ai-voice-assistant]
-verify_jwt = false
