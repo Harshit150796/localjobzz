@@ -33,6 +33,24 @@ serve(async (req) => {
 
     const systemPrompt = `You are a helpful AI assistant for localjobzz, a daily wage job platform serving workers and employers across India.
 
+🌐 CRITICAL - LANGUAGE DETECTION & CONSISTENCY:
+1. **ALWAYS detect and respond in the EXACT SAME language the user is using**
+2. Language detection from user's LATEST message:
+   - English indicators: "jobs", "yes", "no", "tell me", "phone number", "details", "show", "more"
+   - Hindi indicators: "kaam", "naukri", "haan", "nahi", "batao", "dikha", "aur", "phone number"
+   - Hinglish: Mix of both languages
+3. **NEVER switch languages** unless user switches first
+4. If user's last message is English → Your response MUST be English
+5. If user's last message is Hindi → Your response MUST be Hindi
+
+LANGUAGE EXAMPLES:
+User: "jobs in mathura" (English) → You: "I found these jobs in Mathura: 1. dieali cleaning - ₹50,000/day..."
+User: "mathura mein kaam" (Hindi) → You: "Mathura mein yeh kaam mile: 1. dieali cleaning - ₹50,000/din..."
+User: "yes" (English) → You: "Here are the complete details: Phone: 123456788..."
+User: "haan" (Hindi) → You: "Yeh rahi poori jaankari: Phone: 123456788..."
+User: "phone number" (English) → You: "The contact number is: 123456788"
+User: "phone number" (Hindi context) → You: "Phone number hai: 123456788"
+
 LANGUAGE SUPPORT:
 - Speak naturally in English, Hindi, or Hinglish
 - Understand: "kaam chahiye", "naukar chahiye", "maid chahiye", "job milega kya", "kaam dhundna hai"
@@ -109,14 +127,31 @@ CULTURAL CONTEXT:
 - Help bridge language gaps between employers and workers
 - Be encouraging: "Zaroor milega kaam" (You'll definitely find work)
 
-HANDLING FOLLOW-UP QUESTIONS:
-- When you show job results, REMEMBER the job IDs and details from the tool results
-- If user says "yes", "tell me more", "first one", "number 1", "1", "2", "option 1", etc:
-  * Use the get_job_details tool with the job ID they're referring to
-  * The job IDs are provided in the tool results - use them!
-- If user mentions a job by title (e.g., "dieali cleaning"):
-  * Use get_job_details with the job title
-- Always be context-aware of what you JUST told the user
+🔍 HANDLING FOLLOW-UP QUESTIONS - CRITICAL RULES:
+**IMPORTANT**: When you present search results, YOU MUST REMEMBER THE JOB IDs (UUIDs) from the tool results!
+
+**Using get_job_details Tool - Parameter Rules**:
+1. **job_id parameter** = UUID format only (example: "7c451ce7-bc56-4a90-8b83-bcf3a4f33e5c")
+   - Use this ONLY when you have the actual UUID from previous search_jobs results
+   - The search_jobs tool gives you job.id - THIS IS THE UUID YOU MUST USE
+   
+2. **job_title parameter** = Job title string (example: "dieali cleaning")
+   - Use this when user mentions the job by name
+   - Use this as fallback if you don't have the UUID
+
+**Follow-up Triggers**:
+- "yes", "haan", "tell me more", "batao" = User wants details about job(s) you just showed
+- "1", "2", "first one", "pehla", "number 1" = User referring to numbered job from your list
+- "phone number", "contact" = User wants contact details
+- Mentioning job title like "dieali cleaning" = Use job_title parameter
+
+**How to Handle Follow-ups**:
+Step 1: Did I just show search results? → YES? → Check if I have the job IDs
+Step 2: If I have the UUID from search results → Use get_job_details({ job_id: "UUID_HERE" })
+Step 3: If I don't have UUID but user mentioned job name → Use get_job_details({ job_title: "job name" })
+Step 4: Show COMPLETE details including phone number from the tool result
+
+**CRITICAL**: The search_jobs tool returns job.id which is a UUID - YOU MUST USE THIS EXACT ID when calling get_job_details!
 - Number the jobs when presenting search results (1, 2, 3, etc.)
 
 PRACTICAL EXAMPLES:
@@ -188,9 +223,27 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
       }
     ];
 
-    // Build conversation messages
+    // Detect user's language from most recent message
+    const lastUserMessage = messages[messages.length - 1]?.content || '';
+    const isEnglish = /^[a-zA-Z0-9\s,.?!-]+$/.test(lastUserMessage) && 
+                      !/\b(kaam|naukri|haan|nahi|chahiye|milega|batao|dikha|aur)\b/i.test(lastUserMessage);
+    const isHindi = /[ए-ह]/.test(lastUserMessage) || 
+                    /\b(kaam|naukri|haan|nahi|chahiye|milega|batao|dikha)\b/i.test(lastUserMessage);
+
+    let languageHint = '';
+    if (isEnglish) {
+      languageHint = "🌐 LANGUAGE CONTEXT: User's last message was in ENGLISH. You MUST respond in ENGLISH.";
+    } else if (isHindi) {
+      languageHint = "🌐 LANGUAGE CONTEXT: User's last message was in HINDI or HINGLISH. You MUST respond in HINDI or HINGLISH.";
+    } else {
+      languageHint = "🌐 LANGUAGE CONTEXT: User's language detected as HINGLISH (mixed). Respond in HINGLISH.";
+    }
+
+    console.log('Language detected:', isEnglish ? 'English' : isHindi ? 'Hindi' : 'Hinglish');
+
+    // Build conversation messages with language context
     let conversationMessages = [
-      { role: "system", content: systemPrompt },
+      { role: "system", content: systemPrompt + "\n\n" + languageHint },
       ...messages,
     ];
 
@@ -385,34 +438,55 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
                       success: true,
                       jobs: jobs?.map((j, index) => ({
                         number: index + 1,
-                        id: j.id,
+                        id: j.id,  // ⚠️ THIS IS A UUID - Use this for get_job_details job_id parameter
                         title: j.title,
                         location: j.location,
                         daily_salary: j.daily_salary,
                         job_type: j.job_type,
                         category: j.category
-                      })) || []
+                      })) || [],
+                      reminder: "⚠️ CRITICAL: When user asks for details about these jobs, use the 'id' field (which is a UUID) as the job_id parameter in get_job_details tool. DO NOT pass the title as job_id - use job_title parameter for titles!"
                     });
                   }
                 } else if (toolCall.function.name === 'get_job_details') {
                   let query = supabase.from('jobs').select('*').eq('status', 'active');
+                  let job = null;
+                  let error = null;
                   
+                  // Smart parameter handling with UUID validation
                   if (args.job_id) {
-                    query = query.eq('id', args.job_id);
+                    // Check if job_id is actually a UUID
+                    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                    
+                    if (uuidRegex.test(args.job_id)) {
+                      // Valid UUID - search by ID
+                      console.log('✅ Searching by job_id (valid UUID):', args.job_id);
+                      const result = await query.eq('id', args.job_id).maybeSingle();
+                      job = result.data;
+                      error = result.error;
+                    } else {
+                      // Not a UUID - AI passed title as job_id (wrong parameter usage)
+                      console.log('⚠️ job_id is NOT a UUID, treating as title instead:', args.job_id);
+                      const result = await query.ilike('title', `%${args.job_id}%`).maybeSingle();
+                      job = result.data;
+                      error = result.error;
+                    }
                   } else if (args.job_title) {
-                    query = query.ilike('title', `%${args.job_title}%`);
+                    // Search by title (correct usage)
+                    console.log('✅ Searching by job_title:', args.job_title);
+                    const result = await query.ilike('title', `%${args.job_title}%`).maybeSingle();
+                    job = result.data;
+                    error = result.error;
                   }
                   
-                  const { data: job, error } = await query.maybeSingle();
-                  
                   if (error || !job) {
-                    console.error('Job details error:', error);
+                    console.error('❌ Job details error:', error);
                     toolResult = JSON.stringify({ 
                       success: false, 
-                      error: "Job not found or has been removed" 
+                      error: "Job not found or has been removed. Please search again." 
                     });
                   } else {
-                    console.log('Job details retrieved:', job.id);
+                    console.log('✅ Job details retrieved successfully:', job.id);
                     toolResult = JSON.stringify({
                       success: true,
                       job: {
@@ -422,10 +496,12 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
                         daily_salary: job.daily_salary,
                         job_type: job.job_type,
                         description: job.description,
-                        phone: job.phone,
+                        phone: job.phone,  // ⚠️ THIS IS WHAT USER NEEDS!
                         urgency: job.urgency,
-                        category: job.category
-                      }
+                        category: job.category,
+                        created_at: job.created_at
+                      },
+                      reminder: "Show ALL these details to the user, especially the phone number!"
                     });
                   }
                 }
