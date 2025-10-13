@@ -13,7 +13,10 @@ serve(async (req) => {
   }
 
   try {
+    console.log('=== AI Job Assistant Request ===');
     const { messages } = await req.json();
+    console.log('Incoming messages count:', messages?.length || 0);
+    
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
@@ -26,6 +29,7 @@ serve(async (req) => {
 
     // Get user if authenticated
     const { data: { user } } = await supabase.auth.getUser();
+    console.log('User authenticated:', !!user);
 
     const systemPrompt = `You are a helpful AI assistant for localjobzz, a daily wage job platform serving workers and employers across India.
 
@@ -106,21 +110,14 @@ CULTURAL CONTEXT:
 - Be encouraging: "Zaroor milega kaam" (You'll definitely find work)
 
 HANDLING FOLLOW-UP QUESTIONS:
-- When you show job results, REMEMBER the job IDs and details
+- When you show job results, REMEMBER the job IDs and details from the tool results
 - If user says "yes", "tell me more", "first one", "number 1", "1", "2", "option 1", etc:
   * Use the get_job_details tool with the job ID they're referring to
-  * Show full details: description, phone number, ALL info
+  * The job IDs are provided in the tool results - use them!
 - If user mentions a job by title (e.g., "dieali cleaning"):
   * Use get_job_details with the job title
-  * Provide complete information including contact details
 - Always be context-aware of what you JUST told the user
-- DON'T ask for job IDs - you already know them from your previous search results!
 - Number the jobs when presenting search results (1, 2, 3, etc.)
-
-EXAMPLE FOLLOW-UP FLOW:
-You: "I found these jobs: 1. Cook in Mathura ₹500/day, 2. Maid in Mathura ₹400/day"
-User: "tell me more about 1" OR "first one" OR "yes" OR "cook"
-You: [Use get_job_details with the job ID] "Here are the full details: [description, phone, urgency, etc.]"
 
 PRACTICAL EXAMPLES:
 User: "Maid chahiye ghar ke liye"
@@ -191,52 +188,62 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
       }
     ];
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...messages,
-        ],
-        tools,
-        stream: true,
-      }),
-    });
+    // Build conversation messages
+    let conversationMessages = [
+      { role: "system", content: systemPrompt },
+      ...messages,
+    ];
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "AI is busy, please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI service requires credits. Please contact support." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errorText = await response.text();
-      console.error("AI gateway error:", response.status, errorText);
-      return new Response(JSON.stringify({ error: "AI service error" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    console.log('Starting AI conversation loop...');
 
-    // Stream the response
+    // Multi-turn conversation loop for tool handling
     const stream = new ReadableStream({
       async start(controller) {
-        const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        let maxTurns = 5; // Prevent infinite loops
+        let currentTurn = 0;
 
-        try {
+        while (currentTurn < maxTurns) {
+          currentTurn++;
+          console.log(`--- Turn ${currentTurn} ---`);
+          console.log('Calling AI with messages:', conversationMessages.length);
+
+          const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-2.5-flash",
+              messages: conversationMessages,
+              tools,
+              stream: true,
+            }),
+          });
+
+          if (!aiResponse.ok) {
+            console.error('AI gateway error:', aiResponse.status);
+            if (aiResponse.status === 429) {
+              controller.enqueue(new TextEncoder().encode('data: {"error": "AI is busy, please try again in a moment."}\n\n'));
+            } else if (aiResponse.status === 402) {
+              controller.enqueue(new TextEncoder().encode('data: {"error": "AI service requires credits. Please contact support."}\n\n'));
+            } else {
+              controller.enqueue(new TextEncoder().encode('data: {"error": "AI service error"}\n\n'));
+            }
+            controller.close();
+            return;
+          }
+
+          console.log('AI response received, processing stream...');
+
+          const reader = aiResponse.body!.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let toolCalls: any[] = [];
+          let assistantMessage = '';
+          let hasToolCalls = false;
+
+          // Read the entire stream and collect tool calls
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -255,18 +262,84 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
               try {
                 const parsed = JSON.parse(data);
                 
-                // Check for tool calls
+                // Collect assistant message content
+                if (parsed.choices?.[0]?.delta?.content) {
+                  assistantMessage += parsed.choices[0].delta.content;
+                }
+
+                // Collect tool calls
                 if (parsed.choices?.[0]?.delta?.tool_calls) {
-                  const toolCall = parsed.choices[0].delta.tool_calls[0];
+                  const toolCallDelta = parsed.choices[0].delta.tool_calls[0];
                   
-                  if (toolCall.function?.name === 'create_job_post') {
-                    if (!user) {
-                      controller.enqueue(new TextEncoder().encode('data: {"error": "Please sign in to post a job"}\n\n'));
-                      continue;
-                    }
-                    
-                    const args = JSON.parse(toolCall.function.arguments);
-                    const { error } = await supabase.from('jobs').insert({
+                  if (!toolCalls[toolCallDelta.index]) {
+                    toolCalls[toolCallDelta.index] = {
+                      id: toolCallDelta.id || `call_${Date.now()}_${toolCallDelta.index}`,
+                      type: 'function',
+                      function: { name: '', arguments: '' }
+                    };
+                  }
+
+                  if (toolCallDelta.function?.name) {
+                    toolCalls[toolCallDelta.index].function.name = toolCallDelta.function.name;
+                  }
+                  if (toolCallDelta.function?.arguments) {
+                    toolCalls[toolCallDelta.index].function.arguments += toolCallDelta.function.arguments;
+                  }
+
+                  hasToolCalls = true;
+                }
+              } catch (e) {
+                console.error('Parse error:', e);
+              }
+            }
+          }
+
+          // If AI just responded with text (no tool calls), stream it to user and exit
+          if (!hasToolCalls && assistantMessage) {
+            console.log('AI provided final response (no tools), streaming to user...');
+            
+            // Stream the message word by word to simulate streaming
+            const words = assistantMessage.split(' ');
+            for (let i = 0; i < words.length; i++) {
+              const word = words[i] + (i < words.length - 1 ? ' ' : '');
+              controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
+                choices: [{ delta: { content: word } }]
+              })}\n\n`));
+            }
+            
+            controller.enqueue(new TextEncoder().encode('data: [DONE]\n\n'));
+            controller.close();
+            return;
+          }
+
+          // If we have tool calls, execute them
+          if (hasToolCalls && toolCalls.length > 0) {
+            console.log(`Tool calls detected: ${toolCalls.length}`);
+            
+            // Add assistant message with tool calls to conversation
+            conversationMessages.push({
+              role: "assistant",
+              content: assistantMessage || null,
+              tool_calls: toolCalls
+            });
+
+            // Execute each tool and build responses
+            for (const toolCall of toolCalls) {
+              console.log('Executing tool:', toolCall.function.name);
+              let toolResult = '';
+
+              try {
+                const args = JSON.parse(toolCall.function.arguments);
+                console.log('Tool arguments:', args);
+
+                if (toolCall.function.name === 'create_job_post') {
+                  if (!user) {
+                    toolResult = JSON.stringify({ 
+                      success: false, 
+                      error: "User must be signed in to post a job" 
+                    });
+                  } else {
+                    const { data, error } = await supabase.from('jobs').insert({
                       user_id: user.id,
                       title: args.title,
                       category: args.category,
@@ -277,93 +350,115 @@ Be friendly, efficient, and supportive. Your goal is to connect workers with emp
                       phone: args.phone,
                       urgency: args.urgency,
                       status: 'active'
-                    });
+                    }).select().single();
 
                     if (error) {
                       console.error('Job creation error:', error);
-                      controller.enqueue(new TextEncoder().encode('data: {"error": "Failed to create job"}\n\n'));
+                      toolResult = JSON.stringify({ success: false, error: "Failed to create job" });
                     } else {
-                      controller.enqueue(new TextEncoder().encode('data: {"tool_result": "job_created"}\n\n'));
-                    }
-                  } else if (toolCall.function?.name === 'search_jobs') {
-                    const args = JSON.parse(toolCall.function.arguments);
-                    let query = supabase.from('jobs').select('*').eq('status', 'active');
-                    
-                    if (args.job_type) {
-                      query = query.ilike('job_type', `%${args.job_type}%`);
-                    }
-                    if (args.location) {
-                      query = query.ilike('location', `%${args.location}%`);
-                    }
-                    
-                    const { data: jobs, error } = await query.limit(5);
-                    
-                    if (!error && jobs) {
-                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                        tool_result: "jobs_found",
-                        jobs: jobs.map((j, index) => ({
-                          number: index + 1,
-                          id: j.id,
-                          title: j.title,
-                          location: j.location,
-                          daily_salary: j.daily_salary,
-                          job_type: j.job_type,
-                          category: j.category,
-                          created_at: j.created_at
-                        })),
-                        instruction: "Present these jobs with numbers (1, 2, 3...). When user refers to a number, 'yes', 'tell me more', or job name, use get_job_details tool with the job ID."
-                      })}\n\n`));
-                    }
-                  } else if (toolCall.function?.name === 'get_job_details') {
-                    const args = JSON.parse(toolCall.function.arguments);
-                    let query = supabase.from('jobs').select('*').eq('status', 'active');
-                    
-                    if (args.job_id) {
-                      query = query.eq('id', args.job_id);
-                    } else if (args.job_title) {
-                      query = query.ilike('title', `%${args.job_title}%`);
-                    }
-                    
-                    const { data: job, error } = await query.maybeSingle();
-                    
-                    if (!error && job) {
-                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                        tool_result: "job_details",
-                        job: {
-                          id: job.id,
-                          title: job.title,
-                          location: job.location,
-                          daily_salary: job.daily_salary,
-                          job_type: job.job_type,
-                          description: job.description,
-                          phone: job.phone,
-                          urgency: job.urgency,
-                          category: job.category,
-                          created_at: job.created_at
-                        },
-                        instruction: "Present ALL details including description and phone number. User wants complete information."
-                      })}\n\n`));
-                    } else {
-                      controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({
-                        tool_result: "job_not_found",
-                        message: "Sorry, I couldn't find that specific job. It may have been filled or removed."
-                      })}\n\n`));
+                      console.log('Job created successfully:', data.id);
+                      toolResult = JSON.stringify({ 
+                        success: true, 
+                        message: "Job posted successfully",
+                        job_id: data.id 
+                      });
                     }
                   }
-                } else {
-                  controller.enqueue(new TextEncoder().encode(`data: ${data}\n\n`));
+                } else if (toolCall.function.name === 'search_jobs') {
+                  let query = supabase.from('jobs').select('*').eq('status', 'active');
+                  
+                  if (args.job_type) {
+                    query = query.ilike('job_type', `%${args.job_type}%`);
+                  }
+                  if (args.location) {
+                    query = query.ilike('location', `%${args.location}%`);
+                  }
+                  
+                  const { data: jobs, error } = await query.limit(5);
+                  
+                  if (error) {
+                    console.error('Job search error:', error);
+                    toolResult = JSON.stringify({ success: false, jobs: [] });
+                  } else {
+                    console.log(`Found ${jobs?.length || 0} jobs`);
+                    toolResult = JSON.stringify({
+                      success: true,
+                      jobs: jobs?.map((j, index) => ({
+                        number: index + 1,
+                        id: j.id,
+                        title: j.title,
+                        location: j.location,
+                        daily_salary: j.daily_salary,
+                        job_type: j.job_type,
+                        category: j.category
+                      })) || []
+                    });
+                  }
+                } else if (toolCall.function.name === 'get_job_details') {
+                  let query = supabase.from('jobs').select('*').eq('status', 'active');
+                  
+                  if (args.job_id) {
+                    query = query.eq('id', args.job_id);
+                  } else if (args.job_title) {
+                    query = query.ilike('title', `%${args.job_title}%`);
+                  }
+                  
+                  const { data: job, error } = await query.maybeSingle();
+                  
+                  if (error || !job) {
+                    console.error('Job details error:', error);
+                    toolResult = JSON.stringify({ 
+                      success: false, 
+                      error: "Job not found or has been removed" 
+                    });
+                  } else {
+                    console.log('Job details retrieved:', job.id);
+                    toolResult = JSON.stringify({
+                      success: true,
+                      job: {
+                        id: job.id,
+                        title: job.title,
+                        location: job.location,
+                        daily_salary: job.daily_salary,
+                        job_type: job.job_type,
+                        description: job.description,
+                        phone: job.phone,
+                        urgency: job.urgency,
+                        category: job.category
+                      }
+                    });
+                  }
                 }
               } catch (e) {
-                console.error('Parse error:', e);
+                console.error('Tool execution error:', e);
+                toolResult = JSON.stringify({ success: false, error: String(e) });
               }
+
+              // Add tool result to conversation
+              conversationMessages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                content: toolResult
+              });
+
+              console.log('Tool result added to conversation');
             }
+
+            // Continue loop to call AI again with tool results
+            console.log('Calling AI again with tool results...');
+            continue;
           }
 
+          // If no tool calls and no message, something went wrong
+          console.log('No content from AI, exiting loop');
           controller.close();
-        } catch (error) {
-          console.error('Stream error:', error);
-          controller.error(error);
+          return;
         }
+
+        // Max turns reached
+        console.log('Max conversation turns reached');
+        controller.enqueue(new TextEncoder().encode('data: {"error": "Conversation too long, please start a new chat"}\n\n'));
+        controller.close();
       },
     });
 
