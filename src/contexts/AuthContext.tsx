@@ -23,6 +23,9 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
+  loginWithFacebook: () => Promise<{ success: boolean; message: string }>;
+  loginWithTwitter: () => Promise<{ success: boolean; message: string }>;
 }
 
 interface RegisterData {
@@ -202,6 +205,63 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+
+      return { success: true, message: 'Redirecting to Google...' };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred' };
+    }
+  };
+
+  const loginWithFacebook = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+
+      return { success: true, message: 'Redirecting to Facebook...' };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred' };
+    }
+  };
+
+  const loginWithTwitter = async (): Promise<{ success: boolean; message: string }> => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'twitter',
+        options: {
+          redirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+
+      return { success: true, message: 'Redirecting to Twitter...' };
+    } catch (error) {
+      return { success: false, message: 'An unexpected error occurred' };
+    }
+  };
+
   const value: AuthContextType = {
     user,
     session,
@@ -209,7 +269,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
-    updateProfile
+    updateProfile,
+    loginWithGoogle,
+    loginWithFacebook,
+    loginWithTwitter
   };
 
   return (

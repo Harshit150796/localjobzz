@@ -19,6 +19,8 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import Profile from "./pages/Profile";
 import Messages from "./pages/Messages";
+import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import CityJobs from "./pages/CityJobs";
 import CategoryCityJobs from "./pages/CategoryCityJobs";
@@ -48,6 +50,8 @@ const App = () => (
         <Route path="/terms" element={<Terms />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/messages" element={<Messages />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
         <Route path="/jobs/:city" element={<CityJobs />} />
         <Route path="/jobs/:city/:category" element={<CategoryCityJobs />} />
         <Route path="/cities" element={<CityJobsLanding />} />
