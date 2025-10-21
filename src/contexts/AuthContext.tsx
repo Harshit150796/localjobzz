@@ -159,6 +159,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         return { success: false, message: error.message };
       }
 
+      // Send welcome email after successful signup
+      if (data.user) {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: {
+              userId: data.user.id,
+              email: userData.email,
+              name: userData.name
+            }
+          });
+          console.log('Welcome email sent successfully');
+        } catch (emailError) {
+          console.error('Error sending welcome email:', emailError);
+          // Don't fail registration if email fails
+        }
+      }
+
       return { success: true, message: 'Account created successfully! Please check your email to verify your account.' };
     } catch (error) {
       return { success: false, message: 'An unexpected error occurred' };

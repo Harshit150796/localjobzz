@@ -49,6 +49,45 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          email_type: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          resend_email_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email_type: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          resend_email_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       jobs: {
         Row: {
           category: string | null
@@ -187,6 +226,42 @@ export type Database = {
           name?: string
           phone?: string | null
           skills?: string[] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_email_preferences: {
+        Row: {
+          alert_categories: string[] | null
+          alert_cities: string[] | null
+          created_at: string
+          id: string
+          receive_job_alerts: boolean
+          receive_newsletters: boolean
+          receive_promotional: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          alert_categories?: string[] | null
+          alert_cities?: string[] | null
+          created_at?: string
+          id?: string
+          receive_job_alerts?: boolean
+          receive_newsletters?: boolean
+          receive_promotional?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          alert_categories?: string[] | null
+          alert_cities?: string[] | null
+          created_at?: string
+          id?: string
+          receive_job_alerts?: boolean
+          receive_newsletters?: boolean
+          receive_promotional?: boolean
           updated_at?: string
           user_id?: string
         }
