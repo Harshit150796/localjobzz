@@ -143,7 +143,7 @@ const Header = () => {
           {/* Search & City Selector - Desktop */}
           <div className="hidden md:flex flex-1 max-w-3xl mx-4 space-x-2">
             {/* City Selector */}
-            <div className="relative w-32" ref={cityDropdownRef}>
+            <div className="relative w-24" ref={cityDropdownRef}>
               <form onSubmit={handleCityFormSubmit}>
                 <input
                   type="text"
