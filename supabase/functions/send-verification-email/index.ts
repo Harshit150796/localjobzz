@@ -101,7 +101,16 @@ const handler = async (req: Request): Promise<Response> => {
     if (hookSecret) {
       const payload = await req.text();
       const headers = Object.fromEntries(req.headers);
-      const wh = new Webhook(hookSecret);
+      
+      // Parse the secret to handle different formats
+      // Supabase sends secrets like "v1,whsec_BASE64DATA"
+      // but standardwebhooks library expects just "whsec_BASE64DATA"
+      let secretToUse = hookSecret;
+      if (hookSecret.startsWith('v1,')) {
+        secretToUse = hookSecret.substring(3); // Remove "v1," prefix
+      }
+      
+      const wh = new Webhook(secretToUse);
 
       try {
         const {
