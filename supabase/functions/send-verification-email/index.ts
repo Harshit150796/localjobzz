@@ -6,85 +6,99 @@ import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
 
-const verificationEmailHTML = (token: string, tokenHash: string, redirectTo: string, emailActionType: string, supabaseUrl: string) => `
+const verificationEmailHTML = (email: string, token: string, siteUrl: string) => `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your LocalJobzz Account</title>
+  <title>Verify Your Email</title>
 </head>
-<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; background-color: #f5f5f5;">
-  <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-    <!-- Header -->
-    <div style="background: linear-gradient(135deg, #ff6b35 0%, #ff8f5c 100%); padding: 40px 20px; text-align: center;">
-      <h1 style="color: #ffffff; font-size: 32px; margin: 0; font-weight: 700;">LocalJobzz</h1>
-      <p style="color: #ffffff; font-size: 16px; margin: 10px 0 0 0; opacity: 0.95;">Verify Your Account</p>
-    </div>
-    
-    <!-- Main Content -->
-    <div style="padding: 40px 20px;">
-      <h2 style="color: #1a1a1a; font-size: 24px; margin: 0 0 20px 0; font-weight: 600;">📧 Verify Your Email Address</h2>
-      
-      <p style="color: #333333; font-size: 16px; line-height: 1.6; margin: 0 0 24px 0;">
-        Welcome to LocalJobzz! Please verify your email address to activate your account and start exploring daily wage jobs in your city.
-      </p>
-      
-      <!-- Verification Button -->
-      <div style="text-align: center; margin: 40px 0;">
-        <a href="${supabaseUrl}/auth/v1/verify?token=${tokenHash}&type=${emailActionType}&redirect_to=${redirectTo}" style="display: inline-block; background-color: #ff6b35; color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);">
-          Verify Email Address
-        </a>
-      </div>
-      
-      <!-- Manual OTP Section -->
-      <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin: 30px 0; text-align: center;">
-        <p style="color: #666666; font-size: 14px; margin: 0 0 16px 0;">
-          Or enter this verification code manually:
-        </p>
-        <div style="background-color: #ffffff; border: 2px dashed #ff6b35; border-radius: 8px; padding: 20px; margin: 0 auto; max-width: 200px;">
-          <code style="font-size: 28px; font-weight: 700; color: #ff6b35; letter-spacing: 4px; font-family: 'Courier New', monospace;">
-            ${token}
-          </code>
-        </div>
-      </div>
-      
-      <!-- Security Notice -->
-      <div style="background-color: #fff3e0; border-left: 4px solid #ff6b35; padding: 16px 20px; margin: 30px 0; border-radius: 4px;">
-        <p style="margin: 0; color: #666666; font-size: 14px;">
-          <strong style="color: #ff6b35;">🔒 Security Notice:</strong> This verification link expires in 1 hour. If you didn't create an account at LocalJobzz, you can safely ignore this email.
-        </p>
-      </div>
-      
-      <!-- Help Section -->
-      <div style="text-align: center; padding: 20px 0; margin-top: 30px;">
-        <p style="color: #666666; font-size: 14px; margin: 0 0 8px 0;">
-          Having trouble verifying your account?
-        </p>
-        <p style="margin: 0;">
-          <a href="https://localjobzz.com/help" style="color: #ff6b35; text-decoration: none; font-weight: 600;">Get Help</a>
-          <span style="color: #cccccc; margin: 0 8px;">|</span>
-          <a href="mailto:connect@localjobzz.com" style="color: #ff6b35; text-decoration: none; font-weight: 600;">Contact Support</a>
-        </p>
-      </div>
-    </div>
-    
-    <!-- Footer -->
-    <div style="background-color: #f8f9fa; padding: 30px 20px; text-align: center; border-top: 1px solid #e0e0e0;">
-      <p style="color: #666666; font-size: 14px; margin: 0 0 12px 0;">
-        This is an automated message from LocalJobzz.com
-      </p>
-      <p style="color: #999999; font-size: 12px; margin: 0 0 16px 0;">
-        LocalJobzz - Connecting Daily Wage Workers with Local Jobs<br>
-        India
-      </p>
-      <p style="margin: 0;">
-        <a href="https://localjobzz.com/privacy" style="color: #999999; text-decoration: none; font-size: 12px; margin: 0 8px;">Privacy Policy</a>
-        <span style="color: #cccccc;">|</span>
-        <a href="https://localjobzz.com/terms" style="color: #999999; text-decoration: none; font-size: 12px; margin: 0 8px;">Terms of Service</a>
-      </p>
-    </div>
-  </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+  <table role="presentation" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td align="center" style="padding: 40px 0;">
+        <table role="presentation" style="width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- Header -->
+          <tr>
+            <td style="padding: 40px 30px; text-align: center; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); border-radius: 8px 8px 0 0;">
+              <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">Verify Your LocalJobzz Account 📧</h1>
+            </td>
+          </tr>
+          
+          <!-- Body -->
+          <tr>
+            <td style="padding: 40px 30px;">
+              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                Hi there! 👋
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                Welcome to <strong>LocalJobzz</strong>! We're excited to have you join our community of local job seekers and posters.
+              </p>
+              
+              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                To complete your registration, please enter the verification code below on our website:
+              </p>
+              
+              <!-- Verification Code Box -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                <tr>
+                  <td align="center" style="padding: 20px; background-color: #f9fafb; border: 2px dashed #e5e7eb; border-radius: 8px;">
+                    <span style="font-size: 32px; font-weight: bold; color: #f97316; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                      ${token}
+                    </span>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0; color: #666666; font-size: 14px; line-height: 1.5;">
+                This code will expire in <strong>60 minutes</strong>.
+              </p>
+              
+              <!-- CTA Button -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${siteUrl}/verify-email?email=${encodeURIComponent(email)}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+                      Go to Verification Page
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <!-- Security Notice -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                <tr>
+                  <td style="padding: 20px; background-color: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                    <p style="margin: 0; color: #92400e; font-size: 14px; line-height: 1.5;">
+                      🔒 <strong>Security Tip:</strong> Never share this code with anyone. LocalJobzz will never ask for your verification code.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0 0; color: #666666; font-size: 14px; line-height: 1.5;">
+                If you didn't create an account with LocalJobzz, you can safely ignore this email.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 30px; text-align: center; background-color: #f9fafb; border-radius: 0 0 8px 8px;">
+              <p style="margin: 0 0 10px; color: #666666; font-size: 14px;">
+                Thanks for joining LocalJobzz! 🎉
+              </p>
+              <p style="margin: 0; color: #999999; font-size: 12px;">
+                © 2024 LocalJobzz. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
 `;
@@ -131,15 +145,13 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send verification email via Resend
         const emailResponse = await resend.emails.send({
-          from: "LocalJobzz <connect@localjobzz.com>",
+          from: "LocalJobzz <onboarding@resend.dev>",
           to: [user.email],
           subject: "Verify Your LocalJobzz Account 📧",
           html: verificationEmailHTML(
+            user.email,
             token,
-            token_hash,
-            redirect_to,
-            email_action_type,
-            Deno.env.get("SUPABASE_URL") ?? ""
+            redirect_to || "https://localjobzz.lovable.app"
           ),
         });
 
@@ -194,15 +206,13 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const emailResponse = await resend.emails.send({
-        from: "LocalJobzz <connect@localjobzz.com>",
+        from: "LocalJobzz <onboarding@resend.dev>",
         to: [email],
         subject: "Verify Your LocalJobzz Account 📧",
         html: verificationEmailHTML(
+          email,
           token,
-          token_hash,
-          redirect_to || "https://localjobzz.com",
-          email_action_type || "signup",
-          Deno.env.get("SUPABASE_URL") ?? ""
+          redirect_to || "https://localjobzz.lovable.app"
         ),
       });
 

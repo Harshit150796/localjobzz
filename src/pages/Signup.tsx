@@ -89,7 +89,7 @@ const Signup = () => {
       
       if (result.success) {
         toast({ title: "Account created!", description: result.message });
-        navigate('/');
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
       } else {
         toast({ title: "Registration failed", description: result.message, variant: "destructive" });
       }
