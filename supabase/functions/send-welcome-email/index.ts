@@ -126,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email via Resend
     const emailResponse = await resend.emails.send({
-      from: "LocalJobzz <connect@localjobzz.com>",
+      from: "LocalJobzz <noreply@localjobzz.com>",
       to: [email],
       subject: "Welcome to LocalJobzz - Your Daily Wage Job Partner! 🎉",
       html: welcomeEmailHTML(name),

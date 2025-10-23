@@ -145,7 +145,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send verification email via Resend
         const emailResponse = await resend.emails.send({
-          from: "LocalJobzz <onboarding@resend.dev>",
+      from: "LocalJobzz <noreply@localjobzz.com>",
           to: [user.email],
           subject: "Verify Your LocalJobzz Account 📧",
           html: verificationEmailHTML(
@@ -206,7 +206,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
 
       const emailResponse = await resend.emails.send({
-        from: "LocalJobzz <onboarding@resend.dev>",
+        from: "LocalJobzz <noreply@localjobzz.com>",
         to: [email],
         subject: "Verify Your LocalJobzz Account 📧",
         html: verificationEmailHTML(
