@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { User, Mail, Phone, Save, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { User, Mail, Phone, Save, ArrowLeft, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 
 const Profile: React.FC = () => {
-  const { user, updateProfile, isLoading } = useAuth();
+  const { user, updateProfile, isLoading, logout } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -152,6 +153,21 @@ const Profile: React.FC = () => {
               )}
             </button>
           </form>
+        </div>
+
+        {/* Account Actions */}
+        <div className="bg-white rounded-xl shadow-sm p-6 mt-6">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Account Actions</h2>
+          <button
+            onClick={() => {
+              logout();
+              navigate('/');
+            }}
+            className="w-full bg-red-50 text-red-600 py-3 rounded-lg font-semibold hover:bg-red-100 transition-colors flex items-center justify-center border border-red-200"
+          >
+            <LogOut className="h-5 w-5 mr-2" />
+            Sign Out
+          </button>
         </div>
       </div>
       

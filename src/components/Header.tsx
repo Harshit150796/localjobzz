@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, Sparkles, MessageCircle } from 'lucide-react';
+import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, Sparkles, MessageCircle, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
@@ -15,7 +15,7 @@ const Header = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [cityInputValue, setCityInputValue] = useState('');
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const cityDropdownRef = useRef<HTMLDivElement>(null);
 
   const popularIndianCities = [
@@ -301,19 +301,34 @@ const Header = () => {
               {user ? (
                 <div className="text-center">
                   <p className="text-sm text-gray-600 mb-3">Welcome back, {user.name}!</p>
-                  <div className="flex space-x-2">
-                    <Link 
-                      to="/profile"
-                      className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg text-center"
+                  <div className="flex flex-col space-y-2">
+                    <div className="flex space-x-2">
+                      <Link 
+                        to="/profile"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg text-center"
+                      >
+                        My Profile
+                      </Link>
+                      <Link 
+                        to="/messages"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg text-center"
+                      >
+                        Messages
+                      </Link>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setIsMenuOpen(false);
+                        navigate('/');
+                      }}
+                      className="w-full bg-red-50 text-red-600 px-4 py-3 rounded-lg font-semibold hover:bg-red-100 transition-colors flex items-center justify-center border border-red-200"
                     >
-                      My Profile
-                    </Link>
-                    <Link 
-                      to="/messages"
-                      className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg text-center"
-                    >
-                      Messages
-                    </Link>
+                      <LogOut className="h-4 w-4 mr-2" />
+                      Sign Out
+                    </button>
                   </div>
                 </div>
               ) : (
