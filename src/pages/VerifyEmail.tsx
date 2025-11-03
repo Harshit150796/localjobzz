@@ -20,6 +20,8 @@ const VerifyEmail = () => {
   const [isVerifying, setIsVerifying] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [email, setEmail] = useState('');
+  const [resendCountdown, setResendCountdown] = useState(60);
+  const [canResend, setCanResend] = useState(false);
 
   // Get email from URL params or session
   useEffect(() => {
@@ -28,13 +30,38 @@ const VerifyEmail = () => {
       setEmail(emailParam);
     } else if (session?.user?.email) {
       setEmail(session.user.email);
+    } else {
+      // No email found, redirect to signup
+      toast({
+        title: "Email required",
+        description: "Please sign up first to verify your email.",
+        variant: "destructive"
+      });
+      navigate('/signup');
+      return;
     }
 
     // If user is already verified, redirect to home
     if (session?.user?.email_confirmed_at) {
+      toast({
+        title: "Already verified",
+        description: "Your email is already verified!",
+      });
       navigate('/');
     }
-  }, [searchParams, session, navigate]);
+  }, [searchParams, session, navigate, toast]);
+
+  // Countdown timer for resend
+  useEffect(() => {
+    if (resendCountdown > 0) {
+      const timer = setTimeout(() => {
+        setResendCountdown(prev => prev - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setCanResend(true);
+    }
+  }, [resendCountdown]);
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
@@ -116,6 +143,10 @@ const VerifyEmail = () => {
         title: 'Code sent!',
         description: 'A new verification code has been sent to your email.',
       });
+      
+      // Reset countdown
+      setResendCountdown(60);
+      setCanResend(false);
     } catch (error) {
       toast({
         title: 'Error',
@@ -203,10 +234,15 @@ const VerifyEmail = () => {
                   </p>
                   <button
                     onClick={handleResendOTP}
-                    disabled={isResending}
+                    disabled={isResending || !canResend}
                     className="text-orange-500 font-semibold hover:text-orange-600 text-sm disabled:opacity-50"
                   >
-                    {isResending ? 'Sending...' : 'Resend Code'}
+                    {isResending 
+                      ? 'Sending...' 
+                      : canResend 
+                        ? 'Resend Code' 
+                        : `Resend in ${resendCountdown}s`
+                    }
                   </button>
                 </div>
               </div>

@@ -156,9 +156,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
+        // Handle specific error cases
+        if (error.message.includes('already registered') || error.message.includes('already exists')) {
+          return { success: false, message: 'This email is already registered. Please login instead.' };
+        }
+        if (error.message.includes('timeout') || error.message.includes('timed out')) {
+          return { success: false, message: 'Connection is slow. Please try again or check your internet.' };
+        }
         return { success: false, message: error.message };
       }
 
+      // Check if email confirmation is required
+      const confirmationRequired = !data.session; // No session means confirmation is required
+      
       // Send welcome email after successful signup
       if (data.user) {
         try {
@@ -172,12 +182,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('Welcome email sent successfully');
         } catch (emailError) {
           console.error('Error sending welcome email:', emailError);
-          // Don't fail registration if email fails
+          // Don't fail registration if welcome email fails
         }
       }
 
-      return { success: true, message: 'Account created successfully! Please check your email to verify your account.' };
+      if (confirmationRequired) {
+        return { 
+          success: true, 
+          message: 'Account created! Please check your email for a verification code.' 
+        };
+      } else {
+        return { 
+          success: true, 
+          message: 'Account created! You can now use your account.' 
+        };
+      }
     } catch (error) {
+      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('timed out'))) {
+        return { 
+          success: false, 
+          message: 'Connection is slow. Please try again or check your internet.' 
+        };
+      }
       return { success: false, message: 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);

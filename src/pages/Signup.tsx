@@ -88,10 +88,38 @@ const Signup = () => {
       });
       
       if (result.success) {
-        toast({ title: "Account created!", description: result.message });
-        navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        // Show success message with clear next steps
+        toast({ 
+          title: "Account created!", 
+          description: "Please check your email for a verification code.",
+          duration: 10000 // Show for 10 seconds
+        });
+        
+        // Wait 2 seconds before redirecting to let user read the message
+        setTimeout(() => {
+          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+        }, 2000);
       } else {
-        toast({ title: "Registration failed", description: result.message, variant: "destructive" });
+        // Handle specific error cases
+        if (result.message.includes('already registered') || result.message.includes('already exists')) {
+          toast({ 
+            title: "Email already exists", 
+            description: "This email is already registered. Please login instead.",
+            variant: "destructive" 
+          });
+        } else if (result.message.includes('timeout') || result.message.includes('timed out')) {
+          toast({ 
+            title: "Slow network", 
+            description: "Signup is taking longer than expected. Please wait...",
+            variant: "default" 
+          });
+        } else {
+          toast({ 
+            title: "Registration failed", 
+            description: result.message, 
+            variant: "destructive" 
+          });
+        }
       }
     } finally {
       setIsSubmitting(false);
