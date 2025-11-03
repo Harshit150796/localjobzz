@@ -6,7 +6,7 @@ import { Webhook } from "https://esm.sh/standardwebhooks@1.0.0";
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const hookSecret = Deno.env.get("SEND_EMAIL_HOOK_SECRET");
 
-const verificationEmailHTML = (email: string, token: string, siteUrl: string) => `
+const verificationEmailHTML = (email: string, token: string, siteUrl: string, magicLink?: string) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -37,9 +37,30 @@ const verificationEmailHTML = (email: string, token: string, siteUrl: string) =>
                 Welcome to <strong>LocalJobzz</strong>! We're excited to have you join our community of local job seekers and posters.
               </p>
               
+              ${magicLink ? `
+              <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
+                Click the button below to verify your email instantly:
+              </p>
+              
+              <!-- Magic Link Button -->
+              <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
+                <tr>
+                  <td align="center">
+                    <a href="${magicLink}" style="display: inline-block; padding: 18px 50px; background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 18px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                      ✨ Verify Email Instantly
+                    </a>
+                  </td>
+                </tr>
+              </table>
+              
+              <p style="margin: 20px 0; color: #666666; font-size: 14px; line-height: 1.5; text-align: center;">
+                Or use the verification code below if the button doesn't work:
+              </p>
+              ` : `
               <p style="margin: 0 0 20px; color: #333333; font-size: 16px; line-height: 1.5;">
                 To complete your registration, please enter the verification code below on our website:
               </p>
+              `}
               
               <!-- Verification Code Box -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
@@ -53,9 +74,10 @@ const verificationEmailHTML = (email: string, token: string, siteUrl: string) =>
               </table>
               
               <p style="margin: 20px 0; color: #666666; font-size: 14px; line-height: 1.5;">
-                This code will expire in <strong>60 minutes</strong>.
+                This ${magicLink ? 'link and code will' : 'code will'} expire in <strong>${magicLink ? '15' : '60'} minutes</strong>.
               </p>
               
+              ${!magicLink ? `
               <!-- CTA Button -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
                 <tr>
@@ -66,6 +88,7 @@ const verificationEmailHTML = (email: string, token: string, siteUrl: string) =>
                   </td>
                 </tr>
               </table>
+              ` : ''}
               
               <!-- Security Notice -->
               <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 30px 0;">
@@ -145,13 +168,14 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send verification email via Resend
         const emailResponse = await resend.emails.send({
-      from: "LocalJobzz <noreply@localjobzz.com>",
+          from: "LocalJobzz <noreply@localjobzz.com>",
           to: [user.email],
           subject: "Verify Your LocalJobzz Account 📧",
           html: verificationEmailHTML(
             user.email,
             token,
-            redirect_to || "https://localjobzz.lovable.app"
+            redirect_to || "https://localjobzz.lovable.app",
+            undefined // No magic link in webhook flow (only OTP)
           ),
         });
 
@@ -199,9 +223,9 @@ const handler = async (req: Request): Promise<Response> => {
       // No webhook secret configured - accept direct calls (for testing)
       console.warn("WARNING: SEND_EMAIL_HOOK_SECRET not configured - webhook verification disabled");
       
-      const { email, token, token_hash, redirect_to, email_action_type, user_id } = await req.json();
+      const { email, token, token_hash, redirect_to, email_action_type, user_id, magicLink } = await req.json();
 
-      if (!email || !token || !token_hash) {
+      if (!email || !token) {
         throw new Error("Missing required fields");
       }
 
@@ -212,7 +236,8 @@ const handler = async (req: Request): Promise<Response> => {
         html: verificationEmailHTML(
           email,
           token,
-          redirect_to || "https://localjobzz.lovable.app"
+          redirect_to || "https://localjobzz.lovable.app",
+          magicLink // Include magic link if provided
         ),
       });
 

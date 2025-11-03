@@ -4,6 +4,7 @@ import { Mail, Lock, User, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import SEOHead from '../components/SEOHead';
+import { supabase } from '@/integrations/supabase/client';
 
 // Social provider icons
 const GoogleIcon = () => (
@@ -88,17 +89,50 @@ const Signup = () => {
       });
       
       if (result.success) {
-        // Show success message with clear next steps
-        toast({ 
-          title: "Account created!", 
-          description: "Please check your email for a verification code.",
-          duration: 10000 // Show for 10 seconds
-        });
+        // Store password temporarily for auto-login after verification
+        sessionStorage.setItem('temp_password', formData.password);
         
-        // Wait 2 seconds before redirecting to let user read the message
-        setTimeout(() => {
+        // Get current session to get user ID
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        
+        // Generate magic link via edge function
+        try {
+          const { data: magicData, error: magicError } = await supabase.functions.invoke('generate-magic-link', {
+            body: { 
+              email, 
+              userId: userId
+            }
+          });
+
+          if (magicError) {
+            console.error('Error generating magic link:', magicError);
+            // Fallback to OTP verification
+            toast({ 
+              title: "Account created!", 
+              description: "Please check your email for a verification code.",
+              duration: 10000
+            });
+            setTimeout(() => {
+              navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+            }, 2000);
+          } else {
+            // Show success message and redirect to waiting page
+            toast({ 
+              title: "Account created!", 
+              description: "Please check your email for a verification link.",
+              duration: 5000
+            });
+            
+            setTimeout(() => {
+              navigate(`/waiting-verification?email=${encodeURIComponent(email)}`);
+            }, 1000);
+          }
+        } catch (err) {
+          console.error('Magic link error:', err);
+          // Fallback to OTP
           navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-        }, 2000);
+        }
       } else {
         // Handle specific error cases
         if (result.message.includes('already registered') || result.message.includes('already exists')) {
