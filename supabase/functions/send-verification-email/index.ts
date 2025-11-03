@@ -270,45 +270,46 @@ const handler = async (req: Request): Promise<Response> => {
         throw new Error("Missing required fields");
       }
 
-      // Retry logic for better deliverability
-      let emailResponse;
-      let lastError;
-      const maxRetries = 3;
+      console.log(`Sending verification email to ${email}`);
       
-      for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-          console.log(`Sending email attempt ${attempt}/${maxRetries} to ${email}`);
-          
-          emailResponse = await resend.emails.send({
-            from: "LocalJobzz <noreply@localjobzz.com>",
-            to: [email],
-            subject: "Welcome to LocalJobzz - Verify Your Email 🎉",
-            html: verificationEmailHTML(
-              email,
-              token,
-              redirect_to || "https://localjobzz.lovable.app",
-              name || "there",
-              magicLink // Include magic link if provided
-            ),
-          });
-          
-          console.log("Email sent successfully:", emailResponse);
-          break; // Success, exit retry loop
-        } catch (error: any) {
-          lastError = error;
-          console.error(`Email send attempt ${attempt} failed:`, error);
-          
-          // Check if it's a rate limit error
-          if (error.statusCode === 429 && attempt < maxRetries) {
-            const delay = Math.pow(2, attempt) * 1000; // Exponential backoff
-            console.log(`Rate limited, waiting ${delay}ms before retry...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-          } else if (attempt === maxRetries) {
-            throw lastError; // Final attempt failed
-          }
-        }
+      // Send email immediately without retry logic for speed
+      const emailResponse = await resend.emails.send({
+        from: "LocalJobzz <noreply@localjobzz.com>",
+        to: [email],
+        subject: "Welcome to LocalJobzz - Verify Your Email 🎉",
+        html: verificationEmailHTML(
+          email,
+          token,
+          redirect_to || "https://localjobzz.com",
+          name || "there",
+          magicLink // Include magic link if provided
+        ),
+      });
+      
+      console.log("Verification email sent successfully:", emailResponse);
+
+      // Log to database asynchronously (don't wait for it)
+      if (user_id) {
+        const supabase = createClient(
+          Deno.env.get("SUPABASE_URL") ?? "",
+          Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+        );
+        
+        // Don't await - let it complete in background
+        supabase.from("email_logs").insert({
+          user_id: user_id,
+          email_type: "verification",
+          recipient_email: email,
+          subject: "Welcome to LocalJobzz - Verify Your Email",
+          status: "sent",
+          resend_email_id: emailResponse.data?.id,
+          sent_at: new Date().toISOString(),
+        }).then(result => {
+          if (result.error) console.error('Error logging email:', result.error);
+        });
       }
 
+      // Return success immediately
       return new Response(
         JSON.stringify({ success: true, emailId: emailResponse.data?.id }),
         {

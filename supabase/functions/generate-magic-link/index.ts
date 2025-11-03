@@ -69,21 +69,33 @@ serve(async (req) => {
     console.log('Magic link generated:', magicLink);
 
     // Send consolidated email with magic link, OTP, and welcome content
+    // Add timeout protection to prevent exceeding 5-second limit
     console.log('Invoking send-verification-email with magic link and OTP...');
-    const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-verification-email', {
-      body: {
-        email,
-        token: otpCode, // Send 6-digit OTP for display in email
-        magicLink, // Magic link for instant verification
-        name: name || 'there', // User's name for personalization
-        redirect_to: 'https://localjobzz.com',
-        user_id: userId,
-      }
-    });
+    
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000); // 4-second timeout
+    
+    try {
+      const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-verification-email', {
+        body: {
+          email,
+          token: otpCode, // Send 6-digit OTP for display in email
+          magicLink, // Magic link for instant verification
+          name: name || 'there', // User's name for personalization
+          redirect_to: 'https://localjobzz.com',
+          user_id: userId,
+        }
+      });
 
-    if (emailError) {
-      console.error('Error sending verification email:', emailError);
-      throw emailError;
+      clearTimeout(timeout);
+
+      if (emailError) {
+        console.error('Error sending verification email:', emailError);
+        throw emailError;
+      }
+    } catch (error) {
+      clearTimeout(timeout);
+      throw error;
     }
 
     console.log('Consolidated verification email sent successfully to:', email, 'Response:', emailData);
