@@ -169,22 +169,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Check if email confirmation is required
       const confirmationRequired = !data.session; // No session means confirmation is required
       
-      // Send welcome email after successful signup
-      if (data.user) {
-        try {
-          await supabase.functions.invoke('send-welcome-email', {
-            body: {
-              userId: data.user.id,
-              email: userData.email,
-              name: userData.name
-            }
-          });
-          console.log('Welcome email sent successfully');
-        } catch (emailError) {
-          console.error('Error sending welcome email:', emailError);
-          // Don't fail registration if welcome email fails
-        }
-      }
+      // Note: Welcome email is now consolidated with verification email
+      // sent by the generate-magic-link function, so no separate call needed
 
       if (confirmationRequired) {
         return { 

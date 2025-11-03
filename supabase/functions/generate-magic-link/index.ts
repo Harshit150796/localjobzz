@@ -9,6 +9,7 @@ const corsHeaders = {
 interface GenerateMagicLinkRequest {
   email: string;
   userId: string;
+  name?: string;
 }
 
 serve(async (req) => {
@@ -17,8 +18,8 @@ serve(async (req) => {
   }
 
   try {
-    const { email, userId }: GenerateMagicLinkRequest = await req.json();
-    console.log('Generating magic link for:', email);
+    const { email, userId, name }: GenerateMagicLinkRequest = await req.json();
+    console.log('Generating magic link for:', email, 'Name:', name || 'Not provided');
 
     // Initialize Supabase client with service role
     const supabaseAdmin = createClient(
@@ -32,21 +33,26 @@ serve(async (req) => {
       }
     );
 
-    // Generate secure random token
+    // Generate secure random token for magic link (32-byte hex)
     const tokenArray = new Uint8Array(32);
     crypto.getRandomValues(tokenArray);
-    const token = Array.from(tokenArray, byte => byte.toString(16).padStart(2, '0')).join('');
+    const magicToken = Array.from(tokenArray, byte => byte.toString(16).padStart(2, '0')).join('');
+
+    // Generate 6-digit OTP code for fallback
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    console.log('Generated OTP code:', otpCode);
 
     // Set expiration to 15 minutes from now
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 15);
 
-    // Store token in database
+    // Store both tokens in database
     const { error: insertError } = await supabaseAdmin
       .from('magic_tokens')
       .insert({
         user_id: userId,
-        token,
+        token: magicToken,
+        otp_code: otpCode,
         email,
         expires_at: expiresAt.toISOString(),
       });
@@ -56,16 +62,22 @@ serve(async (req) => {
       throw insertError;
     }
 
+    console.log('Magic token and OTP stored successfully');
+
     // Generate magic link
-    const magicLink = `https://localjobzz.com/verify?token=${token}`;
+    const magicLink = `https://localjobzz.com/verify?token=${magicToken}`;
     console.log('Magic link generated:', magicLink);
 
-    // Send email with magic link via the send-verification-email function
-    const { error: emailError } = await supabaseAdmin.functions.invoke('send-verification-email', {
+    // Send consolidated email with magic link, OTP, and welcome content
+    console.log('Invoking send-verification-email with magic link and OTP...');
+    const { data: emailData, error: emailError } = await supabaseAdmin.functions.invoke('send-verification-email', {
       body: {
         email,
-        token, // OTP code (kept for fallback)
-        magicLink, // New magic link
+        token: otpCode, // Send 6-digit OTP for display in email
+        magicLink, // Magic link for instant verification
+        name: name || 'there', // User's name for personalization
+        redirect_to: 'https://localjobzz.com',
+        user_id: userId,
       }
     });
 
@@ -74,7 +86,7 @@ serve(async (req) => {
       throw emailError;
     }
 
-    console.log('Magic link email sent successfully to:', email);
+    console.log('Consolidated verification email sent successfully to:', email, 'Response:', emailData);
 
     return new Response(
       JSON.stringify({ 

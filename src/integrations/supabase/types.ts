@@ -160,6 +160,7 @@ export type Database = {
           email: string
           expires_at: string
           id: string
+          otp_code: string | null
           token: string
           user_id: string | null
           verified_at: string | null
@@ -169,6 +170,7 @@ export type Database = {
           email: string
           expires_at: string
           id?: string
+          otp_code?: string | null
           token: string
           user_id?: string | null
           verified_at?: string | null
@@ -178,6 +180,7 @@ export type Database = {
           email?: string
           expires_at?: string
           id?: string
+          otp_code?: string | null
           token?: string
           user_id?: string | null
           verified_at?: string | null

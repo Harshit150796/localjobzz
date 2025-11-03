@@ -96,42 +96,77 @@ const Signup = () => {
         const { data: sessionData } = await supabase.auth.getSession();
         const userId = sessionData?.session?.user?.id;
         
-        // Generate magic link via edge function
-        try {
-          const { data: magicData, error: magicError } = await supabase.functions.invoke('generate-magic-link', {
-            body: { 
-              email, 
-              userId: userId
-            }
-          });
-
-          if (magicError) {
-            console.error('Error generating magic link:', magicError);
-            // Fallback to OTP verification
-            toast({ 
-              title: "Account created!", 
-              description: "Please check your email for a verification code.",
-              duration: 10000
-            });
-            setTimeout(() => {
-              navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-            }, 2000);
-          } else {
-            // Show success message and redirect to waiting page
-            toast({ 
-              title: "Account created!", 
-              description: "Please check your email for a verification link.",
-              duration: 5000
-            });
+        // Generate magic link with improved error handling and retry logic
+        let magicSuccess = false;
+        let retryCount = 0;
+        const maxRetries = 2;
+        
+        while (!magicSuccess && retryCount <= maxRetries) {
+          try {
+            console.log(`[Attempt ${retryCount + 1}/${maxRetries + 1}] Generating magic link for:`, email);
             
-            setTimeout(() => {
-              navigate(`/waiting-verification?email=${encodeURIComponent(email)}`);
-            }, 1000);
+            const { data: magicData, error: magicError } = await supabase.functions.invoke('generate-magic-link', {
+              body: { 
+                email, 
+                userId: userId,
+                name: formData.name
+              }
+            });
+
+            if (magicError) {
+              console.error(`[Attempt ${retryCount + 1}] Magic link error:`, magicError);
+              
+              if (retryCount < maxRetries) {
+                // Wait 2 seconds before retrying
+                console.log('Waiting 2 seconds before retry...');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                retryCount++;
+                continue;
+              } else {
+                // All retries failed, fallback to OTP
+                console.error('All magic link attempts failed, falling back to OTP');
+                toast({ 
+                  title: "Account created!", 
+                  description: "Please check your email for a verification code.",
+                  duration: 10000
+                });
+                setTimeout(() => {
+                  navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+                }, 2000);
+                break;
+              }
+            } else {
+              // Success!
+              console.log('Magic link generated successfully:', magicData);
+              magicSuccess = true;
+              
+              toast({ 
+                title: "Account created! 🎉", 
+                description: "Check your email for a verification link with welcome guide.",
+                duration: 5000
+              });
+              
+              setTimeout(() => {
+                navigate(`/waiting-verification?email=${encodeURIComponent(email)}`);
+              }, 1000);
+            }
+          } catch (err) {
+            console.error(`[Attempt ${retryCount + 1}] Exception in magic link generation:`, err);
+            
+            if (retryCount < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              retryCount++;
+            } else {
+              // Network error after all retries - fallback to OTP
+              toast({ 
+                title: "Network issue", 
+                description: "Falling back to manual verification. Check your email for a code.",
+                variant: "default"
+              });
+              navigate(`/verify-email?email=${encodeURIComponent(email)}`);
+              break;
+            }
           }
-        } catch (err) {
-          console.error('Magic link error:', err);
-          // Fallback to OTP
-          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
         }
       } else {
         // Handle specific error cases
