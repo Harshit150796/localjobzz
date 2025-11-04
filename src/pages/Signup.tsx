@@ -60,7 +60,7 @@ const Signup = () => {
     setIsSubmitting(true);
     
     try {
-      if (!formData.name || !formData.emailOrPhone) {
+      if (!formData.name || !formData.emailOrPhone || !formData.password) {
         toast({ title: "Please fill all fields", variant: "destructive" });
         return;
       }
@@ -81,78 +81,50 @@ const Signup = () => {
         return;
       }
       
-      // Start registration
-      const result = await register({
-        name: formData.name,
-        email: email,
-        phone: phone,
-        password: formData.password
+      console.log('Creating pending registration for:', email);
+      
+      // Call new pending registration function
+      const { data, error } = await supabase.functions.invoke('create-pending-registration', {
+        body: { 
+          email,
+          name: formData.name,
+          password: formData.password,
+          phone
+        }
       });
-      
-      // IMMEDIATELY get userId (even if webhook times out, user is still created)
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      
-      console.log('Registration result:', result.success ? 'success' : 'failed', 'UserId:', userId);
-      
-      // If userId exists, generate magic link (user was created despite timeout)
-      if (userId) {
-        // Store password temporarily for auto-login after verification
-        sessionStorage.setItem('temp_password', formData.password);
-        
-        try {
-          console.log('Generating magic link for:', email);
-          
-          const { data: magicData, error: magicError } = await supabase.functions.invoke('generate-magic-link', {
-            body: { 
-              email, 
-              userId: userId,
-              name: formData.name
-            }
-          });
 
-          if (magicError) {
-            console.error('Magic link generation failed:', magicError);
-            toast({ 
-              title: "Account created!", 
-              description: "Please check your email for a verification code.",
-              duration: 10000
-            });
-            navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-          } else {
-            console.log('Magic link generated successfully');
-            toast({ 
-              title: "Account created! 🎉", 
-              description: "Check your email for instant verification link.",
-              duration: 5000
-            });
-            navigate(`/waiting-verification?email=${encodeURIComponent(email)}`);
-          }
-        } catch (err) {
-          console.error('Exception in magic link generation:', err);
-          toast({ 
-            title: "Account created!", 
-            description: "Please check your email for verification.",
-            duration: 10000
-          });
-          navigate(`/verify-email?email=${encodeURIComponent(email)}`);
-        }
-      } else if (!result.success) {
-        // No userId and registration failed - handle specific error cases
-        if (result.message.includes('already registered') || result.message.includes('already exists')) {
-          toast({ 
-            title: "Email already exists", 
-            description: "This email is already registered. Please login instead.",
-            variant: "destructive" 
-          });
-        } else {
-          toast({ 
-            title: "Registration failed", 
-            description: result.message, 
-            variant: "destructive" 
-          });
-        }
+      if (error || !data?.success) {
+        const errorMsg = data?.error || error?.message || 'Registration failed';
+        toast({ 
+          title: "Registration failed", 
+          description: errorMsg,
+          variant: "destructive" 
+        });
+        return;
       }
+
+      // Store email and password for OTP verification page
+      sessionStorage.setItem('verify_email', email);
+      sessionStorage.setItem('verify_password', formData.password);
+
+      console.log('Pending registration created, redirecting to OTP verification');
+
+      toast({ 
+        title: "OTP Sent! 📧", 
+        description: "Check your email for the 6-digit verification code.",
+        duration: 5000
+      });
+
+      // Redirect to OTP verification page
+      navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
+      
+    } catch (err) {
+      console.error('Signup error:', err);
+      toast({ 
+        title: "Error", 
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }

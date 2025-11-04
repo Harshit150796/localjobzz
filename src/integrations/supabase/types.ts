@@ -222,6 +222,45 @@ export type Database = {
           },
         ]
       }
+      pending_registrations: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          name: string
+          otp_code: string
+          password_hash: string
+          phone: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          name: string
+          otp_code: string
+          password_hash: string
+          phone?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          name?: string
+          otp_code?: string
+          password_hash?: string
+          phone?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -305,7 +344,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_pending_registrations: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
