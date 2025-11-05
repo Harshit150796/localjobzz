@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 // Social provider icons as SVG components
 const GoogleIcon = () => (
@@ -41,7 +43,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     password: ''
   });
 
-  const { login, register, loginWithGoogle, loginWithFacebook, loginWithTwitter } = useAuth();
+  const navigate = useNavigate();
+  const { login, loginWithGoogle, loginWithFacebook, loginWithTwitter } = useAuth();
   const { toast } = useToast();
 
   // Sync mode with initialMode prop when modal opens or initialMode changes
@@ -113,20 +116,39 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           return;
         }
         
-        const result = await register({
-          name: formData.name,
-          email: email,
-          phone: phone,
-          password: formData.password
+        // Call create-pending-registration edge function
+        const { data, error } = await supabase.functions.invoke('create-pending-registration', {
+          body: { 
+            email,
+            name: formData.name,
+            password: formData.password,
+            phone
+          }
         });
-        
-        if (result.success) {
-          toast({ title: "Account created!", description: result.message });
-          onClose();
-          setFormData({ name: '', emailOrPhone: '', password: '' });
-        } else {
-          toast({ title: "Registration failed", description: result.message, variant: "destructive" });
+
+        if (error || !data?.success) {
+          const errorMsg = data?.error || error?.message || 'Registration failed';
+          toast({ 
+            title: "Registration failed", 
+            description: errorMsg,
+            variant: "destructive" 
+          });
+          return;
         }
+
+        // Store credentials for OTP verification
+        sessionStorage.setItem('verify_email', email);
+        sessionStorage.setItem('verify_password', formData.password);
+
+        toast({ 
+          title: "OTP Sent! 📧", 
+          description: "Check your email for the 6-digit verification code.",
+          duration: 5000
+        });
+
+        // Close modal and redirect to OTP page
+        onClose();
+        navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
       }
     } finally {
       setIsSubmitting(false);
