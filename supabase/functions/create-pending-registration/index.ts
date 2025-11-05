@@ -30,11 +30,20 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Check if email already exists in auth
-    const { data: existingUsers } = await supabase.auth.admin.listUsers();
-    const emailExists = existingUsers?.users?.some(u => u.email === email);
-    
-    if (emailExists) {
+    // Check if email already exists in profiles (actual registered users)
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing email:', checkError);
+      throw checkError;
+    }
+
+    if (existingProfile) {
+      console.log('Email already exists:', email);
       return new Response(
         JSON.stringify({ error: 'Email already registered. Please login instead.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
