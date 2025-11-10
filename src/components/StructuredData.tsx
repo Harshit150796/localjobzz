@@ -163,3 +163,59 @@ export const createFAQSchema = (faqs: Array<{question: string; answer: string}>)
     }
   }))
 });
+
+export const createSiteNavigationSchema = () => ({
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {
+      "@type": "SiteNavigationElement",
+      "position": 1,
+      "name": "About Us",
+      "description": "Learn about localjobzz mission and team",
+      "url": "https://localjobzz.com/about"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 2,
+      "name": "How It Works",
+      "description": "Discover how to find jobs or hire workers on localjobzz",
+      "url": "https://localjobzz.com/how-it-works"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 3,
+      "name": "Post a Job",
+      "description": "Hire workers instantly for daily work",
+      "url": "https://localjobzz.com/post"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 4,
+      "name": "Find Jobs",
+      "description": "Browse thousands of local job opportunities",
+      "url": "https://localjobzz.com/"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 5,
+      "name": "Pricing",
+      "description": "View pricing plans for featured job listings",
+      "url": "https://localjobzz.com/pricing"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 6,
+      "name": "Help Center",
+      "description": "Get help and answers to common questions",
+      "url": "https://localjobzz.com/help"
+    },
+    {
+      "@type": "SiteNavigationElement",
+      "position": 7,
+      "name": "Contact",
+      "description": "Get in touch with the localjobzz team",
+      "url": "https://localjobzz.com/contact"
+    }
+  ]
+});

@@ -16,7 +16,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ListingCard from '../components/ListingCard';
 import SEOHead from '../components/SEOHead';
-import { createOrganizationSchema, createWebsiteSchema, createJobPostingSchema } from '../components/StructuredData';
+import { createOrganizationSchema, createWebsiteSchema, createJobPostingSchema, createSiteNavigationSchema } from '../components/StructuredData';
 import { useJobCategories } from '../hooks/useJobCategories';
 
 const HomePage = () => {
@@ -173,7 +173,7 @@ const HomePage = () => {
 
   const combinedStructuredData = {
     "@context": "https://schema.org",
-    "@graph": [organizationSchema, websiteSchema, ...jobPostingsSchema]
+    "@graph": [organizationSchema, websiteSchema, createSiteNavigationSchema(), ...jobPostingsSchema]
   };
 
   return (

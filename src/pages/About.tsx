@@ -1,13 +1,22 @@
 import { Mail, MapPin, Calendar, Users, Target, Heart } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import founderImage from "@/assets/founder-harshit.jpg";
 
 const About = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead 
+        title="About localjobzz - India's Premier Local Job Platform"
+        description="Learn how localjobzz connects local workers with employers across India. Join 50,000+ job seekers and 5,000+ companies finding work daily."
+        keywords="about localjobzz, local job platform, employment services India, job board India"
+        canonicalUrl="https://localjobzz.com/about"
+      />
       <Header />
       
       {/* Hero Section */}
@@ -330,25 +339,26 @@ const About = () => {
         </div>
       </section>
 
-      {/* Contact CTA */}
+      {/* Ready to Get Started CTA */}
       <section className="py-16 px-4 bg-primary/5">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            Ready to Transform Your Career?
+            Ready to Get Started?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Join thousands of professionals who have found their perfect local job through our platform.
+            Join thousands of people finding work or hiring workers on localjobzz
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Card className="p-6 bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <Mail className="h-6 w-6" />
-                <div className="text-left">
-                  <div className="font-semibold">Get in Touch</div>
-                  <div className="text-sm opacity-90">connect@localjobzz.com</div>
-                </div>
-              </div>
-            </Card>
+            <Link to="/post">
+              <Button size="lg" className="w-full sm:w-auto">
+                Post a Job
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                Find Work
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

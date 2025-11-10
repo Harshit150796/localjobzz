@@ -1,12 +1,21 @@
 import { CheckCircle, Search, Users, Briefcase, Star, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import SEOHead from "@/components/SEOHead";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 const HowItWorks = () => {
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead 
+        title="How It Works - Find Jobs or Hire Workers on localjobzz"
+        description="Discover how to find daily work or hire workers in 3 simple steps. Post jobs free, get instant applications, and connect with local talent."
+        keywords="how to find jobs, how to hire workers, job platform guide, post jobs online"
+        canonicalUrl="https://localjobzz.com/how-it-works"
+      />
       <Header />
       
       {/* Hero Section */}
@@ -167,6 +176,30 @@ const HowItWorks = () => {
               <h3 className="font-semibold mb-2">Quick Results</h3>
               <p className="text-sm text-muted-foreground">Get matched and hired in record time</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-16 px-4 bg-primary/5">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
+            Ready to Get Started?
+          </h2>
+          <p className="text-lg text-muted-foreground mb-8">
+            Join thousands of people finding work or hiring workers on localjobzz
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link to="/post">
+              <Button size="lg" className="w-full sm:w-auto">
+                Post a Job
+              </Button>
+            </Link>
+            <Link to="/">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
+                Find Work
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
