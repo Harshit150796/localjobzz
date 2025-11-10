@@ -96,6 +96,7 @@ export type Database = {
           description: string
           featured: boolean
           id: string
+          images: string[] | null
           job_type: string
           location: string
           phone: string
@@ -112,6 +113,7 @@ export type Database = {
           description: string
           featured?: boolean
           id?: string
+          images?: string[] | null
           job_type: string
           location: string
           phone: string
@@ -128,6 +130,7 @@ export type Database = {
           description?: string
           featured?: boolean
           id?: string
+          images?: string[] | null
           job_type?: string
           location?: string
           phone?: string

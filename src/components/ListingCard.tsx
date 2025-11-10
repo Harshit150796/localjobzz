@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { MapPin, Clock, Heart, Star } from 'lucide-react';
+import { MapPin, Clock, Heart, Star, ImageIcon } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
 import { Badge } from './ui/badge';
 
@@ -14,6 +14,7 @@ interface ListingCardProps {
   urgent?: boolean;
   peopleViewing?: number;
   category?: string;
+  images?: string[];
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ 
@@ -24,9 +25,15 @@ const ListingCard: React.FC<ListingCardProps> = ({
   image, 
   featured = false,
   urgent = false,
-  peopleViewing
+  peopleViewing,
+  images
 }) => {
   const { currencySymbol } = useLocation();
+  const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
+  
+  // Use uploaded images if available, otherwise fallback to placeholder
+  const displayImages = images && images.length > 0 ? images : [`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`];
+  const currentImage = displayImages[currentImageIndex];
   return (
     <div className={`bg-white rounded-lg shadow-sm border ${featured ? 'border-orange-200 ring-2 ring-orange-200' : 'border-gray-200'} hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group relative overflow-hidden`}>
       {featured && (
@@ -47,13 +54,41 @@ const ListingCard: React.FC<ListingCardProps> = ({
       
       <div className="relative overflow-hidden">
         <img 
-          src={`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`}
+          src={currentImage}
           alt={title}
           className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
         />
+        
+        {/* Image count badge */}
+        {displayImages.length > 1 && (
+          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" />
+            {displayImages.length}
+          </div>
+        )}
+        
+        {/* Image navigation dots */}
+        {displayImages.length > 1 && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {displayImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentImageIndex(index);
+                }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  index === currentImageIndex ? 'bg-white w-3' : 'bg-white/60'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+        
         <button className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors">
           <Heart className="h-3 w-3 text-gray-600 hover:text-red-500" />
         </button>
+        
         {/* Apply Now button on hover */}
         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
           <button className="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm">

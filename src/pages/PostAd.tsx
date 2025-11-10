@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import JobSuccessModal from '../components/JobSuccessModal';
 import AuthModal from '../components/auth/AuthModal';
+import ImageUpload from '../components/ImageUpload';
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -28,6 +29,8 @@ const PostAd = () => {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [citySearchTerm, setCitySearchTerm] = useState('');
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [isUploadingImages, setIsUploadingImages] = useState(false);
 
   const jobTypes = [
     'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
@@ -112,6 +115,16 @@ const PostAd = () => {
       return;
     }
 
+    // Prevent submission if images are uploading
+    if (isUploadingImages) {
+      toast({
+        title: "Please Wait",
+        description: "Images are still uploading. Please wait a moment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -123,7 +136,8 @@ const PostAd = () => {
         location: formData.location,
         description: formData.description,
         phone: formData.phone,
-        urgency: formData.urgency
+        urgency: formData.urgency,
+        images: uploadedImages
       });
 
       if (result.success) {
@@ -162,6 +176,7 @@ const PostAd = () => {
       phone: '',
       urgency: 'normal'
     });
+    setUploadedImages([]);
   };
 
   const handleViewJob = () => {
@@ -181,6 +196,7 @@ const PostAd = () => {
       phone: '',
       urgency: 'normal'
     });
+    setUploadedImages([]);
   };
 
   return (
@@ -295,6 +311,28 @@ const PostAd = () => {
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 required
               />
+            </div>
+
+            {/* Job Images */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Workplace Photos (Optional)
+                <span className="text-gray-500 font-normal ml-2">
+                  Up to 5 images to attract more views
+                </span>
+              </label>
+              <ImageUpload
+                images={uploadedImages}
+                onImagesChange={(images) => {
+                  setUploadedImages(images);
+                  setIsUploadingImages(false);
+                }}
+                maxImages={5}
+              />
+              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                <span>💡</span>
+                <span>Tip: Add photos of the workplace, tools needed, or work examples to get 3x more responses!</span>
+              </p>
             </div>
 
             {/* Phone Number */}

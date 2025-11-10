@@ -16,6 +16,7 @@ interface Job {
   status: 'active' | 'completed' | 'expired';
   featured: boolean;
   category?: string;
+  images?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -29,6 +30,7 @@ interface JobFormData {
   phone: string;
   urgency: 'normal' | 'urgent' | 'immediate';
   category?: string;
+  images?: string[];
 }
 
 interface JobContextType {
@@ -94,6 +96,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           phone: jobData.phone,
           urgency: jobData.urgency,
           category: jobData.category,
+          images: jobData.images || [],
           featured: jobData.urgency === 'urgent' || jobData.urgency === 'immediate'
         })
         .select()
