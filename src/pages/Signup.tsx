@@ -30,10 +30,9 @@ const TwitterIcon = () => (
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { register, loginWithGoogle, loginWithFacebook, loginWithTwitter, user } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     emailOrPhone: '',
@@ -57,101 +56,22 @@ const Signup = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
     
-    try {
-      if (!formData.name || !formData.emailOrPhone || !formData.password) {
-        toast({ title: "Please fill all fields", variant: "destructive" });
-        return;
-      }
-      
-      let email = formData.emailOrPhone;
-      let phone: string | undefined;
-      
-      if (isPhone(formData.emailOrPhone)) {
-        const cleanPhone = formData.emailOrPhone.replace(/\D/g, '');
-        email = `${cleanPhone}@phone.localjobzz`;
-        phone = formData.emailOrPhone;
-      } else if (!isEmail(formData.emailOrPhone)) {
-        toast({ 
-          title: "Invalid input", 
-          description: "Please enter a valid email or phone number",
-          variant: "destructive" 
-        });
-        return;
-      }
-      
-      console.log('Creating pending registration for:', email);
-      
-      // Call new pending registration function
-      const { data, error } = await supabase.functions.invoke('create-pending-registration', {
-        body: { 
-          email,
-          name: formData.name,
-          password: formData.password,
-          phone
-        }
-      });
-
-      if (error || !data?.success) {
-        const errorMsg = data?.error || error?.message || 'Registration failed';
-        toast({ 
-          title: "Registration failed", 
-          description: errorMsg,
-          variant: "destructive" 
-        });
-        return;
-      }
-
-      // Store email and password for OTP verification page
-      sessionStorage.setItem('verify_email', email);
-      sessionStorage.setItem('verify_password', formData.password);
-
-      console.log('Pending registration created, redirecting to OTP verification');
-
-      toast({ 
-        title: "OTP Sent! 📧", 
-        description: "Check your email for the 6-digit verification code.",
-        duration: 5000
-      });
-
-      // Redirect to OTP verification page
-      navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
-      
-    } catch (err) {
-      console.error('Signup error:', err);
-      toast({ 
-        title: "Error", 
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive" 
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Signup is temporarily disabled
+    toast({ 
+      title: "Signup Temporarily Unavailable", 
+      description: "We're working on improving our signup system. Please check back soon!",
+      variant: "destructive" 
+    });
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
-    setIsSubmitting(true);
-    try {
-      let result;
-      if (provider === 'google') {
-        result = await loginWithGoogle();
-      } else if (provider === 'facebook') {
-        result = await loginWithFacebook();
-      } else {
-        result = await loginWithTwitter();
-      }
-
-      if (!result.success) {
-        toast({ 
-          title: "Login failed", 
-          description: result.message, 
-          variant: "destructive" 
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Social login is temporarily disabled
+    toast({ 
+      title: "Social Login Temporarily Unavailable", 
+      description: "We're working on improving our signup system. Please check back soon!",
+      variant: "destructive" 
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -193,7 +113,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={() => handleSocialLogin('google')}
-                  disabled={isSubmitting}
+                  disabled={true}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <GoogleIcon />
@@ -203,7 +123,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={() => handleSocialLogin('facebook')}
-                  disabled={isSubmitting}
+                  disabled={true}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <FacebookIcon />
@@ -213,7 +133,7 @@ const Signup = () => {
                 <button
                   type="button"
                   onClick={() => handleSocialLogin('twitter')}
-                  disabled={isSubmitting}
+                  disabled={true}
                   className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <TwitterIcon />
@@ -300,10 +220,10 @@ const Signup = () => {
 
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={true}
                   className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isSubmitting ? 'Creating account...' : 'Create Account'}
+                  Create Account (Temporarily Unavailable)
                 </button>
               </form>
 
