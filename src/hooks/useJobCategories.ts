@@ -36,24 +36,6 @@ export const jobCategories = [
     gradient: 'bg-gradient-to-br from-purple-500 to-purple-700',
     keywords: 'shop assistant, retail jobs, cashier jobs, sales jobs, customer service',
     icon: ShoppingCart
-  },
-  {
-    id: 'security',
-    title: 'Security',
-    subtitle: 'Guard, Watchman, Security',
-    count: '100+ jobs today',
-    gradient: 'bg-gradient-to-br from-gray-600 to-gray-800',
-    keywords: 'security jobs, guard jobs, watchman, night shift security',
-    icon: Shield
-  },
-  {
-    id: 'office-work',
-    title: 'Office Work',
-    subtitle: 'Data Entry, Filing, Assistant',
-    count: '120+ jobs today',
-    gradient: 'bg-gradient-to-br from-indigo-500 to-indigo-700',
-    keywords: 'office jobs, data entry, filing, office assistant, administrative work',
-    icon: FileText
   }
 ];
 

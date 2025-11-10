@@ -106,19 +106,19 @@ const HomePage = () => {
           </p>
           
           {/* Main Action Tiles */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 md:gap-8 mb-12 md:mb-16 max-w-5xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-8 mb-12 md:mb-16 max-w-5xl mx-auto">
             {/* Look for Job Tile */}
             <Link 
               to="/jobs/all"
               className="group transform hover:scale-105 transition-all duration-300"
             >
-              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Briefcase className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-2 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">Look for a Job</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
-                <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2.5">Look for a Job</h3>
+                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
+                <div className="bg-blue-50 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold">
                   3 Easy Steps
                 </div>
               </div>
@@ -129,13 +129,13 @@ const HomePage = () => {
               to="/post"
               className="group transform hover:scale-105 transition-all duration-300"
             >
-              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-2 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">Post a Job</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Hire workers today. Get applications within hours.</p>
-                <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2.5">Post a Job</h3>
+                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3">Hire workers today. Get applications within hours.</p>
+                <div className="bg-green-50 text-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold">
                   100% FREE
                 </div>
               </div>
@@ -144,15 +144,15 @@ const HomePage = () => {
             {/* AI Post Job Tile */}
             <div 
               onClick={() => navigate('/ai-assistant')}
-              className="group transform hover:scale-105 transition-all duration-300 cursor-pointer"
+              className="col-span-2 md:col-span-1 group transform hover:scale-105 transition-all duration-300 cursor-pointer"
             >
-              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Bot className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-2 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Bot className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">AI Job Assistant</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Chat with AI to post jobs or find work. Simple and fast!</p>
-                <div className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg text-sm font-semibold">
+                <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2.5">AI Job Assistant</h3>
+                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3">Chat with AI to post jobs or find work. Simple and fast!</p>
+                <div className="bg-purple-50 text-purple-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold">
                   Try Now - FREE
                 </div>
               </div>
