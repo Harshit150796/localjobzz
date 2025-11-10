@@ -17,6 +17,7 @@ const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const cityDropdownRef = useRef<HTMLDivElement>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   const popularIndianCities = [
     // Major Metros
@@ -227,13 +228,31 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2.5 rounded-lg hover:bg-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
-          >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-          </button>
+          {/* Mobile Search & Menu Buttons */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => {
+                if (!isMenuOpen) {
+                  setIsMenuOpen(true);
+                }
+                setTimeout(() => {
+                  mobileSearchRef.current?.focus();
+                }, 100);
+              }}
+              className="p-2.5 rounded-lg hover:bg-accent min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Search"
+            >
+              <Search className="h-6 w-6" />
+            </button>
+            
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="p-2.5 rounded-lg hover:bg-accent min-w-[44px] min-h-[44px] flex items-center justify-center"
+              aria-label="Menu"
+            >
+              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Menu */}
@@ -277,13 +296,14 @@ const Header = () => {
               </div>
               
               <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search for jobs..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background"
-                />
+              <input
+                ref={mobileSearchRef}
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search for jobs..."
+                className="w-full pl-10 pr-4 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent bg-background"
+              />
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </form>
               
