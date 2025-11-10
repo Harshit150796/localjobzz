@@ -11,6 +11,9 @@ interface ListingCardProps {
   timePosted: string;
   image: string;
   featured?: boolean;
+  urgent?: boolean;
+  peopleViewing?: number;
+  category?: string;
 }
 
 const ListingCard: React.FC<ListingCardProps> = ({ 
@@ -19,7 +22,9 @@ const ListingCard: React.FC<ListingCardProps> = ({
   location, 
   timePosted, 
   image, 
-  featured = false 
+  featured = false,
+  urgent = false,
+  peopleViewing
 }) => {
   const { currencySymbol } = useLocation();
   return (
@@ -32,34 +37,56 @@ const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         </div>
       )}
+      {urgent && !featured && (
+        <div className="absolute top-2 left-2 z-10">
+          <Badge className="bg-red-500 text-white text-xs font-bold px-2 py-1">
+            URGENT
+          </Badge>
+        </div>
+      )}
       
       <div className="relative overflow-hidden">
         <img 
           src={`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`}
           alt={title}
-          className="w-full h-40 sm:h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
         />
-        <button className="absolute top-3 right-3 p-2 bg-white/90 rounded-full hover:bg-white transition-colors">
-          <Heart className="h-4 w-4 text-gray-600 hover:text-red-500" />
+        <button className="absolute top-2 right-2 p-1.5 bg-white/90 rounded-full hover:bg-white transition-colors">
+          <Heart className="h-3 w-3 text-gray-600 hover:text-red-500" />
         </button>
+        {/* Apply Now button on hover */}
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+          <button className="bg-white text-gray-900 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 transition-colors text-sm">
+            Apply Now
+          </button>
+        </div>
       </div>
       
-      <div className="p-3 sm:p-4">
-        <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+      <div className="p-2 sm:p-3">
+        <h3 className="font-bold text-sm sm:text-base text-gray-900 mb-1.5 line-clamp-2 group-hover:text-orange-600 transition-colors">
           {title}
         </h3>
         
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xl sm:text-2xl font-bold text-green-600">{currencySymbol}{price}</span>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-lg sm:text-xl font-bold text-green-600">{currencySymbol}{price}</span>
+          {peopleViewing && (
+            <span className="text-xs text-orange-600 font-medium flex items-center gap-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+              </span>
+              {peopleViewing} viewing
+            </span>
+          )}
         </div>
         
-        <div className="flex items-center text-gray-500 text-xs sm:text-sm space-x-3 sm:space-x-4">
+        <div className="flex items-center text-gray-500 text-xs space-x-2 sm:space-x-3">
           <div className="flex items-center space-x-1">
-            <MapPin className="h-3 w-3" />
-            <span>{location}</span>
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <span className="truncate">{location}</span>
           </div>
           <div className="flex items-center space-x-1">
-            <Clock className="h-3 w-3" />
+            <Clock className="h-3 w-3 flex-shrink-0" />
             <span>{timePosted}</span>
           </div>
         </div>

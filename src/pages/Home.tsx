@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Briefcase, 
   MapPin, 
@@ -8,7 +8,8 @@ import {
   TrendingUp,
   Shield,
   Plus,
-  Bot
+  Bot,
+  Flame
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -21,22 +22,29 @@ import { useJobCategories } from '../hooks/useJobCategories';
 const HomePage = () => {
   const { categories: jobCategories } = useJobCategories();
   const navigate = useNavigate();
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showAllJobs, setShowAllJobs] = useState(false);
 
-  const todaysJobs = [
+  const allJobs = [
     {
       title: 'House Cleaning - Urgent Need',
       price: '800/day',
       location: 'Bandra, Mumbai',
       timePosted: '30 min ago',
       image: 'photo-1581578731548-c64695cc6952',
-      featured: true
+      featured: true,
+      category: 'household',
+      urgent: true,
+      peopleViewing: 5
     },
     {
       title: 'Food Delivery Partner',
       price: '600-1000/day',
       location: 'Koramangala, Bangalore',
       timePosted: '1h ago',
-      image: 'photo-1556909114-f6e7ad7d3136'
+      image: 'photo-1556909114-f6e7ad7d3136',
+      category: 'delivery',
+      peopleViewing: 3
     },
     {
       title: 'Construction Helper Required',
@@ -44,15 +52,106 @@ const HomePage = () => {
       location: 'Gurgaon, Delhi',
       timePosted: '1h ago',
       image: 'photo-1504307651254-35680f356dfd',
-      featured: true
+      featured: true,
+      category: 'construction',
+      urgent: true,
+      peopleViewing: 7
     },
     {
       title: 'Shop Assistant - Part Time',
       price: '500/day',
       location: 'Hitech City, Hyderabad',
       timePosted: '2h ago',
-      image: 'photo-1556742049-0cfed4f6a45d'
+      image: 'photo-1556742049-0cfed4f6a45d',
+      category: 'retail'
+    },
+    {
+      title: 'Cook for Home - Daily',
+      price: '900/day',
+      location: 'Juhu, Mumbai',
+      timePosted: '1h ago',
+      image: 'photo-1556909114-7b25c41b6c7f',
+      category: 'household',
+      peopleViewing: 4
+    },
+    {
+      title: 'Bike Delivery - Swiggy',
+      price: '750/day',
+      location: 'Indiranagar, Bangalore',
+      timePosted: '2h ago',
+      image: 'photo-1556909114-f6e7ad7d3136',
+      featured: true,
+      category: 'delivery',
+      urgent: true,
+      peopleViewing: 6
+    },
+    {
+      title: 'Plumber Helper Needed',
+      price: '650/day',
+      location: 'Andheri, Mumbai',
+      timePosted: '3h ago',
+      image: 'photo-1504307651254-35680f356dfd',
+      category: 'construction'
+    },
+    {
+      title: 'Supermarket Cashier',
+      price: '550/day',
+      location: 'Kondapur, Hyderabad',
+      timePosted: '2h ago',
+      image: 'photo-1556742049-0cfed4f6a45d',
+      category: 'retail',
+      peopleViewing: 2
+    },
+    {
+      title: 'Nanny for 2 Kids',
+      price: '1000/day',
+      location: 'Whitefield, Bangalore',
+      timePosted: '1h ago',
+      image: 'photo-1581578731548-c64695cc6952',
+      category: 'household',
+      urgent: true,
+      peopleViewing: 8
+    },
+    {
+      title: 'Amazon Delivery Partner',
+      price: '850/day',
+      location: 'Malad, Mumbai',
+      timePosted: '30 min ago',
+      image: 'photo-1556909114-f6e7ad7d3136',
+      featured: true,
+      category: 'delivery',
+      peopleViewing: 4
+    },
+    {
+      title: 'Electrician Assistant',
+      price: '700/day',
+      location: 'Powai, Mumbai',
+      timePosted: '2h ago',
+      image: 'photo-1504307651254-35680f356dfd',
+      category: 'construction'
+    },
+    {
+      title: 'Retail Sales Associate',
+      price: '600/day',
+      location: 'Nungambakkam, Chennai',
+      timePosted: '3h ago',
+      image: 'photo-1556742049-0cfed4f6a45d',
+      category: 'retail'
     }
+  ];
+
+  const todaysJobs = selectedCategory === 'all' 
+    ? allJobs 
+    : allJobs.filter(job => job.category === selectedCategory);
+
+  const displayedJobs = showAllJobs ? todaysJobs : todaysJobs.slice(0, 12);
+
+  const categories = [
+    { id: 'all', label: 'All Jobs' },
+    { id: 'household', label: 'Household' },
+    { id: 'delivery', label: 'Delivery' },
+    { id: 'construction', label: 'Construction' },
+    { id: 'retail', label: 'Retail' }
   ];
 
   const stats = [
@@ -67,7 +166,7 @@ const HomePage = () => {
   const websiteSchema = createWebsiteSchema();
   
   // Job postings structured data
-  const jobPostingsSchema = todaysJobs.map(job => createJobPostingSchema({
+  const jobPostingsSchema = allJobs.slice(0, 4).map(job => createJobPostingSchema({
     title: job.title,
     location: job.location,
     salary: job.price,
@@ -110,15 +209,15 @@ const HomePage = () => {
             {/* Look for Job Tile */}
             <Link 
               to="/jobs/all"
-              className="group transform hover:scale-105 transition-all duration-300"
+              className="group transform hover:scale-105 transition-all duration-300 h-full"
             >
-              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300 h-full flex flex-col">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-2 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
                 <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2.5">Look for a Job</h3>
-                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
-                <div className="bg-blue-50 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold">
+                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3 flex-grow">Browse 1,200+ jobs. Find work that starts today.</p>
+                <div className="bg-blue-50 text-blue-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold text-center">
                   3 Easy Steps
                 </div>
               </div>
@@ -127,15 +226,15 @@ const HomePage = () => {
             {/* Post Job Tile */}
             <Link 
               to="/post"
-              className="group transform hover:scale-105 transition-all duration-300"
+              className="group transform hover:scale-105 transition-all duration-300 h-full"
             >
-              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+              <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300 h-full flex flex-col">
                 <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-2 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Plus className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
                 <h3 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 mb-1 sm:mb-2.5">Post a Job</h3>
-                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3">Hire workers today. Get applications within hours.</p>
-                <div className="bg-green-50 text-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold">
+                <p className="text-xs sm:text-base text-gray-600 mb-2 sm:mb-3 flex-grow">Hire workers today. Get calls within hours.</p>
+                <div className="bg-green-50 text-green-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold text-center">
                   100% FREE
                 </div>
               </div>
@@ -210,7 +309,15 @@ const HomePage = () => {
       {/* Today's Jobs */}
       <section className="py-12 md:py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
+          {/* Live Counter */}
+          <div className="flex items-center justify-center gap-2 mb-4 animate-pulse">
+            <Flame className="h-5 w-5 text-orange-500" />
+            <span className="text-orange-600 font-semibold text-sm">
+              18 new jobs posted in last hour
+            </span>
+          </div>
+
+          <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-3 sm:mb-4 leading-tight">
               Jobs Posted Today
             </h2>
@@ -218,17 +325,42 @@ const HomePage = () => {
               Fresh opportunities updated every hour
             </p>
           </div>
+
+          {/* Category Filters */}
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedCategory === cat.id
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {todaysJobs.map((job, index) => (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            {displayedJobs.map((job, index) => (
               <ListingCard key={index} {...job} />
             ))}
           </div>
           
-          <div className="text-center mt-8">
+          <div className="text-center mt-8 space-y-4">
+            {!showAllJobs && todaysJobs.length > 12 && (
+              <button 
+                onClick={() => setShowAllJobs(true)}
+                className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 mr-4"
+              >
+                Load 12 More Jobs
+              </button>
+            )}
             <Link 
               to="/jobs/all"
-              className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-105"
+              className="inline-block bg-gradient-to-r from-orange-500 to-red-500 text-white px-8 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-105"
             >
               View All Today's Jobs
             </Link>
