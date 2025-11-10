@@ -94,12 +94,12 @@ const HomePage = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
+          <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
             <span className="inline-block relative">
               Find Work Today
               <span className="absolute bottom-0 left-0 w-full h-1 bg-yellow-300 transform -rotate-1"></span>
             </span>
-            <span className="block text-yellow-300 mt-2">Get Paid Today</span>
+            <span className="block text-yellow-300 mt-1">Get Paid Today</span>
           </h1>
           <p className="text-lg sm:text-xl text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto">
             The fastest job platform for daily work. Find work in 3 clicks, post jobs in 2 steps.
@@ -112,12 +112,12 @@ const HomePage = () => {
               to="/jobs/all"
               className="group transform hover:scale-105 transition-all duration-300"
             >
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Briefcase className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Briefcase className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">Look for a Job</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">Look for a Job</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Browse 1,200+ jobs posted today. Find work that starts immediately.</p>
                 <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-semibold">
                   3 Easy Steps
                 </div>
@@ -129,12 +129,12 @@ const HomePage = () => {
               to="/post"
               className="group transform hover:scale-105 transition-all duration-300"
             >
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Plus className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Plus className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">Post a Job</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Hire workers today. Get applications within hours.</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">Post a Job</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Hire workers today. Get applications within hours.</p>
                 <div className="bg-green-50 text-green-700 px-4 py-2 rounded-lg text-sm font-semibold">
                   100% FREE
                 </div>
@@ -146,12 +146,12 @@ const HomePage = () => {
               onClick={() => navigate('/ai-assistant')}
               className="group transform hover:scale-105 transition-all duration-300 cursor-pointer"
             >
-              <div className="bg-white rounded-2xl p-6 sm:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
-                <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-16 h-16 sm:w-20 sm:h-20 flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300">
-                  <Bot className="h-8 w-8 sm:h-10 sm:w-10 text-white" />
+              <div className="bg-white rounded-2xl p-5 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300">
+                <div className="bg-gradient-to-br from-purple-500 to-purple-700 rounded-full w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 flex items-center justify-center mx-auto mb-3 sm:mb-4 md:mb-6 group-hover:scale-110 transition-transform duration-300">
+                  <Bot className="h-7 w-7 sm:h-8 sm:w-8 md:h-10 md:w-10 text-white" />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-800 mb-2 sm:mb-3">AI Job Assistant</h3>
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">Chat with AI to post jobs or find work. Simple and fast!</p>
+                <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-2 sm:mb-2.5">AI Job Assistant</h3>
+                <p className="text-sm sm:text-base text-gray-600 mb-2.5 sm:mb-3">Chat with AI to post jobs or find work. Simple and fast!</p>
                 <div className="bg-purple-50 text-purple-700 px-4 py-2 rounded-lg text-sm font-semibold">
                   Try Now - FREE
                 </div>
