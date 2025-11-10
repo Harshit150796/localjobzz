@@ -31,20 +31,11 @@ const HomePage = () => {
       price: '800/day',
       location: 'Bandra, Mumbai',
       timePosted: '30 min ago',
-      image: 'photo-1581578731548-c64695cc6952',
+      image: 'photo-1628177142898-93e36e4e3a50',
       featured: true,
       category: 'household',
       urgent: true,
       peopleViewing: 5
-    },
-    {
-      title: 'Food Delivery Partner',
-      price: '600-1000/day',
-      location: 'Koramangala, Bangalore',
-      timePosted: '1h ago',
-      image: 'photo-1556909114-f6e7ad7d3136',
-      category: 'delivery',
-      peopleViewing: 3
     },
     {
       title: 'Construction Helper Required',
@@ -70,27 +61,25 @@ const HomePage = () => {
       price: '900/day',
       location: 'Juhu, Mumbai',
       timePosted: '1h ago',
-      image: 'photo-1556909114-7b25c41b6c7f',
+      image: 'photo-1556910103-1c02745aae4d',
       category: 'household',
       peopleViewing: 4
     },
     {
-      title: 'Bike Delivery - Swiggy',
-      price: '750/day',
-      location: 'Indiranagar, Bangalore',
-      timePosted: '2h ago',
-      image: 'photo-1556909114-f6e7ad7d3136',
-      featured: true,
-      category: 'delivery',
-      urgent: true,
-      peopleViewing: 6
+      title: 'Driver for Family - Private',
+      price: '850/day',
+      location: 'Banjara Hills, Hyderabad',
+      timePosted: '45 min ago',
+      image: 'photo-1449965408869-eaa3f722e40d',
+      category: 'household',
+      peopleViewing: 3
     },
     {
       title: 'Plumber Helper Needed',
       price: '650/day',
       location: 'Andheri, Mumbai',
       timePosted: '3h ago',
-      image: 'photo-1504307651254-35680f356dfd',
+      image: 'photo-1607472586893-edb57bdc0e39',
       category: 'construction'
     },
     {
@@ -107,28 +96,37 @@ const HomePage = () => {
       price: '1000/day',
       location: 'Whitefield, Bangalore',
       timePosted: '1h ago',
-      image: 'photo-1581578731548-c64695cc6952',
+      image: 'photo-1587654780291-39c9404d746b',
       category: 'household',
       urgent: true,
       peopleViewing: 8
     },
     {
-      title: 'Amazon Delivery Partner',
-      price: '850/day',
-      location: 'Malad, Mumbai',
-      timePosted: '30 min ago',
-      image: 'photo-1556909114-f6e7ad7d3136',
-      featured: true,
-      category: 'delivery',
-      peopleViewing: 4
+      title: 'Warehouse Helper',
+      price: '600/day',
+      location: 'Salt Lake, Kolkata',
+      timePosted: '2h ago',
+      image: 'photo-1586528116311-ad8dd3c8310d',
+      category: 'construction',
+      peopleViewing: 3
     },
     {
       title: 'Electrician Assistant',
       price: '700/day',
       location: 'Powai, Mumbai',
       timePosted: '2h ago',
-      image: 'photo-1504307651254-35680f356dfd',
+      image: 'photo-1621905251189-08b45d6a269e',
       category: 'construction'
+    },
+    {
+      title: 'Restaurant Waiter',
+      price: '650/day',
+      location: 'Connaught Place, Delhi',
+      timePosted: '1h ago',
+      image: 'photo-1414235077428-338989a2e8c0',
+      featured: true,
+      category: 'retail',
+      peopleViewing: 5
     },
     {
       title: 'Retail Sales Associate',
@@ -149,7 +147,6 @@ const HomePage = () => {
   const categories = [
     { id: 'all', label: 'All Jobs' },
     { id: 'household', label: 'Household' },
-    { id: 'delivery', label: 'Delivery' },
     { id: 'construction', label: 'Construction' },
     { id: 'retail', label: 'Retail' }
   ];
