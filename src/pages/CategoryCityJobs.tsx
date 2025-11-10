@@ -16,6 +16,7 @@ const CategoryCityJobs = () => {
   const jobsData = useMemo(() => {
     const baseJobs = [
       {
+        jobId: `mock-${category}-${city}-1`,
         title: `${categoryName} Professional Needed`,
         price: '800/day',
         location: cityName,
@@ -24,6 +25,7 @@ const CategoryCityJobs = () => {
         featured: true
       },
       {
+        jobId: `mock-${category}-${city}-2`,
         title: `Experienced ${categoryName} Worker`,
         price: '700-900/day',
         location: cityName, 
@@ -31,6 +33,7 @@ const CategoryCityJobs = () => {
         image: 'photo-1556909114-f6e7ad7d3136'
       },
       {
+        jobId: `mock-${category}-${city}-3`,
         title: `${categoryName} Assistant Required`,
         price: '600/day',
         location: cityName,
@@ -38,6 +41,7 @@ const CategoryCityJobs = () => {
         image: 'photo-1504307651254-35680f356dfd'
       },
       {
+        jobId: `mock-${category}-${city}-4`,
         title: `Part-time ${categoryName} Work`,
         price: '500/day',
         location: cityName,
@@ -46,6 +50,7 @@ const CategoryCityJobs = () => {
         featured: true
       },
       {
+        jobId: `mock-${category}-${city}-5`,
         title: `Urgent ${categoryName} Position`,
         price: '900/day',
         location: cityName,

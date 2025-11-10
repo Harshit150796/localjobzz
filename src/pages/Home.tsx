@@ -22,6 +22,7 @@ import { createOrganizationSchema, createWebsiteSchema, createJobPostingSchema, 
 import { useJobCategories } from '../hooks/useJobCategories';
 import { useJobs } from '../contexts/JobContext';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { timeAgo } from '../utils/timeHelpers';
 
 const HomePage = () => {
   const { categories: jobCategories } = useJobCategories();
@@ -272,11 +273,12 @@ const HomePage = () => {
             }>
               {displayedJobs.map((job) => (
                 <ListingCard 
-                  key={job.id} 
+                  key={job.id}
+                  jobId={job.id}
                   title={job.title}
                   price={job.daily_salary}
                   location={job.location}
-                  timePosted={new Date(job.created_at).toLocaleString()}
+                  timePosted={timeAgo(job.created_at)}
                   images={job.images || []}
                   featured={job.featured}
                   urgent={job.urgency === 'urgent' || job.urgency === 'immediate'}

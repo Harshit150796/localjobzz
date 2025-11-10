@@ -30,6 +30,7 @@ import CategoryCityJobs from "./pages/CategoryCityJobs";
 import CityJobsLanding from "./pages/CityJobsLanding";
 import AIAssistant from "./pages/AIAssistant";
 import VerifyOTP from "./pages/VerifyOTP";
+import JobDetail from "./pages/JobDetail";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ const App = () => (
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/post" element={<PostAd />} />
+        <Route path="/job/:jobId" element={<JobDetail />} />
         <Route path="/category/:categoryName" element={<Category />} />
         <Route path="/about" element={<About />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
