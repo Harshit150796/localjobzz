@@ -94,9 +94,12 @@ const HomePage = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight">
-            Find Work Today
-            <span className="block text-yellow-300">Get Paid Today</span>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white mb-4 sm:mb-6 leading-tight drop-shadow-lg">
+            <span className="inline-block relative">
+              Find Work Today
+              <span className="absolute bottom-0 left-0 w-full h-1 bg-yellow-300 transform -rotate-1"></span>
+            </span>
+            <span className="block text-yellow-300 mt-2">Get Paid Today</span>
           </h1>
           <p className="text-lg sm:text-xl text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto">
             The fastest job platform for daily work. Find work in 3 clicks, post jobs in 2 steps.
@@ -182,21 +185,24 @@ const HomePage = () => {
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            {jobCategories.map((category, index) => (
-              <Link key={index} to={`/category/${category.id}`} className="group">
-                <div className={`relative overflow-hidden rounded-xl ${category.gradient} p-4 sm:p-6 transition-all duration-300 transform group-hover:scale-105 group-hover:shadow-lg`}>
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <Briefcase className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                    <span className="text-white/80 text-xs sm:text-sm font-medium">{category.count}</span>
+            {jobCategories.map((category, index) => {
+              const CategoryIcon = category.icon;
+              return (
+                <Link key={index} to={`/category/${category.id}`} className="group">
+                  <div className={`relative overflow-hidden rounded-xl ${category.gradient} p-4 sm:p-6 transition-all duration-300 transform group-hover:scale-105 group-hover:shadow-lg`}>
+                    <div className="flex items-center justify-between mb-3 sm:mb-4">
+                      <CategoryIcon className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
+                      <span className="text-white/80 text-xs sm:text-sm font-medium">{category.count}</span>
+                    </div>
+                    <h3 className="text-white text-lg sm:text-xl font-bold mb-1">{category.title}</h3>
+                    <p className="text-white/80 text-xs sm:text-sm">{category.subtitle}</p>
+                    
+                    {/* Decorative element */}
+                    <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10"></div>
                   </div>
-                  <h3 className="text-white text-lg sm:text-xl font-bold mb-1">{category.title}</h3>
-                  <p className="text-white/80 text-xs sm:text-sm">{category.subtitle}</p>
-                  
-                  {/* Decorative element */}
-                  <div className="absolute -right-4 -bottom-4 w-20 h-20 rounded-full bg-white/10"></div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         </div>
       </section>

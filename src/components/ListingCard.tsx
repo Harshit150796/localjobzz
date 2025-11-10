@@ -1,7 +1,8 @@
 
 import React from 'react';
-import { MapPin, Clock, Heart } from 'lucide-react';
+import { MapPin, Clock, Heart, Star } from 'lucide-react';
 import { useLocation } from '../contexts/LocationContext';
+import { Badge } from './ui/badge';
 
 interface ListingCardProps {
   title: string;
@@ -22,10 +23,13 @@ const ListingCard: React.FC<ListingCardProps> = ({
 }) => {
   const { currencySymbol } = useLocation();
   return (
-    <div className={`bg-white rounded-lg shadow-sm border ${featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group`}>
+    <div className={`bg-white rounded-lg shadow-sm border ${featured ? 'border-orange-200 ring-2 ring-orange-200' : 'border-gray-200'} hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group relative overflow-hidden`}>
       {featured && (
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2 py-1 rounded-t-lg">
-          Featured
+        <div className="absolute top-0 right-0 z-10">
+          <div className="bg-gradient-to-br from-orange-500 to-red-500 text-white text-xs font-bold px-3 py-1.5 flex items-center gap-1 shadow-md" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%)' }}>
+            <Star className="h-3 w-3 fill-white" />
+            Featured
+          </div>
         </div>
       )}
       
@@ -41,7 +45,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
       </div>
       
       <div className="p-3 sm:p-4">
-        <h3 className="font-semibold text-sm sm:text-base text-gray-800 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
+        <h3 className="font-bold text-base sm:text-lg text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
           {title}
         </h3>
         
