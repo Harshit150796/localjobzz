@@ -191,26 +191,7 @@ const Header = () => {
 
           {/* Navigation & Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Desktop Navigation Menu */}
-            <nav className="flex items-center space-x-6">
-              <Link to="/about" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                About
-              </Link>
-              <Link to="/how-it-works" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                How It Works
-              </Link>
-              <Link to="/pricing" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                Pricing
-              </Link>
-              <Link to="/help" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                Help
-              </Link>
-              <Link to="/contact" className="text-sm font-medium text-foreground/80 hover:text-foreground transition-colors">
-                Contact
-              </Link>
-            </nav>
-
-            <Link 
+            <Link
               to="/ai-assistant" 
               className="flex items-center space-x-1.5 text-foreground/80 hover:text-foreground transition-colors"
             >
@@ -326,45 +307,6 @@ const Header = () => {
                 <Search className="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" />
               </form>
 
-              {/* Mobile Navigation Links */}
-              <div className="border-t border-border pt-3 space-y-2">
-                <Link 
-                  to="/about"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                >
-                  About Us
-                </Link>
-                <Link 
-                  to="/how-it-works"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                >
-                  How It Works
-                </Link>
-                <Link 
-                  to="/pricing"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                >
-                  Pricing
-                </Link>
-                <Link 
-                  to="/help"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                >
-                  Help Center
-                </Link>
-                <Link 
-                  to="/contact"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="block px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                >
-                  Contact
-                </Link>
-              </div>
-              
               {/* AI Assistant Link - Mobile */}
               <div className="border-t border-border pt-3">
                 <Link 
