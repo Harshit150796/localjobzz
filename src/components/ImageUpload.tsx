@@ -13,7 +13,7 @@ interface ImageUploadProps {
 const ImageUpload: React.FC<ImageUploadProps> = ({ 
   images, 
   onImagesChange, 
-  maxImages = 5 
+  maxImages = 3 
 }) => {
   const { user } = useAuth();
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
@@ -150,35 +150,40 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const uploadedCount = images.filter(img => img).length;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{uploadedCount} of {maxImages} photos</span>
+    <div className="space-y-4">
+      <div className="flex items-center justify-center gap-3 text-sm">
+        <span className="text-gray-600 font-medium">{uploadedCount} of {maxImages} photos</span>
         {uploadedCount > 0 && (
-          <span className="text-green-600">✓ Images added</span>
+          <span className="text-green-600 flex items-center gap-1">
+            <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
+            </svg>
+            Added
+          </span>
         )}
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+      <div className="flex justify-center items-center gap-3 sm:gap-5">
         {slots.map((index) => {
           const hasImage = images[index];
           const isUploading = uploadingIndex === index;
           
           return (
-            <div key={index} className="relative aspect-square">
+            <div key={index} className="relative w-[90px] h-[90px] sm:w-[120px] sm:h-[120px]">
               {hasImage ? (
                 // Image preview with remove button
                 <div className="relative group h-full w-full">
                   <img 
                     src={hasImage} 
                     alt={`Upload ${index + 1}`}
-                    className="h-full w-full object-cover rounded-lg border-2 border-border"
+                    className="h-full w-full object-cover rounded-full border-3 border-white shadow-lg ring-2 ring-gray-200"
                   />
                   <button
                     type="button"
                     onClick={() => handleRemove(index)}
-                    className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-md hover:bg-destructive/90"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1.5 shadow-lg hover:bg-red-600 transition-all duration-200 hover:scale-110 z-10"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               ) : (
@@ -188,9 +193,9 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   onDragLeave={handleDrag}
                   onDragOver={handleDrag}
                   onDrop={(e) => handleDrop(e, index)}
-                  className={`h-full w-full border-2 border-dashed rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-accent/50 transition-colors ${
-                    dragActive ? 'border-primary bg-accent' : 'border-border'
-                  } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  className={`h-full w-full border-2 border-dashed rounded-full flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-accent/50 transition-all duration-200 ${
+                    dragActive ? 'border-primary bg-accent scale-105' : 'border-gray-300'
+                  } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''} ${index === 0 && uploadedCount === 0 ? 'animate-pulse' : ''}`}
                   onClick={() => !isUploading && fileInputRef.current?.click()}
                 >
                   <input
@@ -201,20 +206,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                     className="hidden"
                   />
                   {isUploading ? (
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                      <span className="text-xs text-muted-foreground">Uploading...</span>
+                    <div className="flex flex-col items-center gap-1">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     </div>
                   ) : (
                     <>
-                      {index === 0 ? (
-                        <ImageIcon className="h-8 w-8 text-muted-foreground mb-1" />
-                      ) : (
-                        <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                      <ImageIcon className="h-6 w-6 sm:h-8 sm:h-8 text-gray-400 mb-1" />
+                      {index === 0 && uploadedCount === 0 && (
+                        <span className="text-[10px] text-gray-500 text-center">Add</span>
                       )}
-                      <span className="text-xs text-muted-foreground text-center px-2">
-                        {index === 0 ? 'Add Photo' : '+'}
-                      </span>
                     </>
                   )}
                 </div>
@@ -224,8 +224,8 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         })}
       </div>
       
-      <p className="text-xs text-muted-foreground">
-        Supported formats: JPG, PNG, WEBP (max 5MB each)
+      <p className="text-xs text-gray-500 text-center">
+        JPG, PNG or WEBP (max 5MB each)
       </p>
     </div>
   );

@@ -199,10 +199,10 @@ const PostAd = () => {
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Workplace Photos - Moved to Top */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Workplace Photos (Optional)
-                <span className="text-gray-500 font-normal ml-2">
-                  Up to 5 images to attract more views
+              <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                📸 Workplace Photos
+                <span className="text-gray-500 font-normal block text-xs mt-1">
+                  Add up to 3 images to attract more responses
                 </span>
               </label>
               <ImageUpload
@@ -211,11 +211,11 @@ const PostAd = () => {
                   setUploadedImages(images);
                   setIsUploadingImages(false);
                 }}
-                maxImages={5}
+                maxImages={3}
               />
-              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+              <p className="text-xs text-green-600 mt-3 flex items-center justify-center gap-1.5">
                 <span>💡</span>
-                <span>Tip: Add photos of the workplace, tools needed, or work examples to get 3x more responses!</span>
+                <span>Jobs with photos get 3x more responses!</span>
               </p>
             </div>
 
