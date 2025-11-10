@@ -9,7 +9,7 @@ interface ListingCardProps {
   price: string;
   location: string;
   timePosted: string;
-  image: string;
+  image?: string;
   featured?: boolean;
   urgent?: boolean;
   peopleViewing?: number;
@@ -32,7 +32,11 @@ const ListingCard: React.FC<ListingCardProps> = ({
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   
   // Use uploaded images if available, otherwise fallback to placeholder
-  const displayImages = images && images.length > 0 ? images : [`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`];
+  const displayImages = images && images.length > 0 
+    ? images 
+    : image 
+      ? [`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`]
+      : ['https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200'];
   const currentImage = displayImages[currentImageIndex];
   return (
     <div className={`bg-white rounded-lg shadow-sm border ${featured ? 'border-orange-200 ring-2 ring-orange-200' : 'border-gray-200'} hover:shadow-md transition-all duration-200 transform hover:-translate-y-1 group relative overflow-hidden`}>

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Briefcase, 
   MapPin, 
@@ -9,7 +9,9 @@ import {
   Shield,
   Plus,
   Bot,
-  Flame
+  Flame,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
@@ -18,131 +20,33 @@ import ListingCard from '../components/ListingCard';
 import SEOHead from '../components/SEOHead';
 import { createOrganizationSchema, createWebsiteSchema, createJobPostingSchema, createSiteNavigationSchema } from '../components/StructuredData';
 import { useJobCategories } from '../hooks/useJobCategories';
+import { useJobs } from '../contexts/JobContext';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const HomePage = () => {
   const { categories: jobCategories } = useJobCategories();
+  const { jobs, isLoading } = useJobs();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showAllJobs, setShowAllJobs] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  const allJobs = [
-    {
-      title: 'House Cleaning - Urgent Need',
-      price: '800/day',
-      location: 'Bandra, Mumbai',
-      timePosted: '30 min ago',
-      image: 'photo-1628177142898-93e36e4e3a50',
-      featured: true,
-      category: 'household',
-      urgent: true,
-      peopleViewing: 5
-    },
-    {
-      title: 'Construction Helper Required',
-      price: '700/day',
-      location: 'Gurgaon, Delhi',
-      timePosted: '1h ago',
-      image: 'photo-1504307651254-35680f356dfd',
-      featured: true,
-      category: 'construction',
-      urgent: true,
-      peopleViewing: 7
-    },
-    {
-      title: 'Shop Assistant - Part Time',
-      price: '500/day',
-      location: 'Hitech City, Hyderabad',
-      timePosted: '2h ago',
-      image: 'photo-1556742049-0cfed4f6a45d',
-      category: 'retail'
-    },
-    {
-      title: 'Cook for Home - Daily',
-      price: '900/day',
-      location: 'Juhu, Mumbai',
-      timePosted: '1h ago',
-      image: 'photo-1556910103-1c02745aae4d',
-      category: 'household',
-      peopleViewing: 4
-    },
-    {
-      title: 'Driver for Family - Private',
-      price: '850/day',
-      location: 'Banjara Hills, Hyderabad',
-      timePosted: '45 min ago',
-      image: 'photo-1449965408869-eaa3f722e40d',
-      category: 'household',
-      peopleViewing: 3
-    },
-    {
-      title: 'Plumber Helper Needed',
-      price: '650/day',
-      location: 'Andheri, Mumbai',
-      timePosted: '3h ago',
-      image: 'photo-1607472586893-edb57bdc0e39',
-      category: 'construction'
-    },
-    {
-      title: 'Supermarket Cashier',
-      price: '550/day',
-      location: 'Kondapur, Hyderabad',
-      timePosted: '2h ago',
-      image: 'photo-1556742049-0cfed4f6a45d',
-      category: 'retail',
-      peopleViewing: 2
-    },
-    {
-      title: 'Nanny for 2 Kids',
-      price: '1000/day',
-      location: 'Whitefield, Bangalore',
-      timePosted: '1h ago',
-      image: 'photo-1587654780291-39c9404d746b',
-      category: 'household',
-      urgent: true,
-      peopleViewing: 8
-    },
-    {
-      title: 'Warehouse Helper',
-      price: '600/day',
-      location: 'Salt Lake, Kolkata',
-      timePosted: '2h ago',
-      image: 'photo-1586528116311-ad8dd3c8310d',
-      category: 'construction',
-      peopleViewing: 3
-    },
-    {
-      title: 'Electrician Assistant',
-      price: '700/day',
-      location: 'Powai, Mumbai',
-      timePosted: '2h ago',
-      image: 'photo-1621905251189-08b45d6a269e',
-      category: 'construction'
-    },
-    {
-      title: 'Restaurant Waiter',
-      price: '650/day',
-      location: 'Connaught Place, Delhi',
-      timePosted: '1h ago',
-      image: 'photo-1414235077428-338989a2e8c0',
-      featured: true,
-      category: 'retail',
-      peopleViewing: 5
-    },
-    {
-      title: 'Retail Sales Associate',
-      price: '600/day',
-      location: 'Nungambakkam, Chennai',
-      timePosted: '3h ago',
-      image: 'photo-1556742049-0cfed4f6a45d',
-      category: 'retail'
+  // Sort jobs by created_at (newest first)
+  const sortedJobs = useMemo(() => {
+    return [...jobs].sort((a, b) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [jobs]);
+
+  // Filter by category
+  const filteredJobs = useMemo(() => {
+    if (selectedCategory === 'all') {
+      return sortedJobs;
     }
-  ];
+    return sortedJobs.filter(job => job.category === selectedCategory);
+  }, [sortedJobs, selectedCategory]);
 
-  const todaysJobs = selectedCategory === 'all' 
-    ? allJobs 
-    : allJobs.filter(job => job.category === selectedCategory);
-
-  const displayedJobs = showAllJobs ? todaysJobs : todaysJobs.slice(0, 12);
+  const displayedJobs = showAllJobs ? filteredJobs : filteredJobs.slice(0, 12);
 
   const categories = [
     { id: 'all', label: 'All Jobs' },
@@ -163,11 +67,11 @@ const HomePage = () => {
   const websiteSchema = createWebsiteSchema();
   
   // Job postings structured data
-  const jobPostingsSchema = allJobs.slice(0, 4).map(job => createJobPostingSchema({
+  const jobPostingsSchema = sortedJobs.slice(0, 4).map(job => createJobPostingSchema({
     title: job.title,
     location: job.location,
-    salary: job.price,
-    datePosted: new Date().toISOString(),
+    salary: job.daily_salary,
+    datePosted: job.created_at,
     employmentType: 'FULL_TIME'
   }));
 
@@ -323,31 +227,66 @@ const HomePage = () => {
             </p>
           </div>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                  selectedCategory === cat.id
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                {cat.label}
-              </button>
-            ))}
+          {/* Category Filters and View Toggle */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                    selectedCategory === cat.id
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+
+            {/* View Mode Toggle */}
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')}>
+              <ToggleGroupItem value="grid" aria-label="Grid view">
+                <LayoutGrid className="h-4 w-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="list" aria-label="List view">
+                <List className="h-4 w-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
           </div>
           
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            {displayedJobs.map((job, index) => (
-              <ListingCard key={index} {...job} />
-            ))}
-          </div>
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+              <p className="mt-4 text-gray-600">Loading jobs...</p>
+            </div>
+          ) : displayedJobs.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 text-lg">No jobs found. Be the first to post!</p>
+            </div>
+          ) : (
+            <div className={viewMode === 'grid' 
+              ? "grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6" 
+              : "space-y-4"
+            }>
+              {displayedJobs.map((job) => (
+                <ListingCard 
+                  key={job.id} 
+                  title={job.title}
+                  price={job.daily_salary}
+                  location={job.location}
+                  timePosted={new Date(job.created_at).toLocaleString()}
+                  images={job.images || []}
+                  featured={job.featured}
+                  urgent={job.urgency === 'urgent' || job.urgency === 'immediate'}
+                />
+              ))}
+            </div>
+          )}
           
           <div className="text-center mt-8 space-y-4">
-            {!showAllJobs && todaysJobs.length > 12 && (
+            {!showAllJobs && filteredJobs.length > 12 && (
               <button 
                 onClick={() => setShowAllJobs(true)}
                 className="bg-gray-100 text-gray-800 px-6 py-3 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-200 transform hover:scale-105 mr-4"
