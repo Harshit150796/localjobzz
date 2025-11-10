@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User, Phone, Eye, EyeOff } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 // Social provider icons as SVG components
 const GoogleIcon = () => (
@@ -43,8 +41,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     password: ''
   });
 
-  const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, loginWithTwitter } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   // Sync mode with initialMode prop when modal opens or initialMode changes
@@ -93,62 +90,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           toast({ title: "Login failed", description: result.message, variant: "destructive" });
         }
       } else {
-        if (!formData.name || !formData.emailOrPhone) {
-          toast({ title: "Please fill all fields", variant: "destructive" });
-          return;
-        }
-        
-        // Determine if input is email or phone
-        let email = formData.emailOrPhone;
-        let phone: string | undefined;
-        
-        if (isPhone(formData.emailOrPhone)) {
-          // User entered phone - create synthetic email
-          const cleanPhone = formData.emailOrPhone.replace(/\D/g, '');
-          email = `${cleanPhone}@phone.localjobzz`;
-          phone = formData.emailOrPhone;
-        } else if (!isEmail(formData.emailOrPhone)) {
-          toast({ 
-            title: "Invalid input", 
-            description: "Please enter a valid email or phone number",
-            variant: "destructive" 
-          });
-          return;
-        }
-        
-        // Call create-pending-registration edge function
-        const { data, error } = await supabase.functions.invoke('create-pending-registration', {
-          body: { 
-            email,
-            name: formData.name,
-            password: formData.password,
-            phone
-          }
-        });
-
-        if (error || !data?.success) {
-          const errorMsg = data?.error || error?.message || 'Registration failed';
-          toast({ 
-            title: "Registration failed", 
-            description: errorMsg,
-            variant: "destructive" 
-          });
-          return;
-        }
-
-        // Store credentials for OTP verification
-        sessionStorage.setItem('verify_email', email);
-        sessionStorage.setItem('verify_password', formData.password);
-
+        // Registration is temporarily disabled
         toast({ 
-          title: "OTP Sent! 📧", 
-          description: "Check your email for the 6-digit verification code.",
-          duration: 5000
+          title: "Signup Temporarily Unavailable", 
+          description: "Registration is currently disabled. Please try again later.",
+          variant: "destructive" 
         });
-
-        // Close modal and redirect to OTP page
-        onClose();
-        navigate(`/verify-otp?email=${encodeURIComponent(email)}`);
       }
     } finally {
       setIsSubmitting(false);
@@ -162,29 +109,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     }));
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
-    setIsSubmitting(true);
-    try {
-      let result;
-      if (provider === 'google') {
-        result = await loginWithGoogle();
-      } else if (provider === 'facebook') {
-        result = await loginWithFacebook();
-      } else {
-        result = await loginWithTwitter();
-      }
-
-      if (!result.success) {
-        toast({ 
-          title: "Login failed", 
-          description: result.message, 
-          variant: "destructive" 
-        });
-      }
-      // Note: If successful, user will be redirected to OAuth provider
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSocialLogin = async () => {
+    toast({ 
+      title: "Social Login Temporarily Unavailable", 
+      description: "Social login is currently disabled. Please use email/password login.",
+      variant: "destructive" 
+    });
   };
 
   return (
@@ -203,13 +133,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           </button>
         </div>
 
-        {/* Social Login Buttons */}
+        {/* Social Login Buttons - Temporarily Disabled */}
         <div className="p-4 pb-3 space-y-2">
           <button
             type="button"
-            onClick={() => handleSocialLogin('google')}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSocialLogin}
+            disabled={true}
+            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
           >
             <GoogleIcon />
             <span className="font-medium text-gray-700">Continue with Google</span>
@@ -217,9 +147,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           <button
             type="button"
-            onClick={() => handleSocialLogin('facebook')}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSocialLogin}
+            disabled={true}
+            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
           >
             <FacebookIcon />
             <span className="font-medium text-gray-700">Continue with Facebook</span>
@@ -227,9 +157,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
           <button
             type="button"
-            onClick={() => handleSocialLogin('twitter')}
-            disabled={isSubmitting}
-            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={handleSocialLogin}
+            disabled={true}
+            className="w-full flex items-center justify-center gap-3 px-3 py-2.5 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
           >
             <TwitterIcon />
             <span className="font-medium text-gray-700">Continue with X</span>

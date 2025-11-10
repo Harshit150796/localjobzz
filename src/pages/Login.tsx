@@ -29,7 +29,7 @@ const TwitterIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login, loginWithGoogle, loginWithFacebook, loginWithTwitter, user } = useAuth();
+  const { login, user } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -73,28 +73,12 @@ const Login = () => {
     }
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'twitter') => {
-    setIsSubmitting(true);
-    try {
-      let result;
-      if (provider === 'google') {
-        result = await loginWithGoogle();
-      } else if (provider === 'facebook') {
-        result = await loginWithFacebook();
-      } else {
-        result = await loginWithTwitter();
-      }
-
-      if (!result.success) {
-        toast({ 
-          title: "Login failed", 
-          description: result.message, 
-          variant: "destructive" 
-        });
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleSocialLogin = async () => {
+    toast({ 
+      title: "Social Login Temporarily Unavailable", 
+      description: "Social login is currently disabled. Please use email/password login.",
+      variant: "destructive" 
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,13 +115,13 @@ const Login = () => {
 
             {/* Content */}
             <div className="p-8">
-              {/* Social Login Buttons */}
+              {/* Social Login Buttons - Temporarily Disabled */}
               <div className="space-y-3 mb-6">
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('google')}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSocialLogin}
+                  disabled={true}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
                 >
                   <GoogleIcon />
                   <span className="font-medium text-gray-700">Continue with Google</span>
@@ -145,9 +129,9 @@ const Login = () => {
 
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('facebook')}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSocialLogin}
+                  disabled={true}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
                 >
                   <FacebookIcon />
                   <span className="font-medium text-gray-700">Continue with Facebook</span>
@@ -155,9 +139,9 @@ const Login = () => {
 
                 <button
                   type="button"
-                  onClick={() => handleSocialLogin('twitter')}
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleSocialLogin}
+                  disabled={true}
+                  className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg transition-colors opacity-50 cursor-not-allowed"
                 >
                   <TwitterIcon />
                   <span className="font-medium text-gray-700">Continue with X</span>

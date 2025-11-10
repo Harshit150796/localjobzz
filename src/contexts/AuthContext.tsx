@@ -20,19 +20,8 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
-  register: (userData: RegisterData) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>;
-  loginWithGoogle: () => Promise<{ success: boolean; message: string }>;
-  loginWithFacebook: () => Promise<{ success: boolean; message: string }>;
-  loginWithTwitter: () => Promise<{ success: boolean; message: string }>;
-}
-
-interface RegisterData {
-  name: string;
-  email: string;
-  phone?: string;
-  password: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -139,62 +128,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (userData: RegisterData): Promise<{ success: boolean; message: string }> => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: userData.email,
-        password: userData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/verify-email`,
-          data: {
-            name: userData.name,
-            phone: userData.phone
-          }
-        }
-      });
-
-      if (error) {
-        // Handle specific error cases
-        if (error.message.includes('already registered') || error.message.includes('already exists')) {
-          return { success: false, message: 'This email is already registered. Please login instead.' };
-        }
-        if (error.message.includes('timeout') || error.message.includes('timed out')) {
-          return { success: false, message: 'Connection is slow. Please try again or check your internet.' };
-        }
-        return { success: false, message: error.message };
-      }
-
-      // Check if email confirmation is required
-      const confirmationRequired = !data.session; // No session means confirmation is required
-      
-      // Note: Welcome email is now consolidated with verification email
-      // sent by the generate-magic-link function, so no separate call needed
-
-      if (confirmationRequired) {
-        return { 
-          success: true, 
-          message: 'Account created! Please check your email for a verification code.' 
-        };
-      } else {
-        return { 
-          success: true, 
-          message: 'Account created! You can now use your account.' 
-        };
-      }
-    } catch (error) {
-      if (error instanceof Error && (error.message.includes('timeout') || error.message.includes('timed out'))) {
-        return { 
-          success: false, 
-          message: 'Connection is slow. Please try again or check your internet.' 
-        };
-      }
-      return { success: false, message: 'An unexpected error occurred' };
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const logout = async () => {
     await supabase.auth.signOut();
@@ -234,74 +167,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const loginWithGoogle = async (): Promise<{ success: boolean; message: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        return { success: false, message: error.message };
-      }
-
-      return { success: true, message: 'Redirecting to Google...' };
-    } catch (error) {
-      return { success: false, message: 'An unexpected error occurred' };
-    }
-  };
-
-  const loginWithFacebook = async (): Promise<{ success: boolean; message: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        return { success: false, message: error.message };
-      }
-
-      return { success: true, message: 'Redirecting to Facebook...' };
-    } catch (error) {
-      return { success: false, message: 'An unexpected error occurred' };
-    }
-  };
-
-  const loginWithTwitter = async (): Promise<{ success: boolean; message: string }> => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'twitter',
-        options: {
-          redirectTo: `${window.location.origin}/`
-        }
-      });
-
-      if (error) {
-        return { success: false, message: error.message };
-      }
-
-      return { success: true, message: 'Redirecting to Twitter...' };
-    } catch (error) {
-      return { success: false, message: 'An unexpected error occurred' };
-    }
-  };
 
   const value: AuthContextType = {
     user,
     session,
     isLoading,
     login,
-    register,
     logout,
-    updateProfile,
-    loginWithGoogle,
-    loginWithFacebook,
-    loginWithTwitter
+    updateProfile
   };
 
   return (
