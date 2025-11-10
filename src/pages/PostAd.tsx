@@ -4,18 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
-import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import JobSuccessModal from '../components/JobSuccessModal';
-import AuthModal from '../components/auth/AuthModal';
 import ImageUpload from '../components/ImageUpload';
 
 const PostAd = () => {
   const navigate = useNavigate();
   const { addJob } = useJobs();
-  const { session, user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: '',
     jobType: '',
@@ -104,17 +100,6 @@ const PostAd = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if user is authenticated
-    if (!session || !user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to post a job.",
-        variant: "destructive",
-      });
-      setShowAuthModal(true);
-      return;
-    }
-
     // Prevent submission if images are uploading
     if (isUploadingImages) {
       toast({
@@ -208,10 +193,32 @@ const PostAd = () => {
           {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-green-700 p-6">
             <h1 className="text-3xl font-bold text-white">Post a Job</h1>
-            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE!</p>
+            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE! No signup required.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            {/* Workplace Photos - Moved to Top */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Workplace Photos (Optional)
+                <span className="text-gray-500 font-normal ml-2">
+                  Up to 5 images to attract more views
+                </span>
+              </label>
+              <ImageUpload
+                images={uploadedImages}
+                onImagesChange={(images) => {
+                  setUploadedImages(images);
+                  setIsUploadingImages(false);
+                }}
+                maxImages={5}
+              />
+              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                <span>💡</span>
+                <span>Tip: Add photos of the workplace, tools needed, or work examples to get 3x more responses!</span>
+              </p>
+            </div>
+
             {/* Job Title */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -313,28 +320,6 @@ const PostAd = () => {
               />
             </div>
 
-            {/* Job Images */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Workplace Photos (Optional)
-                <span className="text-gray-500 font-normal ml-2">
-                  Up to 5 images to attract more views
-                </span>
-              </label>
-              <ImageUpload
-                images={uploadedImages}
-                onImagesChange={(images) => {
-                  setUploadedImages(images);
-                  setIsUploadingImages(false);
-                }}
-                maxImages={5}
-              />
-              <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                <span>💡</span>
-                <span>Tip: Add photos of the workplace, tools needed, or work examples to get 3x more responses!</span>
-              </p>
-            </div>
-
             {/* Phone Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -404,15 +389,6 @@ const PostAd = () => {
               </div>
             </div>
 
-            {/* Authentication Status */}
-            {!session && (
-              <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-                <p className="text-sm text-amber-800">
-                  ⚠️ You need to be signed in to post a job. Click the button below to sign in.
-                </p>
-              </div>
-            )}
-
             {/* Submit Button */}
             <div className="pt-6 border-t">
               <button
@@ -421,7 +397,7 @@ const PostAd = () => {
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <Briefcase className="h-5 w-5" />
-                <span>{isSubmitting ? 'Posting Job...' : 'Post Job - Completely FREE'}</span>
+                <span>{isSubmitting ? 'Posting Job...' : 'Post Job - No Signup Needed!'}</span>
               </button>
               <p className="text-center text-sm text-gray-500 mt-3">
                 Your job will be visible to thousands of workers immediately
@@ -439,13 +415,6 @@ const PostAd = () => {
         onClose={handleSuccessModalClose}
         onViewJob={handleViewJob}
         onPostAnother={handlePostAnother}
-      />
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-        initialMode="login"
       />
     </div>
   );

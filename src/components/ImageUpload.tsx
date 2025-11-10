@@ -47,7 +47,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       // Create unique filename
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user?.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${user?.id || 'anonymous'}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       // Upload to Supabase Storage
       const { error: uploadError } = await supabase.storage

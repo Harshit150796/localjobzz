@@ -78,16 +78,12 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addJob = async (jobData: JobFormData): Promise<{ success: boolean; message: string }> => {
-    if (!session?.user) {
-      return { success: false, message: 'You must be logged in to post a job' };
-    }
-
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('jobs')
         .insert({
-          user_id: session.user.id,
+          user_id: session?.user?.id || null,
           title: jobData.title,
           job_type: jobData.job_type,
           daily_salary: jobData.daily_salary,
