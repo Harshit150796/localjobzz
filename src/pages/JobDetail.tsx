@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star } from 'lucide-react';
+import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
@@ -22,7 +22,7 @@ const JobDetail = () => {
   const { toast } = useToast();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
-  
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const job = jobs.find(j => j.id === jobId);
 
@@ -101,6 +101,14 @@ const JobDetail = () => {
     } finally {
       setIsCreatingConversation(false);
     }
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % Math.max(displayImages.length, 3));
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + Math.max(displayImages.length, 3)) % Math.max(displayImages.length, 3));
   };
 
 
@@ -191,24 +199,74 @@ const JobDetail = () => {
               </div>
             </div>
 
-            {/* Images */}
-            {displayImages.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Workplace Photos</h2>
-                <div className="flex justify-center items-center gap-3 sm:gap-5">
-                  {displayImages.map((image, index) => (
-                    <div key={index} className="w-[90px] h-[90px] sm:w-[120px] sm:h-[120px]">
-                      <img 
-                        src={image}
-                        alt={`${job.title} - Photo ${index + 1}`}
-                        className="h-full w-full object-cover rounded-full border-[3px] border-white shadow-lg ring-2 ring-gray-200 hover:ring-orange-400 transition-all duration-200 cursor-pointer hover:scale-105"
-                        onClick={() => window.open(image, '_blank')}
-                      />
+            {/* Images Section - Always show */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-bold text-gray-900 mb-4">Workplace Photos</h2>
+              
+              <div className="relative flex justify-center items-center">
+                {/* Main Image Display Area */}
+                <div className="w-[200px] h-[200px] sm:w-[280px] sm:h-[280px]">
+                  {displayImages.length > 0 ? (
+                    // Show actual image
+                    <img 
+                      src={displayImages[currentImageIndex]}
+                      alt={`${job.title} - Photo ${currentImageIndex + 1}`}
+                      className="h-full w-full object-cover rounded-full border-[4px] border-white shadow-xl ring-2 ring-gray-200 cursor-pointer hover:ring-orange-400 transition-all duration-200"
+                      onClick={() => window.open(displayImages[currentImageIndex], '_blank')}
+                    />
+                  ) : (
+                    // Show empty placeholder for current slot
+                    <div className="h-full w-full border-2 border-dashed border-gray-300 rounded-full flex flex-col items-center justify-center bg-gray-50">
+                      <ImageIcon className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mb-2" />
+                      <span className="text-xs text-gray-400">No photo added</span>
                     </div>
-                  ))}
+                  )}
                 </div>
+
+                {/* Navigation Arrows */}
+                {(displayImages.length > 1 || displayImages.length === 0) && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-0 sm:left-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110 z-10"
+                    >
+                      <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-0 sm:right-4 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 sm:p-3 rounded-full transition-all duration-200 hover:scale-110 z-10"
+                    >
+                      <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+                    </button>
+                  </>
+                )}
               </div>
-            )}
+
+              {/* Dot Indicators */}
+              <div className="flex justify-center items-center gap-2 mt-6">
+                {Array.from({ length: displayImages.length > 0 ? displayImages.length : 3 }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentImageIndex(index)}
+                    className={`rounded-full transition-all duration-200 ${
+                      index === currentImageIndex 
+                        ? 'w-8 h-2 bg-orange-500' 
+                        : 'w-2 h-2 bg-gray-300 hover:bg-gray-400'
+                    }`}
+                    aria-label={`View photo ${index + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Photo Counter */}
+              <div className="text-center mt-3 text-sm text-gray-500">
+                {displayImages.length > 0 ? (
+                  <span>{currentImageIndex + 1} of {displayImages.length} photos</span>
+                ) : (
+                  <span>0 of 3 photos • No photos uploaded</span>
+                )}
+              </div>
+            </div>
 
             {/* Description */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
