@@ -36,7 +36,7 @@ interface JobFormData {
 interface JobContextType {
   jobs: Job[];
   isLoading: boolean;
-  addJob: (jobData: JobFormData) => Promise<{ success: boolean; message: string }>;
+  addJob: (jobData: JobFormData) => Promise<{ success: boolean; message: string; jobId?: string }>;
   refreshJobs: () => Promise<void>;
 }
 
@@ -77,7 +77,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const addJob = async (jobData: JobFormData): Promise<{ success: boolean; message: string }> => {
+  const addJob = async (jobData: JobFormData): Promise<{ success: boolean; message: string; jobId?: string }> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -104,7 +104,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       // Refresh jobs list
       await refreshJobs();
-      return { success: true, message: 'Job posted successfully!' };
+      return { success: true, message: 'Job posted successfully!', jobId: data.id };
     } catch (error) {
       return { success: false, message: 'An unexpected error occurred' };
     } finally {

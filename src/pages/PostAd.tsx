@@ -27,6 +27,7 @@ const PostAd = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
+  const [newJobId, setNewJobId] = useState<string | null>(null);
 
   const jobTypes = [
     'Household Work', 'Delivery & Transport', 'Construction', 'Shop Assistant', 
@@ -126,6 +127,9 @@ const PostAd = () => {
       });
 
       if (result.success) {
+        if (result.jobId) {
+          setNewJobId(result.jobId);
+        }
         toast({
           title: "Success!",
           description: "Your job has been posted successfully.",
@@ -151,6 +155,7 @@ const PostAd = () => {
 
   const handleSuccessModalClose = () => {
     setShowSuccessModal(false);
+    setNewJobId(null);
     // Reset form
     setFormData({
       jobTitle: '',
@@ -166,11 +171,16 @@ const PostAd = () => {
 
   const handleViewJob = () => {
     setShowSuccessModal(false);
-    navigate('/category/jobs');
+    if (newJobId) {
+      navigate(`/job/${newJobId}`);
+    } else {
+      navigate('/category/jobs');
+    }
   };
 
   const handlePostAnother = () => {
     setShowSuccessModal(false);
+    setNewJobId(null);
     // Reset form
     setFormData({
       jobTitle: '',
