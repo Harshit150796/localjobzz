@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
@@ -22,7 +22,7 @@ const JobDetail = () => {
   const { toast } = useToast();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
 
   const job = jobs.find(j => j.id === jobId);
 
@@ -51,9 +51,7 @@ const JobDetail = () => {
     );
   }
 
-  const displayImages = job.images && job.images.length > 0 
-    ? job.images 
-    : ['https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&h=400'];
+  const displayImages = job.images && job.images.length > 0 ? job.images : [];
 
   const handleSendMessage = async () => {
     if (!user) {
@@ -105,13 +103,6 @@ const JobDetail = () => {
     }
   };
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % displayImages.length);
-  };
-
-  const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
-  };
 
   // Get similar jobs (same category, exclude current)
   const similarJobs = jobs
@@ -203,40 +194,18 @@ const JobDetail = () => {
             {/* Images */}
             {displayImages.length > 0 && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Photos</h2>
-                <div className="relative">
-                  <img 
-                    src={displayImages[currentImageIndex]}
-                    alt={`${job.title} - Image ${currentImageIndex + 1}`}
-                    className="w-full h-96 object-cover rounded-lg"
-                  />
-                  {displayImages.length > 1 && (
-                    <>
-                      <button
-                        onClick={prevImage}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                      >
-                        <ChevronLeft className="h-6 w-6" />
-                      </button>
-                      <button
-                        onClick={nextImage}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full transition-colors"
-                      >
-                        <ChevronRight className="h-6 w-6" />
-                      </button>
-                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                        {displayImages.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setCurrentImageIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-all ${
-                              index === currentImageIndex ? 'bg-white w-6' : 'bg-white/60'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Workplace Photos</h2>
+                <div className="flex justify-center items-center gap-3 sm:gap-5">
+                  {displayImages.map((image, index) => (
+                    <div key={index} className="w-[90px] h-[90px] sm:w-[120px] sm:h-[120px]">
+                      <img 
+                        src={image}
+                        alt={`${job.title} - Photo ${index + 1}`}
+                        className="h-full w-full object-cover rounded-full border-[3px] border-white shadow-lg ring-2 ring-gray-200 hover:ring-orange-400 transition-all duration-200 cursor-pointer hover:scale-105"
+                        onClick={() => window.open(image, '_blank')}
+                      />
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
