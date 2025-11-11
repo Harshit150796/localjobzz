@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Filter, Grid, List, SlidersHorizontal, Clock, MapPin, Phone, MessageCircle } from 'lucide-react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
@@ -222,60 +222,67 @@ const CityJobs = () => {
   };
 
   const JobCard = ({ job }: { job: any }) => (
-    <div className={`bg-white rounded-lg shadow-sm border ${job.featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-md transition-all duration-200 p-6`}>
-      {job.featured && (
-        <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2 py-1 rounded mb-4 inline-block">
-          Urgent Job
-        </div>
-      )}
-      
-      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
-        <div className="flex-1">
-          <h3 className="font-bold text-xl text-gray-800 mb-2">{job.title}</h3>
-          <div className="text-2xl font-bold text-green-600 mb-2">{job.salary}</div>
-          
-          <div className="flex flex-wrap items-center text-gray-600 text-sm space-x-4 mb-3">
-            <div className="flex items-center space-x-1">
-              <MapPin className="h-4 w-4" />
-              <span>{job.location}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <Clock className="h-4 w-4" />
-              <span>{job.timePosted}</span>
-            </div>
+    <Link to={`/job/${job.id}`} className="block">
+      <div className={`bg-white rounded-lg shadow-sm border ${job.featured ? 'border-orange-200 ring-1 ring-orange-100' : 'border-gray-200'} hover:shadow-lg hover:border-orange-300 transition-all duration-200 p-6 cursor-pointer`}>
+        {job.featured && (
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-medium px-2 py-1 rounded mb-4 inline-block">
+            Urgent Job
           </div>
-          
-          <div className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded inline-block mb-3">
-            {job.jobType}
-          </div>
-          
-          <p className="text-gray-700 mb-3">{job.description}</p>
-          
-          <div className="space-y-2 text-sm text-gray-600">
-            <div><strong>Timing:</strong> {job.timing}</div>
-            <div><strong>Requirements:</strong> {job.requirements}</div>
-          </div>
-        </div>
+        )}
         
-        <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col space-y-2">
-          <a 
-            href={`tel:${job.phone}`}
-            className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 no-underline"
-          >
-            <Phone className="h-4 w-4" />
-            <span>Call {job.phone}</span>
-          </a>
-          <button
-            onClick={() => handleSendMessage(job)}
-            disabled={isCreatingConversation}
-            className="w-full lg:w-auto bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <MessageCircle className="h-4 w-4" />
-            <span>{isCreatingConversation ? 'Loading...' : 'Send Message'}</span>
-          </button>
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex-1">
+            <h3 className="font-bold text-xl text-gray-800 mb-2">{job.title}</h3>
+            <div className="text-2xl font-bold text-green-600 mb-2">{job.salary}</div>
+            
+            <div className="flex flex-wrap items-center text-gray-600 text-sm space-x-4 mb-3">
+              <div className="flex items-center space-x-1">
+                <MapPin className="h-4 w-4" />
+                <span>{job.location}</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Clock className="h-4 w-4" />
+                <span>{job.timePosted}</span>
+              </div>
+            </div>
+            
+            <div className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded inline-block mb-3">
+              {job.jobType}
+            </div>
+            
+            <p className="text-gray-700 mb-3">{job.description}</p>
+            
+            <div className="space-y-2 text-sm text-gray-600">
+              <div><strong>Timing:</strong> {job.timing}</div>
+              <div><strong>Requirements:</strong> {job.requirements}</div>
+            </div>
+          </div>
+          
+          <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col space-y-2">
+            <a 
+              href={`tel:${job.phone}`}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full lg:w-auto bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 flex items-center justify-center space-x-2 no-underline"
+            >
+              <Phone className="h-4 w-4" />
+              <span>Call {job.phone}</span>
+            </a>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleSendMessage(job);
+              }}
+              disabled={isCreatingConversation}
+              className="w-full lg:w-auto bg-gray-900 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-800 transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <span>{isCreatingConversation ? 'Loading...' : 'Send Message'}</span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 
   return (
