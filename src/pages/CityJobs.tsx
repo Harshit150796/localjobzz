@@ -129,6 +129,18 @@ const CityJobs = () => {
 
     return true;
   }).sort((a, b) => {
+    // Apply selected sorting method FIRST
+    if (sortBy === 'salaryHigh') {
+      const salaryA = parseInt(a.salary.replace(/[^0-9]/g, '')) || 0;
+      const salaryB = parseInt(b.salary.replace(/[^0-9]/g, '')) || 0;
+      if (salaryA !== salaryB) return salaryB - salaryA; // Highest first
+    } else if (sortBy === 'salaryLow') {
+      const salaryA = parseInt(a.salary.replace(/[^0-9]/g, '')) || 0;
+      const salaryB = parseInt(b.salary.replace(/[^0-9]/g, '')) || 0;
+      if (salaryA !== salaryB) return salaryA - salaryB; // Lowest first
+    }
+    
+    // For "newest" or as secondary sort, use existing logic
     // For "all" jobs, skip city proximity sorting
     if (!isAllJobs) {
       // Sort by proximity to city
@@ -401,7 +413,7 @@ const CityJobs = () => {
             </div>
 
             {/* Job Listings */}
-            <div className="space-y-6">
+            <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 gap-6" : "space-y-6"}>
               {isLoading ? (
                 <div className="text-center py-12">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
