@@ -56,6 +56,7 @@ const CityJobs = () => {
       salary: job.daily_salary,
       location: job.location,
       timePosted: new Date(job.created_at).toLocaleDateString(),
+      created_at: job.created_at,
       jobType: job.job_type,
       description: job.description,
       phone: job.phone,
@@ -138,9 +139,14 @@ const CityJobs = () => {
       const salaryA = parseInt(a.salary.replace(/[^0-9]/g, '')) || 0;
       const salaryB = parseInt(b.salary.replace(/[^0-9]/g, '')) || 0;
       if (salaryA !== salaryB) return salaryA - salaryB; // Lowest first
+    } else if (sortBy === 'newest') {
+      // Sort by timestamp - newest first (same as homepage)
+      const timeA = new Date(a.created_at).getTime();
+      const timeB = new Date(b.created_at).getTime();
+      if (timeA !== timeB) return timeB - timeA; // Newer posts first
     }
     
-    // For "newest" or as secondary sort, use existing logic
+    // For secondary sort, use existing logic
     // For "all" jobs, skip city proximity sorting
     if (!isAllJobs) {
       // Sort by proximity to city
@@ -156,11 +162,10 @@ const CityJobs = () => {
     if (a.featured && !b.featured) return -1;
     if (!a.featured && b.featured) return 1;
     
-    // Tertiary sort by time posted (newest first for "Just now", then others)
-    if (a.timePosted === 'Just now' && b.timePosted !== 'Just now') return -1;
-    if (a.timePosted !== 'Just now' && b.timePosted === 'Just now') return 1;
-    
-    return 0;
+    // Tertiary sort by timestamp - newest first
+    const timeA = new Date(a.created_at).getTime();
+    const timeB = new Date(b.created_at).getTime();
+    return timeB - timeA;
   });
 
   const filters = {
