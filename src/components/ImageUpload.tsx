@@ -19,6 +19,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [uploadingIndex, setUploadingIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [clickedSlotIndex, setClickedSlotIndex] = useState<number>(0);
 
   const handleFileSelect = async (file: File, index: number) => {
     // Validate file type
@@ -85,10 +86,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     }
   };
 
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFileSelect(file, index);
+      handleFileSelect(file, clickedSlotIndex);
+      e.target.value = ''; // Reset input for reuse
     }
   };
 
@@ -163,6 +165,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         )}
       </div>
       
+      {/* Single hidden file input for all slots */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/jpg,image/png,image/webp"
+        onChange={handleFileInput}
+        className="hidden"
+      />
+      
       <div className="flex justify-center items-center gap-3 sm:gap-5">
         {slots.map((index) => {
           const hasImage = images[index];
@@ -196,15 +207,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
                   className={`h-full w-full border-2 border-dashed rounded-full flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-accent/50 transition-all duration-200 ${
                     dragActive ? 'border-primary bg-accent scale-105' : 'border-gray-300'
                   } ${isUploading ? 'opacity-50 cursor-not-allowed' : ''} ${index === 0 && uploadedCount === 0 ? 'animate-pulse' : ''}`}
-                  onClick={() => !isUploading && fileInputRef.current?.click()}
+                  onClick={() => {
+                    if (!isUploading) {
+                      setClickedSlotIndex(index);
+                      fileInputRef.current?.click();
+                    }
+                  }}
                 >
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={(e) => handleFileInput(e, index)}
-                    className="hidden"
-                  />
                   {isUploading ? (
                     <div className="flex flex-col items-center gap-1">
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
