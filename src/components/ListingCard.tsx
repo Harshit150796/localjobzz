@@ -29,14 +29,135 @@ const ListingCard: React.FC<ListingCardProps> = ({
   featured = false,
   urgent = false,
   peopleViewing,
+  category,
   images
 }) => {
   const { currencySymbol } = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   
-  // Only use uploaded images, no fallbacks
-  const hasImages = images && images.length > 0;
-  const displayImages = hasImages ? images : [];
+  // Category-specific image pools (4-6 images per category for variety)
+  const categoryImagePools: Record<string, string[]> = {
+    'Cleaning & Housekeeping': [
+      'photo-1628177142898-93e36e4e3a50',
+      'photo-1581578731548-c64695cc6952',
+      'photo-1585421514738-01798e348b17',
+      'photo-1563453392212-326f5e854473',
+      'photo-1527515637462-cff94eecc1ac'
+    ],
+    'Construction & Labor': [
+      'photo-1504307651254-35680f356dfd',
+      'photo-1541888946425-d81bb19240f5',
+      'photo-1581858726788-75bc0f6a952d',
+      'photo-1503387762-592deb58ef4e',
+      'photo-1590856029826-c7a73142bbf1',
+      'photo-1513467535987-fd81bc7d62f8'
+    ],
+    'Delivery & Logistics': [
+      'photo-1526367790999-0150786686a2',
+      'photo-1603123853151-5f5dcd5b821f',
+      'photo-1566207474742-de921626ad0c',
+      'photo-1601584115197-04ecc0da31d7',
+      'photo-1557804506-669a67965ba0'
+    ],
+    'Repair & Maintenance': [
+      'photo-1589939705384-5185137a7f0f',
+      'photo-1621905251918-48416bd8575a',
+      'photo-1621905252507-b35492cc74b4',
+      'photo-1416879595882-3373a0480b5b',
+      'photo-1581092160562-40aa08e78837',
+      'photo-1504917595217-d4dc5ebe6122'
+    ],
+    'Sales & Marketing': [
+      'photo-1556742111-a301076d9d18',
+      'photo-1441986300917-64674bd600d8',
+      'photo-1556740758-90de374c12ad',
+      'photo-1607082349566-187342175e2f',
+      'photo-1486406146926-c627a92ad1ab'
+    ],
+    'Office & Admin': [
+      'photo-1497366216548-37526070297c',
+      'photo-1531206715517-5c0ba140b2b8',
+      'photo-1454165804606-c3d57bc86b40',
+      'photo-1553877522-43269d4ea984',
+      'photo-1486312338219-ce68d2c6f44d',
+      'photo-1542744173-8e7e53415bb0'
+    ],
+    'Hospitality & Service': [
+      'photo-1556910103-1c02745aae4d',
+      'photo-1414235077428-338989a2e8c0',
+      'photo-1581349485608-9469926a8e5e',
+      'photo-1517248135467-4c7edcad34c4',
+      'photo-1559339352-11d035aa65de',
+      'photo-1504674900247-0877df9cc836'
+    ],
+    'Healthcare & Medical': [
+      'photo-1576091160399-112ba8d25d1d',
+      'photo-1631217868264-e5b90bb7e133',
+      'photo-1582719471384-894fbb16e074',
+      'photo-1559757175-0eb30cd8c063',
+      'photo-1538108149393-fbbd81895907'
+    ],
+    'Manufacturing & Production': [
+      'photo-1581092160562-40aa08e78837',
+      'photo-1581091226825-a6a2a5aee158',
+      'photo-1565688534245-05d6b5be184a',
+      'photo-1581092918056-0c4c3acd3789',
+      'photo-1460925895917-afdab827c52f'
+    ],
+    'Warehouse & Packing': [
+      'photo-1553413077-190dd305871c',
+      'photo-1586528116311-ad8dd3c8310d',
+      'photo-1566207474742-de921626ad0c',
+      'photo-1590856029826-c7a73142bbf1',
+      'photo-1586864387634-61ba7f57d4c5'
+    ],
+    'Security & Safety': [
+      'photo-1550751827-4bd374c3f58b',
+      'photo-1560264280-88b68371db39',
+      'photo-1582139329536-e7284fece509',
+      'photo-1568602471122-7832951cc4c5',
+      'photo-1504674900247-0877df9cc836'
+    ],
+    'Automobile & Transport': [
+      'photo-1486262715619-67b85e0b08d3',
+      'photo-1487754180451-c456f719a1fc',
+      'photo-1625047509248-ec889cbff17f',
+      'photo-1619642751034-765dfdf7c58e',
+      'photo-1492144534655-ae79c964c9d7'
+    ],
+    'Other Services': [
+      'photo-1521737711867-e3b97375f902',
+      'photo-1556909114-f6e7ad7d3136',
+      'photo-1552664730-d307ca884978',
+      'photo-1600880292203-757bb62b4baf',
+      'photo-1507679799987-c73779587ccf'
+    ]
+  };
+  
+  // Hash function to consistently pick the same image for the same job
+  const getImageForJob = (category: string | undefined, jobId: string): string => {
+    const imagePool = category && categoryImagePools[category] 
+      ? categoryImagePools[category]
+      : categoryImagePools['Other Services'];
+    
+    let hash = 0;
+    for (let i = 0; i < jobId.length; i++) {
+      const char = jobId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    
+    const index = Math.abs(hash) % imagePool.length;
+    const photoId = imagePool[index];
+    
+    return `https://images.unsplash.com/${photoId}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`;
+  };
+  
+  // Use uploaded images if available, otherwise use category-specific placeholder
+  const hasUploadedImages = images && images.length > 0;
+  const displayImages = hasUploadedImages 
+    ? images 
+    : [getImageForJob(category, jobId)];
   const currentImage = displayImages[currentImageIndex];
   
   return (
@@ -59,45 +180,36 @@ const ListingCard: React.FC<ListingCardProps> = ({
       )}
       
       <div className="relative overflow-hidden">
-        {hasImages ? (
-          <>
-            <img 
-              src={currentImage}
-              alt={title}
-              className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-            />
-            
-            {/* Image count badge */}
-            {displayImages.length > 1 && (
-              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <ImageIcon className="h-3 w-3" />
-                {displayImages.length}
-              </div>
-            )}
-            
-            {/* Image navigation dots */}
-            {displayImages.length > 1 && (
-              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                {displayImages.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      setCurrentImageIndex(index);
-                    }}
-                    className={`w-1.5 h-1.5 rounded-full transition-all ${
-                      index === currentImageIndex ? 'bg-white w-3' : 'bg-white/60'
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="w-full h-32 sm:h-40 bg-gray-200 flex flex-col items-center justify-center">
-            <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />
-            <span className="text-gray-500 text-sm font-medium">No Image</span>
+        <img 
+          src={currentImage}
+          alt={title}
+          className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        
+        {/* Image count badge - only show for uploaded images */}
+        {hasUploadedImages && displayImages.length > 1 && (
+          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+            <ImageIcon className="h-3 w-3" />
+            {displayImages.length}
+          </div>
+        )}
+        
+        {/* Image navigation dots - only show for uploaded images */}
+        {hasUploadedImages && displayImages.length > 1 && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+            {displayImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setCurrentImageIndex(index);
+                }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  index === currentImageIndex ? 'bg-white w-3' : 'bg-white/60'
+                }`}
+              />
+            ))}
           </div>
         )}
         
