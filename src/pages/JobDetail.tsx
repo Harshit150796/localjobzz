@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight, ImageIcon, Share2 } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
@@ -100,6 +100,51 @@ const JobDetail = () => {
       toast({ title: "Error", description: "Failed to start conversation", variant: "destructive" });
     } finally {
       setIsCreatingConversation(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const shareUrl = `https://localjobzz.com/job/${job.id}`;
+    const shareTitle = `${job.title} - ${job.location}`;
+    const shareText = `Check out this job: ${job.title} in ${job.location}. Salary: ₹${job.daily_salary}/day`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        
+        toast({
+          title: "Shared successfully",
+          description: "Job advertisement shared",
+        });
+      } catch (error) {
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.error('Error sharing:', error);
+          copyToClipboard(shareUrl);
+        }
+      }
+    } else {
+      copyToClipboard(shareUrl);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      toast({
+        title: "Link copied!",
+        description: "Job link copied to clipboard. You can now share it anywhere.",
+      });
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy link. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -312,6 +357,14 @@ const JobDetail = () => {
                 >
                   <MessageCircle className="h-5 w-5" />
                   {isCreatingConversation ? 'Loading...' : 'Send Message'}
+                </button>
+
+                <button
+                  onClick={handleShare}
+                  className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <Share2 className="h-5 w-5" />
+                  Share Job
                 </button>
               </div>
 
