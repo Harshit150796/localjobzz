@@ -14,6 +14,47 @@ const CategoryCityJobs = () => {
 
   // Mock job data specific to category and city
   const jobsData = useMemo(() => {
+    // Category-specific images - all unique and relevant to job type
+    const categoryImages: Record<string, string[]> = {
+      'household-work': [
+        'photo-1628177142898-93e36e4e3a50', // Cleaning supplies/housekeeping
+        'photo-1556910103-1c02745aae4d', // Cooking/chef work
+        'photo-1416879595882-3373a0480b5b', // Gardening/plants
+        'photo-1581578731548-c64695cc6952', // General housework
+        'photo-1582735689369-4fe89db7114c'  // Laundry/ironing
+      ],
+      'delivery-transport': [
+        'photo-1526367790999-0150786686a2', // Food delivery rider
+        'photo-1566207474742-de921626ad0c', // Package delivery person
+        'photo-1603123853151-5f5dcd5b821f', // Bike courier/delivery
+        'photo-1601584115197-04ecc0da31d7', // Truck/cargo transport
+        'photo-1591768793355-74d04bb6608f'  // Courier service
+      ],
+      'construction': [
+        'photo-1504307651254-35680f356dfd', // Construction site/worker
+        'photo-1589939705384-5185137a7f0f', // Painting/paint work
+        'photo-1621905251918-48416bd8575a', // Plumbing work
+        'photo-1621905252507-b35492cc74b4', // Electrical work
+        'photo-1581858726788-75bc0f6a952d'  // Carpentry/woodwork
+      ],
+      'shop-assistant': [
+        'photo-1556742111-a301076d9d18', // Cashier/retail counter
+        'photo-1441986300917-64674bd600d8', // Retail store interior
+        'photo-1556740758-90de374c12ad', // Warehouse/inventory
+        'photo-1556742031-c6961e8560b0', // Customer service
+        'photo-1542838132-92c53300491e'  // Supermarket/grocery
+      ]
+    };
+
+    // Get images for current category or use generic ones
+    const images = categoryImages[category || ''] || [
+      'photo-1521737711867-e3b97375f902', // Professional at work
+      'photo-1531206715517-5c0ba140b2b8', // Office work environment
+      'photo-1552664730-d307ca884978', // Team collaboration
+      'photo-1556909114-f6e7ad7d3136', // Modern workplace
+      'photo-1556740758-90de374c12ad'  // Work environment
+    ];
+
     const baseJobs = [
       {
         jobId: `mock-${category}-${city}-1`,
@@ -21,7 +62,7 @@ const CategoryCityJobs = () => {
         price: '800/day',
         location: cityName,
         timePosted: '30 min ago',
-        image: 'photo-1581578731548-c64695cc6952',
+        image: images[0],
         featured: true
       },
       {
@@ -30,7 +71,7 @@ const CategoryCityJobs = () => {
         price: '700-900/day',
         location: cityName, 
         timePosted: '1h ago',
-        image: 'photo-1556909114-f6e7ad7d3136'
+        image: images[1]
       },
       {
         jobId: `mock-${category}-${city}-3`,
@@ -38,7 +79,7 @@ const CategoryCityJobs = () => {
         price: '600/day',
         location: cityName,
         timePosted: '2h ago',
-        image: 'photo-1504307651254-35680f356dfd'
+        image: images[2]
       },
       {
         jobId: `mock-${category}-${city}-4`,
@@ -46,7 +87,7 @@ const CategoryCityJobs = () => {
         price: '500/day',
         location: cityName,
         timePosted: '3h ago',
-        image: 'photo-1556742049-0cfed4f6a45d',
+        image: images[3],
         featured: true
       },
       {
@@ -55,23 +96,35 @@ const CategoryCityJobs = () => {
         price: '900/day',
         location: cityName,
         timePosted: '4h ago',
-        image: 'photo-1581578731548-c64695cc6952'
+        image: images[4]
       }
     ];
 
-    // Customize based on category
+    // Customize titles based on category
     if (category === 'household-work') {
       baseJobs[0].title = 'House Cleaning Specialist';
       baseJobs[1].title = 'Cooking & Kitchen Helper';
       baseJobs[2].title = 'Gardening & Maintenance';
+      baseJobs[3].title = 'Full-time Household Helper';
+      baseJobs[4].title = 'Laundry & Ironing Work';
     } else if (category === 'delivery-transport') {
       baseJobs[0].title = 'Food Delivery Partner';
       baseJobs[1].title = 'Package Delivery Driver';
-      baseJobs[2].title = 'Bike Taxi Driver';
+      baseJobs[2].title = 'Bike Courier Needed';
+      baseJobs[3].title = 'Cargo Transport Driver';
+      baseJobs[4].title = 'Express Courier Service';
     } else if (category === 'construction') {
       baseJobs[0].title = 'Construction Helper';
       baseJobs[1].title = 'Painting Contractor';
       baseJobs[2].title = 'Plumbing Assistant';
+      baseJobs[3].title = 'Electrician Helper';
+      baseJobs[4].title = 'Carpentry Work';
+    } else if (category === 'shop-assistant') {
+      baseJobs[0].title = 'Cashier Position';
+      baseJobs[1].title = 'Retail Sales Assistant';
+      baseJobs[2].title = 'Inventory Manager Helper';
+      baseJobs[3].title = 'Customer Service Rep';
+      baseJobs[4].title = 'Supermarket Helper';
     }
 
     return baseJobs;
