@@ -34,12 +34,9 @@ const ListingCard: React.FC<ListingCardProps> = ({
   const { currencySymbol } = useLocation();
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   
-  // Use uploaded images if available, otherwise fallback to placeholder
-  const displayImages = images && images.length > 0 
-    ? images 
-    : image 
-      ? [`https://images.unsplash.com/${image}?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200`]
-      : ['https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&h=200'];
+  // Only use uploaded images, no fallbacks
+  const hasImages = images && images.length > 0;
+  const displayImages = hasImages ? images : [];
   const currentImage = displayImages[currentImageIndex];
   
   return (
@@ -62,35 +59,45 @@ const ListingCard: React.FC<ListingCardProps> = ({
       )}
       
       <div className="relative overflow-hidden">
-        <img 
-          src={currentImage}
-          alt={title}
-          className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
-        />
-        
-        {/* Image count badge */}
-        {displayImages.length > 1 && (
-          <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <ImageIcon className="h-3 w-3" />
-            {displayImages.length}
-          </div>
-        )}
-        
-        {/* Image navigation dots */}
-        {displayImages.length > 1 && (
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            {displayImages.map((_, index) => (
-              <button
-                key={index}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentImageIndex(index);
-                }}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${
-                  index === currentImageIndex ? 'bg-white w-3' : 'bg-white/60'
-                }`}
-              />
-            ))}
+        {hasImages ? (
+          <>
+            <img 
+              src={currentImage}
+              alt={title}
+              className="w-full h-32 sm:h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+            />
+            
+            {/* Image count badge */}
+            {displayImages.length > 1 && (
+              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                <ImageIcon className="h-3 w-3" />
+                {displayImages.length}
+              </div>
+            )}
+            
+            {/* Image navigation dots */}
+            {displayImages.length > 1 && (
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                {displayImages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setCurrentImageIndex(index);
+                    }}
+                    className={`w-1.5 h-1.5 rounded-full transition-all ${
+                      index === currentImageIndex ? 'bg-white w-3' : 'bg-white/60'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="w-full h-32 sm:h-40 bg-gray-200 flex flex-col items-center justify-center">
+            <ImageIcon className="h-8 w-8 text-gray-400 mb-2" />
+            <span className="text-gray-500 text-sm font-medium">No Image</span>
           </div>
         )}
         
