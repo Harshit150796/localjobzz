@@ -104,7 +104,7 @@ const JobDetail = () => {
   };
 
   const handleShare = async () => {
-    const shareUrl = `https://localjobzz.com/job/${job.id}`;
+    const shareUrl = `${window.location.origin}/job/${job.id}`;
     const shareTitle = `${job.title} - ${job.location}`;
     const shareText = `Check out this job: ${job.title} in ${job.location}. Salary: ₹${job.daily_salary}/day`;
 
