@@ -215,7 +215,7 @@ const handler = async (req: Request): Promise<Response> => {
           html: verificationEmailHTML(
             user.email,
             token,
-            redirect_to || "https://localjobzz.lovable.app",
+            redirect_to || "https://www.localjobzz.com",
             undefined // No magic link in webhook flow (only OTP)
           ),
         });
