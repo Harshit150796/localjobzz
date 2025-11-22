@@ -191,6 +191,7 @@ const JobDetail = () => {
         keywords={`${job.title}, ${job.location}, ${job.category}, daily job, local work`}
         structuredData={structuredData}
         canonicalUrl={`https://localjobzz.com/job/${job.id}`}
+        ogImage={job.images?.[0]}
       />
       
       <Header />
