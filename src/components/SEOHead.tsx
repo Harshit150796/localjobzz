@@ -17,7 +17,7 @@ const SEOHead = ({
   description = 'Find daily work opportunities or hire workers instantly. Join thousands of people making smart employment decisions on localjobzz.com - the fastest job platform.',
   keywords = 'local jobs, daily work, hire workers, job platform, employment, part time jobs, full time jobs, gig work',
   canonicalUrl,
-  ogImage = 'https://lovable.dev/opengraph-image-p98pqg.png',
+  ogImage = 'https://www.localjobzz.com/favicon-512.png',
   ogType = 'website',
   structuredData,
   city,
@@ -57,6 +57,8 @@ const SEOHead = ({
       <meta property="og:description" content={finalDescription} />
       <meta property="og:type" content={ogType} />
       <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
       <meta property="og:url" content={canonicalUrl || window.location.href} />
       <meta property="og:site_name" content="localjobzz" />
       <meta property="og:locale" content="en_US" />
