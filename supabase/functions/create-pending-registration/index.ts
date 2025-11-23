@@ -109,23 +109,22 @@ const handler = async (req: Request): Promise<Response> => {
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
     console.log('Generated OTP for', email);
 
-    // Hash OTP and password
+    // Hash only the OTP (store password as-is temporarily for registration)
     const otpHash = await hashValue(otpCode);
-    const passwordHash = await hashValue(password);
 
     // Set expiration (5 minutes)
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    // Store pending registration
+    // Store pending registration (with plain password, only for 5 min)
     const { error: insertError } = await supabase
       .from('pending_registrations')
       .upsert({
         email,
         name,
-        password_hash: passwordHash,
+        password_hash: password, // Store plain password temporarily for registration
         phone,
-        otp_code: otpCode, // Keep for backward compatibility with send-otp-email
+        otp_code: otpCode,
         otp_hash: otpHash,
         expires_at: expiresAt.toISOString(),
         attempts: 0,
