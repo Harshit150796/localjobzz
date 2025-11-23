@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+
+// Helper function to hash using Web Crypto API
+async function hashValue(value: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -62,7 +70,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Verify OTP using constant-time comparison
-    const isMatch = await bcrypt.compare(otpCode, pending.otp_hash);
+    const otpCodeHash = await hashValue(otpCode);
+    const isMatch = otpCodeHash === pending.otp_hash;
 
     if (!isMatch) {
       // Increment attempts
