@@ -90,49 +90,79 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('OTP verified, creating user account...');
+    console.log('OTP verified, checking if user exists...');
 
-    // Create user in Supabase Auth
-    const { data: authData, error: createError } = await supabase.auth.admin.createUser({
-      email: pending.email,
-      password: pending.password_hash,
-      email_confirm: true, // Auto-confirm email
-      user_metadata: { 
-        name: pending.name,
-        phone: pending.phone 
+    // Check if user already exists in auth
+    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+    const existingUser = existingAuthUsers.users.find(u => u.email === pending.email);
+
+    let userId: string;
+
+    if (existingUser) {
+      console.log('User already exists:', existingUser.id);
+      userId = existingUser.id;
+
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', existingUser.id)
+        .single();
+
+      // Create profile if it doesn't exist
+      if (!existingProfile) {
+        console.log('Creating missing profile for existing user');
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: existingUser.id,
+            name: pending.name,
+            email: pending.email,
+            phone: pending.phone,
+            email_verified: true
+          });
+
+        if (profileError) {
+          console.error('Failed to create profile:', profileError);
+          throw profileError;
+        }
       }
-    });
-
-    if (createError) {
-      console.error('Failed to create user:', createError);
-      
-      // Check if user already exists
-      if (createError.message.includes('already registered')) {
-        return new Response(
-          JSON.stringify({ error: 'Email already registered. Please login instead.' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-        );
-      }
-      
-      throw createError;
-    }
-
-    console.log('User created:', authData.user.id);
-
-    // Create profile with email_verified=true
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        user_id: authData.user.id,
-        name: pending.name,
+    } else {
+      // Create new user in Supabase Auth
+      console.log('Creating new user account...');
+      const { data: authData, error: createError } = await supabase.auth.admin.createUser({
         email: pending.email,
-        phone: pending.phone,
-        email_verified: true
+        password: pending.password_hash, // This is the plain password
+        email_confirm: true,
+        user_metadata: { 
+          name: pending.name,
+          phone: pending.phone 
+        }
       });
 
-    if (profileError) {
-      console.error('Failed to create profile:', profileError);
-      throw profileError;
+      if (createError) {
+        console.error('Failed to create user:', createError);
+        throw createError;
+      }
+
+      console.log('User created:', authData.user.id);
+      userId = authData.user.id;
+
+      // Create profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: authData.user.id,
+          name: pending.name,
+          email: pending.email,
+          phone: pending.phone,
+          email_verified: true
+        });
+
+      if (profileError) {
+        console.error('Failed to create profile:', profileError);
+        throw profileError;
+      }
     }
 
     // Mark pending registration as verified
@@ -147,7 +177,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ 
         success: true, 
         message: 'Email verified successfully! You can now login.',
-        userId: authData.user.id
+        userId: userId
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
