@@ -225,41 +225,95 @@ export type Database = {
           },
         ]
       }
+      otp_rate_limits: {
+        Row: {
+          attempt_type: string
+          attempts: number | null
+          blocked_until: string | null
+          created_at: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          updated_at: string | null
+          window_start: string | null
+        }
+        Insert: {
+          attempt_type: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          updated_at?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          attempt_type?: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          updated_at?: string | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       pending_registrations: {
         Row: {
           attempts: number | null
           created_at: string | null
           email: string
+          email_verified: boolean | null
           expires_at: string
           id: string
+          ip_address: string | null
+          last_resend_at: string | null
           name: string
           otp_code: string
+          otp_hash: string | null
           password_hash: string
           phone: string | null
+          resend_count: number | null
+          user_agent: string | null
           verified_at: string | null
         }
         Insert: {
           attempts?: number | null
           created_at?: string | null
           email: string
+          email_verified?: boolean | null
           expires_at: string
           id?: string
+          ip_address?: string | null
+          last_resend_at?: string | null
           name: string
           otp_code: string
+          otp_hash?: string | null
           password_hash: string
           phone?: string | null
+          resend_count?: number | null
+          user_agent?: string | null
           verified_at?: string | null
         }
         Update: {
           attempts?: number | null
           created_at?: string | null
           email?: string
+          email_verified?: boolean | null
           expires_at?: string
           id?: string
+          ip_address?: string | null
+          last_resend_at?: string | null
           name?: string
           otp_code?: string
+          otp_hash?: string | null
           password_hash?: string
           phone?: string | null
+          resend_count?: number | null
+          user_agent?: string | null
           verified_at?: string | null
         }
         Relationships: []
@@ -270,6 +324,7 @@ export type Database = {
           bio: string | null
           created_at: string
           email: string
+          email_verified: boolean
           id: string
           location: string | null
           name: string
@@ -283,6 +338,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email: string
+          email_verified?: boolean
           id?: string
           location?: string | null
           name: string
@@ -296,6 +352,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           email?: string
+          email_verified?: boolean
           id?: string
           location?: string | null
           name?: string
