@@ -5,7 +5,6 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from '../components/auth/AuthModal';
 import { useToast } from '../hooks/use-toast';
 import { createOrFindConversation } from '../utils/messageHelpers';
 
@@ -20,8 +19,6 @@ const Category = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
   // Convert Supabase jobs to display format
@@ -147,8 +144,12 @@ const Category = () => {
 
   const handleSendMessage = async (job: any) => {
     if (!user) {
-      setPendingJobId(job.id);
-      setIsAuthModalOpen(true);
+      toast({
+        title: "Login Required",
+        description: "Please login to send messages",
+        variant: "destructive"
+      });
+      navigate('/login');
       return;
     }
 
@@ -382,15 +383,6 @@ const Category = () => {
       </div>
 
       <Footer />
-      
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => {
-          setIsAuthModalOpen(false);
-          setPendingJobId(null);
-        }}
-        initialMode="login"
-      />
     </div>
   );
 };
