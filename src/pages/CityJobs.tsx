@@ -8,7 +8,6 @@ import BreadcrumbNavigation from '../components/Breadcrumb';
 import { createLocalBusinessSchema, createBreadcrumbSchema, createOrganizationSchema } from '../components/StructuredData';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from '../components/auth/AuthModal';
 import { useToast } from '../hooks/use-toast';
 import { createOrFindConversation } from '../utils/messageHelpers';
 
@@ -24,8 +23,6 @@ const CityJobs = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [pendingJobId, setPendingJobId] = useState<string | null>(null);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
 
   // Convert Supabase jobs to display format and filter by city (or show all if city is 'all')
@@ -200,8 +197,12 @@ const CityJobs = () => {
 
   const handleSendMessage = async (job: any) => {
     if (!user) {
-      setPendingJobId(job.id);
-      setIsAuthModalOpen(true);
+      toast({
+        title: "Login Required",
+        description: "Please login to send messages",
+        variant: "destructive"
+      });
+      navigate('/login');
       return;
     }
 
@@ -440,15 +441,6 @@ const CityJobs = () => {
       </div>
 
       <Footer />
-      
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => {
-          setIsAuthModalOpen(false);
-          setPendingJobId(null);
-        }}
-        initialMode="login"
-      />
     </div>
   );
 };

@@ -7,7 +7,6 @@ import SEOHead from '../components/SEOHead';
 import { Badge } from '../components/ui/badge';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from '../components/auth/AuthModal';
 import { useToast } from '../hooks/use-toast';
 import { createOrFindConversation } from '../utils/messageHelpers';
 import { createJobPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
@@ -20,7 +19,6 @@ const JobDetail = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -55,7 +53,12 @@ const JobDetail = () => {
 
   const handleSendMessage = async () => {
     if (!user) {
-      setIsAuthModalOpen(true);
+      toast({
+        title: "Login Required",
+        description: "Please login to send messages",
+        variant: "destructive"
+      });
+      navigate('/login');
       return;
     }
 
@@ -408,12 +411,6 @@ const JobDetail = () => {
       </div>
 
       <Footer />
-      
-      <AuthModal 
-        isOpen={isAuthModalOpen} 
-        onClose={() => setIsAuthModalOpen(false)}
-        initialMode="login"
-      />
     </div>
   );
 };

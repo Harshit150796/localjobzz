@@ -3,15 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, Plus, Menu, X, LogIn, UserPlus, MapPin, Sparkles, MessageCircle, LogOut } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from './auth/AuthModal';
 import UserMenu from './UserMenu';
 
 const Header = () => {
   // City selector component for job location search
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [cityInputValue, setCityInputValue] = useState('');
   const navigate = useNavigate();
@@ -203,27 +200,21 @@ const Header = () => {
               <UserMenu />
             ) : (
               <>
-                <button
-                  onClick={() => {
-                    setAuthMode('login');
-                    setShowAuthModal(true);
-                  }}
+                <Link
+                  to="/login"
                   className="flex items-center space-x-1.5 bg-brand text-brand-foreground px-3 py-1.5 rounded text-sm hover:bg-brand-light transition-colors"
                 >
                   <LogIn className="h-4 w-4" />
                   <span className="font-medium">Sign In</span>
-                </button>
+                </Link>
                 
-                <button
-                  onClick={() => {
-                    setAuthMode('register');
-                    setShowAuthModal(true);
-                  }}
+                <Link
+                  to="/signup"
                   className="flex items-center space-x-1.5 bg-primary text-primary-foreground px-3 py-1.5 rounded text-sm hover:bg-primary/90 transition-colors"
                 >
                   <UserPlus className="h-4 w-4" />
                   <span className="font-medium">Sign Up</span>
-                </button>
+                </Link>
               </>
             )}
           </div>
@@ -355,42 +346,29 @@ const Header = () => {
                 </div>
               ) : (
                 <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      setAuthMode('login');
-                      setShowAuthModal(true);
-                      setIsMenuOpen(false);
-                    }}
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
                     className="flex-1 flex items-center justify-center space-x-2 bg-gradient-to-r from-orange-500 to-red-500 text-white px-4 py-3 rounded-lg"
                   >
                     <LogIn className="h-4 w-4" />
                     <span>Sign In</span>
-                  </button>
+                  </Link>
                   
-                  <button
-                    onClick={() => {
-                      setAuthMode('register');
-                      setShowAuthModal(true);
-                      setIsMenuOpen(false);
-                    }}
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMenuOpen(false)}
                     className="flex-1 flex items-center justify-center space-x-2 bg-gray-800 text-white px-4 py-3 rounded-lg"
                   >
                     <UserPlus className="h-4 w-4" />
                     <span>Sign Up</span>
-                  </button>
+                  </Link>
                 </div>
               )}
             </div>
           </div>
         )}
       </div>
-      
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-        initialMode={authMode}
-      />
     </header>
   );
 };
