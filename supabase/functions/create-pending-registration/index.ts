@@ -24,23 +24,21 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Creating pending registration for:', email);
 
-    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    // Get IP address and User-Agent
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const userAgent = req.headers.get('user-agent') || 'unknown';
+
     // Check if email already exists in profiles (actual registered users)
-    const { data: existingProfile, error: checkError } = await supabase
+    const { data: existingProfile } = await supabase
       .from('profiles')
       .select('email')
       .eq('email', email)
       .maybeSingle();
-
-    if (checkError) {
-      console.error('Error checking existing email:', checkError);
-      throw checkError;
-    }
 
     if (existingProfile) {
       console.log('Email already exists:', email);
@@ -50,34 +48,86 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check rate limiting - 30 second cooldown
+    const { data: lastPending } = await supabase
+      .from('pending_registrations')
+      .select('created_at')
+      .eq('email', email)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastPending) {
+      const timeSinceLastSend = Date.now() - new Date(lastPending.created_at).getTime();
+      if (timeSinceLastSend < 30000) {
+        const waitTime = Math.ceil((30000 - timeSinceLastSend) / 1000);
+        return new Response(
+          JSON.stringify({ error: `Please wait ${waitTime} seconds before requesting a new code.` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+        );
+      }
+    }
+
+    // Check hourly rate limit (3 OTPs per hour per email)
+    const oneHourAgo = new Date(Date.now() - 3600000);
+    const { data: recentAttempts, count } = await supabase
+      .from('pending_registrations')
+      .select('*', { count: 'exact', head: false })
+      .eq('email', email)
+      .gte('created_at', oneHourAgo.toISOString());
+
+    if (count && count >= 3) {
+      return new Response(
+        JSON.stringify({ error: 'Too many OTP requests. Please try again in 1 hour.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      );
+    }
+
+    // Check IP-based rate limit (10 per hour)
+    const { count: ipCount } = await supabase
+      .from('pending_registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('ip_address', ipAddress)
+      .gte('created_at', oneHourAgo.toISOString());
+
+    if (ipCount && ipCount >= 10) {
+      return new Response(
+        JSON.stringify({ error: 'Too many requests from this IP. Please try again later.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      );
+    }
+
     // Generate 6-digit OTP
     const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    console.log('Generated OTP:', otpCode);
+    console.log('Generated OTP for', email);
 
-    // Hash password
+    // Hash OTP and password
+    const otpHash = await bcrypt.hash(otpCode);
     const passwordHash = await bcrypt.hash(password);
 
-    // Set expiration (15 minutes)
+    // Set expiration (5 minutes)
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
     // Store pending registration
-    const { data: pendingReg, error: insertError } = await supabase
+    const { error: insertError } = await supabase
       .from('pending_registrations')
       .upsert({
         email,
         name,
         password_hash: passwordHash,
         phone,
-        otp_code: otpCode,
+        otp_code: otpCode, // Keep for backward compatibility with send-otp-email
+        otp_hash: otpHash,
         expires_at: expiresAt.toISOString(),
         attempts: 0,
-        verified_at: null
+        resend_count: 0,
+        verified_at: null,
+        ip_address: ipAddress,
+        user_agent: userAgent
       }, {
         onConflict: 'email'
-      })
-      .select()
-      .single();
+      });
 
     if (insertError) {
       console.error('Insert error:', insertError);
@@ -86,7 +136,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Pending registration created, sending OTP email...');
 
-    // Send OTP email asynchronously (non-blocking)
+    // Send OTP email asynchronously
     supabase.functions.invoke('send-otp-email', {
       body: { email, name, otpCode }
     }).then(result => {
@@ -98,7 +148,7 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'OTP sent to your email',
+        message: 'OTP sent to your email. Valid for 5 minutes.',
         expiresAt: expiresAt.toISOString()
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }

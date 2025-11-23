@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail, Lock, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import SEOHead from '../components/SEOHead';
 
 // Social provider icons
@@ -60,6 +61,26 @@ const Login = () => {
         const cleanPhone = formData.emailOrPhone.replace(/\D/g, '');
         loginEmail = `${cleanPhone}@phone.localjobzz`;
       }
+
+      // Check if email is verified before allowing login
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email_verified')
+        .eq('email', loginEmail)
+        .maybeSingle();
+      
+      if (profile && !profile.email_verified) {
+        toast({
+          title: "Email not verified",
+          description: "Please verify your email first. Redirecting to verification...",
+          variant: "destructive"
+        });
+        
+        // Store email and redirect to verification
+        sessionStorage.setItem('verify_email', loginEmail);
+        navigate(`/verify-otp?email=${encodeURIComponent(loginEmail)}`);
+        return;
+      }
       
       const result = await login(loginEmail, formData.password);
       if (result.success) {
@@ -68,6 +89,13 @@ const Login = () => {
       } else {
         toast({ title: "Login failed", description: result.message, variant: "destructive" });
       }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      toast({ 
+        title: "Login failed", 
+        description: error.message || "An error occurred during login",
+        variant: "destructive" 
+      });
     } finally {
       setIsSubmitting(false);
     }

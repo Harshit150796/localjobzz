@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -26,7 +27,7 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Find pending registration
+    // Get pending registration
     const { data: pending, error: fetchError } = await supabase
       .from('pending_registrations')
       .select('*')
@@ -35,95 +36,108 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     if (fetchError || !pending) {
-      console.error('Pending registration not found or already verified');
-      
-      // Increment attempts if registration exists
-      if (pending) {
-        await supabase
-          .from('pending_registrations')
-          .update({ attempts: pending.attempts + 1 })
-          .eq('email', email);
-      }
-
+      console.error('No pending registration found');
       return new Response(
-        JSON.stringify({ error: 'Invalid or expired verification code' }),
+        JSON.stringify({ error: 'No pending registration found for this email' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 404 }
+      );
+    }
+
+    // Check if too many attempts (max 5)
+    if (pending.attempts >= 5) {
+      return new Response(
+        JSON.stringify({ error: 'Too many attempts. Please request a new code.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      );
+    }
+
+    // Check if OTP expired (5 minutes)
+    const now = new Date();
+    const expiresAt = new Date(pending.expires_at);
+    if (now > expiresAt) {
+      return new Response(
+        JSON.stringify({ error: 'OTP expired. Please request a new code.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Check if OTP matches
-    if (pending.otp_code !== otpCode) {
-      console.error('OTP mismatch');
-      
+    // Verify OTP using constant-time comparison
+    const isMatch = await bcrypt.compare(otpCode, pending.otp_hash);
+
+    if (!isMatch) {
+      // Increment attempts
+      const newAttempts = pending.attempts + 1;
       await supabase
         .from('pending_registrations')
-        .update({ attempts: pending.attempts + 1 })
+        .update({ attempts: newAttempts })
         .eq('email', email);
 
+      const remainingAttempts = 5 - newAttempts;
       return new Response(
-        JSON.stringify({ error: 'Invalid verification code. Please try again.' }),
+        JSON.stringify({ 
+          error: `Invalid OTP. ${remainingAttempts} attempt${remainingAttempts !== 1 ? 's' : ''} remaining.` 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
 
-    // Check expiration
-    if (new Date() > new Date(pending.expires_at)) {
-      console.error('OTP expired');
-      return new Response(
-        JSON.stringify({ error: 'Verification code has expired. Please request a new code.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
-      );
-    }
+    console.log('OTP verified, creating user account...');
 
-    console.log('OTP verified, creating Supabase Auth account...');
-
-    // Create Supabase Auth account NOW (after verification)
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // Create user in Supabase Auth
+    const { data: authData, error: createError } = await supabase.auth.admin.createUser({
       email: pending.email,
       password: pending.password_hash,
-      email_confirm: true, // Mark as verified immediately
-      user_metadata: {
+      email_confirm: true, // Auto-confirm email
+      user_metadata: { 
         name: pending.name,
-        phone: pending.phone
+        phone: pending.phone 
       }
     });
 
-    if (authError) {
-      console.error('Auth creation error:', authError);
+    if (createError) {
+      console.error('Failed to create user:', createError);
       
       // Check if user already exists
-      if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
-        // Mark as verified anyway since the email is verified
-        await supabase
-          .from('pending_registrations')
-          .update({ verified_at: new Date().toISOString() })
-          .eq('email', email);
-          
+      if (createError.message.includes('already registered')) {
         return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'Email verified! You can now login.',
-            alreadyExists: true
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+          JSON.stringify({ error: 'Email already registered. Please login instead.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
         );
       }
       
-      throw authError;
+      throw createError;
     }
 
-    console.log('Auth account created successfully:', authData.user.id);
+    console.log('User created:', authData.user.id);
 
-    // Mark as verified
+    // Create profile with email_verified=true
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert({
+        user_id: authData.user.id,
+        name: pending.name,
+        email: pending.email,
+        phone: pending.phone,
+        email_verified: true
+      });
+
+    if (profileError) {
+      console.error('Failed to create profile:', profileError);
+      throw profileError;
+    }
+
+    // Mark pending registration as verified
     await supabase
       .from('pending_registrations')
       .update({ verified_at: new Date().toISOString() })
       .eq('email', email);
 
+    console.log('Account creation complete for:', email);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'Email verified! Account created successfully.',
+        message: 'Email verified successfully! You can now login.',
         userId: authData.user.id
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
@@ -132,7 +146,7 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('Error in verify-otp:', error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Verification failed' }),
+      JSON.stringify({ error: error.message || 'Failed to verify OTP' }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
     );
   }

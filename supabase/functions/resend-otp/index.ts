@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,20 +42,47 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Check 30-second cooldown
+    if (pending.last_resend_at) {
+      const timeSinceLastResend = Date.now() - new Date(pending.last_resend_at).getTime();
+      if (timeSinceLastResend < 30000) {
+        const waitTime = Math.ceil((30000 - timeSinceLastResend) / 1000);
+        return new Response(
+          JSON.stringify({ error: `Please wait ${waitTime} seconds before resending.` }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+        );
+      }
+    }
+
+    // Check hourly resend limit (3 per hour)
+    const oneHourAgo = new Date(Date.now() - 3600000);
+    if (pending.created_at && new Date(pending.created_at) > oneHourAgo && pending.resend_count >= 3) {
+      return new Response(
+        JSON.stringify({ error: 'Maximum resend limit reached (3 per hour). Please try again later.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
+      );
+    }
+
     // Generate new OTP
     const newOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpHash = await bcrypt.hash(newOTP);
+    
+    // Set new expiration (5 minutes)
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
-    console.log('Generated new OTP:', newOTP);
+    console.log('Generated new OTP for', email);
 
-    // Update OTP
+    // Update OTP with new hash, reset attempts, increment resend count
     await supabase
       .from('pending_registrations')
       .update({
-        otp_code: newOTP,
+        otp_code: newOTP, // Keep for send-otp-email
+        otp_hash: otpHash,
         expires_at: expiresAt.toISOString(),
-        attempts: 0
+        attempts: 0, // Reset attempts
+        resend_count: (pending.resend_count || 0) + 1,
+        last_resend_at: new Date().toISOString()
       })
       .eq('email', email);
 
@@ -65,11 +93,14 @@ const handler = async (req: Request): Promise<Response> => {
       body: { email, name: pending.name, otpCode: newOTP }
     });
 
+    const remainingResends = 3 - (pending.resend_count || 0) - 1;
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: 'New verification code sent',
-        expiresAt: expiresAt.toISOString()
+        message: 'New verification code sent. Valid for 5 minutes.',
+        expiresAt: expiresAt.toISOString(),
+        remainingResends: Math.max(0, remainingResends)
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
     );
