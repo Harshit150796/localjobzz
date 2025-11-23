@@ -102,15 +102,39 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('User already exists:', existingUser.id);
       userId = existingUser.id;
 
+      // Update auth user to confirmed if not already
+      if (!existingUser.email_confirmed_at) {
+        console.log('Confirming email for existing user');
+        await supabase.auth.admin.updateUserById(existingUser.id, {
+          email_confirm: true
+        });
+      }
+
       // Check if profile exists
       const { data: existingProfile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, email_verified')
         .eq('user_id', existingUser.id)
-        .single();
+        .maybeSingle();
 
-      // Create profile if it doesn't exist
-      if (!existingProfile) {
+      if (existingProfile) {
+        // Update existing profile to verified
+        console.log('Updating existing profile to verified');
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            email_verified: true,
+            name: pending.name,
+            phone: pending.phone 
+          })
+          .eq('user_id', existingUser.id);
+
+        if (updateError) {
+          console.error('Failed to update profile:', updateError);
+          throw updateError;
+        }
+      } else {
+        // Create profile if it doesn't exist
         console.log('Creating missing profile for existing user');
         const { error: profileError } = await supabase
           .from('profiles')

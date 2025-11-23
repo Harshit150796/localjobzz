@@ -41,19 +41,29 @@ const handler = async (req: Request): Promise<Response> => {
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
-    // Check if email already exists in profiles (actual registered users)
+    // Check if email already exists in profiles with verified email
     const { data: existingProfile } = await supabase
       .from('profiles')
-      .select('email')
+      .select('email, email_verified')
       .eq('email', email)
       .maybeSingle();
 
-    if (existingProfile) {
-      console.log('Email already exists:', email);
+    if (existingProfile && existingProfile.email_verified) {
+      console.log('Email already exists and is verified:', email);
       return new Response(
         JSON.stringify({ error: 'Email already registered. Please login instead.' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
+    }
+
+    // If profile exists but not verified, allow re-signup (clean up old pending registrations)
+    if (existingProfile && !existingProfile.email_verified) {
+      console.log('Email exists but not verified, allowing re-signup:', email);
+      // Delete old pending registrations for this email
+      await supabase
+        .from('pending_registrations')
+        .delete()
+        .eq('email', email);
     }
 
     // Check rate limiting - 30 second cooldown
