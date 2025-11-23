@@ -1,6 +1,14 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
-import * as bcrypt from "https://deno.land/x/bcrypt@v0.4.1/mod.ts";
+
+// Helper function to hash using Web Crypto API
+async function hashValue(value: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(value);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -102,8 +110,8 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Generated OTP for', email);
 
     // Hash OTP and password
-    const otpHash = await bcrypt.hash(otpCode);
-    const passwordHash = await bcrypt.hash(password);
+    const otpHash = await hashValue(otpCode);
+    const passwordHash = await hashValue(password);
 
     // Set expiration (5 minutes)
     const expiresAt = new Date();
