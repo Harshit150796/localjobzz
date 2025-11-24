@@ -15,6 +15,15 @@ export const createOrFindConversation = async (
   workerId: string
 ): Promise<ConversationResult> => {
   try {
+    // Validate all UUIDs are present and not null
+    if (!jobId || !employerId || !workerId || 
+        jobId === 'null' || employerId === 'null' || workerId === 'null') {
+      return { 
+        success: false, 
+        error: 'Invalid user or job information. Cannot start conversation.' 
+      };
+    }
+
     // Check if conversation already exists
     const { data: existing, error: searchError } = await supabase
       .from('conversations')
