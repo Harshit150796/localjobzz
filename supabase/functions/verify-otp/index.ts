@@ -172,19 +172,22 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('User created:', authData.user.id);
       userId = authData.user.id;
 
-      // Create profile
+      // Wait 100ms for handle_new_user trigger to complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Update the auto-created profile (created by trigger)
+      console.log('Updating auto-created profile to verified');
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert({
-          user_id: authData.user.id,
+        .update({
           name: pending.name,
-          email: pending.email,
           phone: pending.phone,
           email_verified: true
-        });
+        })
+        .eq('user_id', authData.user.id);
 
       if (profileError) {
-        console.error('Failed to create profile:', profileError);
+        console.error('Failed to update profile:', profileError);
         throw profileError;
       }
     }
