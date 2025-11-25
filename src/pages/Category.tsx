@@ -162,15 +162,6 @@ const Category = () => {
         return;
       }
 
-      // Check if job was posted anonymously (no user_id)
-      if (!originalJob.user_id) {
-        toast({ 
-          title: "Cannot Send Message", 
-          description: "This job was posted anonymously. Please call the phone number to contact.",
-          variant: "destructive" 
-        });
-        return;
-      }
 
       const result = await createOrFindConversation(
         job.id,

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Mail, Lock, Phone, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
@@ -30,6 +30,7 @@ const TwitterIcon = () => (
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, user } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
@@ -38,13 +39,15 @@ const Login = () => {
     emailOrPhone: '',
     password: ''
   });
+  
+  const from = (location.state as any)?.from || '/';
 
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      navigate('/');
+      navigate(from);
     }
-  }, [user, navigate]);
+  }, [user, navigate, from]);
 
   const isPhone = (input: string) => {
     return /^[\d\s\-\+\(\)]+$/.test(input) && input.replace(/\D/g, '').length >= 10;
@@ -137,8 +140,14 @@ const Login = () => {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-500 to-red-500 p-8 text-white">
-              <h1 className="text-3xl font-bold mb-2">Welcome Back!</h1>
-              <p className="text-orange-100">Sign in to continue to LocalJobzz</p>
+              <h1 className="text-3xl font-bold mb-2">
+                {from === '/post-ad' ? 'Login to Post Jobs' : 'Welcome Back!'}
+              </h1>
+              <p className="text-orange-100">
+                {from === '/post-ad' 
+                  ? '✅ Enable messaging • Manage your jobs • Get more responses'
+                  : 'Sign in to continue to LocalJobzz'}
+              </p>
             </div>
 
             {/* Content */}
