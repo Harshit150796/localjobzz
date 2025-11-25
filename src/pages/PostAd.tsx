@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { MapPin, Phone, Briefcase } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Phone, Briefcase, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
+import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import JobSuccessModal from '../components/JobSuccessModal';
 import ImageUpload from '../components/ImageUpload';
@@ -11,6 +12,7 @@ import ImageUpload from '../components/ImageUpload';
 const PostAd = () => {
   const navigate = useNavigate();
   const { addJob } = useJobs();
+  const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -194,6 +196,34 @@ const PostAd = () => {
     setUploadedImages([]);
   };
 
+  // Check authentication - redirect if not logged in
+  useEffect(() => {
+    if (!isLoading && !user) {
+      navigate('/login', { state: { from: '/post-ad' } });
+    }
+  }, [user, isLoading, navigate]);
+
+  // Show loading while checking auth
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Don't render form if not authenticated
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -203,7 +233,7 @@ const PostAd = () => {
           {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-green-700 p-6">
             <h1 className="text-3xl font-bold text-white">Post a Job</h1>
-            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE! No signup required.</p>
+            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE! Enable messaging and manage your posts.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">

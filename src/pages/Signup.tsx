@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +8,7 @@ import SEOHead from '../components/SEOHead';
 const Signup = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -15,6 +16,8 @@ const Signup = () => {
     email: '',
     password: ''
   });
+  
+  const from = (location.state as any)?.from || '/';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,8 +112,14 @@ const Signup = () => {
           <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-r from-orange-500 to-red-500 p-8 text-white">
-              <h1 className="text-3xl font-bold mb-2">Join LocalJobzz</h1>
-              <p className="text-orange-100">Create your account to get started</p>
+              <h1 className="text-3xl font-bold mb-2">
+                {from === '/post-ad' ? 'Sign Up to Post Jobs' : 'Join LocalJobzz'}
+              </h1>
+              <p className="text-orange-100">
+                {from === '/post-ad'
+                  ? '✅ Enable messaging • Manage your jobs • Get more responses'
+                  : 'Create your account to get started'}
+              </p>
             </div>
 
             {/* Content */}
