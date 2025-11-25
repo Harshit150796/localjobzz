@@ -44,7 +44,7 @@ const App = () => (
         <Sonner />
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/post" element={<PostAd />} />
+        <Route path="/post-ad" element={<PostAd />} />
         <Route path="/job/:jobId" element={<JobDetail />} />
         <Route path="/category/:categoryName" element={<Category />} />
         <Route path="/about" element={<About />} />
