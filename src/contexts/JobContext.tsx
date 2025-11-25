@@ -88,6 +88,15 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     
     try {
+      // Debug logging to verify auth state
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('=== Job Posting Debug ===');
+      console.log('Session exists:', !!session);
+      console.log('Session user ID:', session?.user?.id);
+      console.log('Context user ID:', user.id);
+      console.log('User IDs match:', session?.user?.id === user.id);
+      console.log('========================');
+      
       console.log('Posting job with user_id:', user.id);
       const { data, error } = await supabase
         .from('jobs')
