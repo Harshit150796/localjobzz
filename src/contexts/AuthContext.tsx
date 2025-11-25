@@ -42,40 +42,61 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   // Set up auth state listeners and check for existing session
   useEffect(() => {
+    let isMounted = true;
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        if (!isMounted) return;
+        
+        console.log('Auth state changed:', event);
         setSession(session);
         
-        // Defer the profile fetch to prevent deadlock
-        if (session?.user) {
+        if (session?.user && !profileLoaded) {
+          // Only fetch profile if not already loaded
           setTimeout(() => {
-            fetchUserProfile(session.user.id);
+            if (isMounted) {
+              fetchUserProfile(session.user.id);
+              setProfileLoaded(true);
+            }
           }, 0);
-        } else {
+        } else if (!session?.user) {
           setUser(null);
+          setProfileLoaded(false);
         }
         setIsLoading(false);
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Get initial session - DO THIS ONCE
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!isMounted) return;
+      
       setSession(session);
-      if (session?.user) {
+      if (session?.user && !profileLoaded) {
         setTimeout(() => {
-          fetchUserProfile(session.user.id);
+          if (isMounted) {
+            fetchUserProfile(session.user.id);
+            setProfileLoaded(true);
+          }
         }, 0);
       } else {
         setIsLoading(false);
       }
-    });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []);
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []); // Empty dependency array - run once
 
   // Fetch user profile from profiles table
   const fetchUserProfile = async (userId: string) => {

@@ -13,7 +13,7 @@ const PostAd = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { addJob, updateJob } = useJobs();
-  const { user, isLoading } = useAuth();
+  const { user, session, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // Check if we're editing an existing job
@@ -218,10 +218,17 @@ const PostAd = () => {
 
   // Check authentication - redirect if not logged in
   useEffect(() => {
-    if (!isLoading && !user) {
-      navigate('/login', { state: { from: '/post-ad' } });
+    // Only redirect if we're DEFINITELY sure user is not authenticated
+    // Don't redirect if auth is still loading or initializing
+    if (!isLoading && !user && session === null) {
+      // Add a small delay to ensure auth state has fully initialized
+      const timer = setTimeout(() => {
+        navigate('/login', { state: { from: '/post-ad' } });
+      }, 500);
+      
+      return () => clearTimeout(timer);
     }
-  }, [user, isLoading, navigate]);
+  }, [user, isLoading, session, navigate]);
 
   // Pre-fill form when editing
   useEffect(() => {
