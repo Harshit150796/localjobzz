@@ -187,7 +187,7 @@ export const createSiteNavigationSchema = () => ({
       "position": 3,
       "name": "Post a Job",
       "description": "Hire workers instantly for daily work",
-      "url": "https://localjobzz.com/post"
+      "url": "https://localjobzz.com/post-ad"
     },
     {
       "@type": "SiteNavigationElement",
