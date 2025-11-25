@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User, LogOut, MessageCircle, Settings, ChevronDown } from 'lucide-react';
+import { User, LogOut, MessageCircle, Briefcase, ChevronDown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Link } from 'react-router-dom';
 
@@ -52,21 +52,21 @@ const UserMenu: React.FC = () => {
               </Link>
               
               <Link
+                to="/my-jobs"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <Briefcase className="h-4 w-4 mr-3" />
+                My Jobs
+              </Link>
+              
+              <Link
                 to="/messages"
                 onClick={() => setIsOpen(false)}
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 <MessageCircle className="h-4 w-4 mr-3" />
                 Messages
-              </Link>
-              
-              <Link
-                to="/settings"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <Settings className="h-4 w-4 mr-3" />
-                Settings
               </Link>
               
               <hr className="my-2" />

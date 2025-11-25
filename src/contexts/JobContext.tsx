@@ -37,6 +37,7 @@ interface JobContextType {
   jobs: Job[];
   isLoading: boolean;
   addJob: (jobData: JobFormData) => Promise<{ success: boolean; message: string; jobId?: string }>;
+  deleteJob: (jobId: string) => Promise<{ success: boolean; message: string }>;
   refreshJobs: () => Promise<void>;
 }
 
@@ -112,8 +113,30 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const deleteJob = async (jobId: string): Promise<{ success: boolean; message: string }> => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId)
+        .eq('user_id', session?.user?.id);
+
+      if (error) {
+        return { success: false, message: error.message };
+      }
+
+      await refreshJobs();
+      return { success: true, message: 'Job deleted successfully!' };
+    } catch (error) {
+      return { success: false, message: 'Failed to delete job' };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <JobContext.Provider value={{ jobs, isLoading, addJob, refreshJobs }}>
+    <JobContext.Provider value={{ jobs, isLoading, addJob, deleteJob, refreshJobs }}>
       {children}
     </JobContext.Provider>
   );
