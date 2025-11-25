@@ -349,7 +349,7 @@ const About = () => {
             Join thousands of people finding work or hiring workers on localjobzz
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/post">
+            <Link to="/post-ad">
               <Button size="lg" className="w-full sm:w-auto">
                 Post a Job
               </Button>

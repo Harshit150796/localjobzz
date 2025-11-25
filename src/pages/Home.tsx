@@ -127,7 +127,7 @@ const HomePage = () => {
 
             {/* Post Job Tile */}
             <Link 
-              to="/post"
+              to="/post-ad"
               className="group transform hover:scale-105 transition-all duration-300 h-full"
             >
               <div className="bg-white rounded-2xl p-4 sm:p-6 md:p-8 shadow-2xl hover:shadow-3xl transition-all duration-300 border-4 border-transparent hover:border-yellow-300 h-full flex flex-col">
@@ -385,7 +385,7 @@ const HomePage = () => {
               Find Work Now
             </Link>
             <Link 
-              to="/post"
+              to="/post-ad"
               className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-lg text-base sm:text-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 transform hover:scale-105"
             >
               Post a Job - FREE!
