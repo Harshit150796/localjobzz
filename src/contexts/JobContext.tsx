@@ -79,7 +79,10 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const addJob = async (jobData: JobFormData): Promise<{ success: boolean; message: string; jobId?: string }> => {
+  const addJob = async (
+    jobData: JobFormData, 
+    retryCount = 0
+  ): Promise<{ success: boolean; message: string; jobId?: string }> => {
     setIsLoading(true);
     
     if (!user?.id) {
@@ -88,7 +91,8 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     
     try {
-      console.log('Posting job with user_id:', user.id);
+      console.log(`Posting job with user_id: ${user.id} (attempt ${retryCount + 1})`);
+      
       const { data, error } = await supabase
         .from('jobs')
         .insert({
@@ -108,6 +112,20 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .single();
 
       if (error) {
+        console.error('Job posting error:', error);
+        
+        // Retry logic for RLS errors (likely caused by auth timing)
+        if (error.message.includes('row-level security') && retryCount < 2) {
+          console.log(`RLS error detected, retrying in ${(retryCount + 1)}s...`);
+          setIsLoading(false);
+          
+          // Wait with exponential backoff (1s, 2s)
+          await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+          
+          // Retry the operation
+          return addJob(jobData, retryCount + 1);
+        }
+        
         return { success: false, message: error.message };
       }
 
@@ -115,6 +133,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await refreshJobs();
       return { success: true, message: 'Job posted successfully!', jobId: data.id };
     } catch (error) {
+      console.error('Unexpected error during job posting:', error);
       return { success: false, message: 'An unexpected error occurred' };
     } finally {
       setIsLoading(false);
