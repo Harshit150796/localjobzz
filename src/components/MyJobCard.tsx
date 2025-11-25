@@ -13,7 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MapPin, DollarSign, Trash2, Eye, Calendar } from 'lucide-react';
+import { MapPin, DollarSign, Trash2, Eye, Calendar, Pencil } from 'lucide-react';
 import { useJobs } from '@/contexts/JobContext';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
@@ -154,6 +154,13 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
             >
               <Eye className="h-4 w-4 mr-2" />
               View Details
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/post-ad', { state: { editJob: job } })}
+            >
+              <Pencil className="h-4 w-4" />
             </Button>
             <Button
               variant="destructive"

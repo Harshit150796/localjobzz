@@ -104,7 +104,7 @@ export type Database = {
           title: string
           updated_at: string
           urgency: string
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           category?: string | null
@@ -121,7 +121,7 @@ export type Database = {
           title: string
           updated_at?: string
           urgency?: string
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           category?: string | null
@@ -138,7 +138,7 @@ export type Database = {
           title?: string
           updated_at?: string
           urgency?: string
-          user_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }

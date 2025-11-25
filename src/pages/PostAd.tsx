@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Phone, Briefcase, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
@@ -11,9 +11,15 @@ import ImageUpload from '../components/ImageUpload';
 
 const PostAd = () => {
   const navigate = useNavigate();
-  const { addJob } = useJobs();
+  const location = useLocation();
+  const { addJob, updateJob } = useJobs();
   const { user, isLoading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Check if we're editing an existing job
+  const editJob = location.state?.editJob;
+  const isEditMode = !!editJob;
+  
   const [formData, setFormData] = useState({
     jobTitle: '',
     jobType: '',
@@ -116,8 +122,7 @@ const PostAd = () => {
     setIsSubmitting(true);
     
     try {
-      // Add job to context
-      const result = await addJob({
+      const jobData = {
         title: formData.jobTitle,
         job_type: formData.jobType,
         daily_salary: formData.dailySalary,
@@ -126,21 +131,36 @@ const PostAd = () => {
         phone: formData.phone,
         urgency: formData.urgency,
         images: uploadedImages
-      });
+      };
+
+      let result;
+      if (isEditMode && editJob) {
+        // Update existing job
+        result = await updateJob(editJob.id, jobData);
+      } else {
+        // Add new job
+        result = await addJob(jobData);
+      }
 
       if (result.success) {
-        if (result.jobId) {
+        if (!isEditMode && result.jobId) {
           setNewJobId(result.jobId);
         }
         toast({
           title: "Success!",
-          description: "Your job has been posted successfully.",
+          description: isEditMode ? "Your job has been updated successfully." : "Your job has been posted successfully.",
         });
-        setShowSuccessModal(true);
+        
+        if (isEditMode) {
+          // Navigate back to My Jobs after editing
+          navigate('/my-jobs');
+        } else {
+          setShowSuccessModal(true);
+        }
       } else {
         toast({
           title: "Error",
-          description: result.message || "Failed to post job. Please try again.",
+          description: result.message || `Failed to ${isEditMode ? 'update' : 'post'} job. Please try again.`,
           variant: "destructive",
         });
       }
@@ -203,6 +223,22 @@ const PostAd = () => {
     }
   }, [user, isLoading, navigate]);
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editJob) {
+      setFormData({
+        jobTitle: editJob.title || '',
+        jobType: editJob.job_type || '',
+        dailySalary: editJob.daily_salary || '',
+        location: editJob.location || '',
+        description: editJob.description || '',
+        phone: editJob.phone || '',
+        urgency: editJob.urgency || 'normal'
+      });
+      setUploadedImages(editJob.images || []);
+    }
+  }, [editJob]);
+
   // Show loading while checking auth
   if (isLoading) {
     return (
@@ -232,8 +268,12 @@ const PostAd = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {/* Header */}
           <div className="bg-gradient-to-r from-green-600 to-green-700 p-6">
-            <h1 className="text-3xl font-bold text-white">Post a Job</h1>
-            <p className="text-white/90 mt-2">Find workers in 2 simple steps - It's completely FREE! Enable messaging and manage your posts.</p>
+            <h1 className="text-3xl font-bold text-white">{isEditMode ? 'Edit Job' : 'Post a Job'}</h1>
+            <p className="text-white/90 mt-2">
+              {isEditMode 
+                ? 'Update your job details below' 
+                : 'Find workers in 2 simple steps - It\'s completely FREE! Enable messaging and manage your posts.'}
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
@@ -437,10 +477,16 @@ const PostAd = () => {
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-4 px-6 rounded-lg text-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 transform hover:scale-[1.02] flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 <Briefcase className="h-5 w-5" />
-                <span>{isSubmitting ? 'Posting Job...' : 'Post Job - No Signup Needed!'}</span>
+                <span>
+                  {isSubmitting 
+                    ? (isEditMode ? 'Updating Job...' : 'Posting Job...') 
+                    : (isEditMode ? 'Update Job' : 'Post Job - No Signup Needed!')}
+                </span>
               </button>
               <p className="text-center text-sm text-gray-500 mt-3">
-                Your job will be visible to thousands of workers immediately
+                {isEditMode 
+                  ? 'Your changes will be saved immediately' 
+                  : 'Your job will be visible to thousands of workers immediately'}
               </p>
             </div>
           </form>
