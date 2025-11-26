@@ -24,6 +24,14 @@ export const createOrFindConversation = async (
       };
     }
 
+    // Prevent self-conversations
+    if (employerId === workerId) {
+      return { 
+        success: false, 
+        error: 'You cannot message your own job posting' 
+      };
+    }
+
     // Check if conversation already exists
     const { data: existing, error: searchError } = await supabase
       .from('conversations')

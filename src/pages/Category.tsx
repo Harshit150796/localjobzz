@@ -159,9 +159,20 @@ const Category = () => {
       const originalJob = jobs.find(j => j.id === job.id);
       if (!originalJob) {
         toast({ title: "Error", description: "Job not found", variant: "destructive" });
+        setIsCreatingConversation(false);
         return;
       }
 
+      // Prevent self-messaging
+      if (user.id === originalJob.user_id) {
+        toast({ 
+          title: "Notice", 
+          description: "You cannot message your own job posting",
+          variant: "default" 
+        });
+        setIsCreatingConversation(false);
+        return;
+      }
 
       const result = await createOrFindConversation(
         job.id,
