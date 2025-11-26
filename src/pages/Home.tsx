@@ -100,7 +100,7 @@ const HomePage = () => {
               Find Work Today
               {/* GPU-safe tilted underline using SVG */}
               <svg 
-                className="w-full h-2 mt-1" 
+                className="w-full h-2 -mt-1" 
                 viewBox="0 0 100 8" 
                 preserveAspectRatio="none"
               >
