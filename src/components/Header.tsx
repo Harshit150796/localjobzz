@@ -319,14 +319,21 @@ const Header = () => {
                       <Link 
                         to="/profile"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg text-center"
+                        className="flex-1 bg-gray-800 text-white px-4 py-3 rounded-lg text-center text-sm"
                       >
                         My Profile
                       </Link>
                       <Link 
+                        to="/my-jobs"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg text-center text-sm"
+                      >
+                        My Jobs
+                      </Link>
+                      <Link 
                         to="/messages"
                         onClick={() => setIsMenuOpen(false)}
-                        className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg text-center"
+                        className="flex-1 bg-orange-500 text-white px-4 py-3 rounded-lg text-center text-sm"
                       >
                         Messages
                       </Link>
