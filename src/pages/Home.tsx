@@ -96,7 +96,17 @@ const HomePage = () => {
       <section className="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 py-12 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl sm:text-4xl md:text-6xl font-extrabold text-white mb-4 sm:mb-6 leading-tight">
-            <span className="block opacity-0 animate-fade-in-up">Find Work Today</span>
+            <span 
+              className="inline-block opacity-0 animate-fade-in-up pb-2"
+              style={{
+                backgroundImage: 'linear-gradient(to right, #facc15, #facc15)',
+                backgroundSize: '100% 4px',
+                backgroundPosition: 'bottom',
+                backgroundRepeat: 'no-repeat'
+              }}
+            >
+              Find Work Today
+            </span>
             <span className="block text-yellow-300 mt-1 opacity-0 animate-fade-in-up-delay">Get Paid Today</span>
           </h1>
           <p className="text-lg sm:text-xl text-white/90 mb-8 sm:mb-12 max-w-2xl mx-auto opacity-0 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
