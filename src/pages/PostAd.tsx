@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import JobSuccessModal from '../components/JobSuccessModal';
 import ImageUpload from '../components/ImageUpload';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ const PostAd = () => {
     jobTitle: '',
     jobType: '',
     dailySalary: '',
+    paymentType: 'daily' as 'daily' | 'monthly',
     location: '',
     description: '',
     phone: '',
@@ -125,7 +127,7 @@ const PostAd = () => {
       const jobData = {
         title: formData.jobTitle,
         job_type: formData.jobType,
-        daily_salary: formData.dailySalary,
+        daily_salary: `${formData.dailySalary}/${formData.paymentType === 'daily' ? 'day' : 'month'}`,
         location: formData.location,
         description: formData.description,
         phone: formData.phone,
@@ -183,6 +185,7 @@ const PostAd = () => {
       jobTitle: '',
       jobType: '',
       dailySalary: '',
+      paymentType: 'daily',
       location: '',
       description: '',
       phone: '',
@@ -208,6 +211,7 @@ const PostAd = () => {
       jobTitle: '',
       jobType: '',
       dailySalary: '',
+      paymentType: 'daily',
       location: '',
       description: '',
       phone: '',
@@ -233,10 +237,16 @@ const PostAd = () => {
   // Pre-fill form when editing
   useEffect(() => {
     if (editJob) {
+      // Parse payment type from stored format like "500/day" or "15000/month"
+      const salaryParts = editJob.daily_salary?.split('/') || [];
+      const salaryAmount = salaryParts[0] || editJob.daily_salary || '';
+      const paymentType = salaryParts[1] === 'month' ? 'monthly' : 'daily';
+      
       setFormData({
         jobTitle: editJob.title || '',
         jobType: editJob.job_type || '',
-        dailySalary: editJob.daily_salary || '',
+        dailySalary: salaryAmount,
+        paymentType: paymentType,
         location: editJob.location || '',
         description: editJob.description || '',
         phone: editJob.phone || '',
@@ -343,13 +353,28 @@ const PostAd = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Daily Payment (₹) *
+                  Payment (₹) *
                 </label>
+                <ToggleGroup 
+                  type="single" 
+                  value={formData.paymentType}
+                  onValueChange={(value) => {
+                    if (value) setFormData({...formData, paymentType: value as 'daily' | 'monthly'});
+                  }}
+                  className="justify-start mb-2"
+                >
+                  <ToggleGroupItem value="daily" className="px-4">
+                    Daily
+                  </ToggleGroupItem>
+                  <ToggleGroupItem value="monthly" className="px-4">
+                    Monthly
+                  </ToggleGroupItem>
+                </ToggleGroup>
                 <input
                   type="number"
                   value={formData.dailySalary}
                   onChange={(e) => setFormData({...formData, dailySalary: e.target.value})}
-                  placeholder="e.g., 500, 800, 1000"
+                  placeholder={formData.paymentType === 'daily' ? "e.g., 500, 800, 1000" : "e.g., 15000, 20000, 30000"}
                   className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                   required
                 />
