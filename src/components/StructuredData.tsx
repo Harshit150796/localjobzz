@@ -5,7 +5,7 @@ export const createOrganizationSchema = () => ({
   "url": "https://localjobzz.com",
   "logo": {
     "@type": "ImageObject",
-    "url": "https://localjobzz.com/favicon-orange.png"
+    "url": "https://localjobzz.com/favicon-new.png"
   },
   "description": "Premier job platform for finding daily work opportunities and hiring workers instantly",
   "foundingDate": "2024",
@@ -62,7 +62,7 @@ export const createJobPostingSchema = (job: {
     "@type": "Organization",
     "name": "localjobzz",
     "sameAs": "https://localjobzz.com",
-    "logo": "https://localjobzz.com/favicon-orange.png"
+    "logo": "https://localjobzz.com/favicon-new.png"
   },
   "jobLocation": {
     "@type": "Place",
@@ -90,7 +90,7 @@ export const createLocalBusinessSchema = (city?: string) => ({
   "@context": "https://schema.org",
   "@type": "LocalBusiness",
   "name": `localjobzz ${city ? `- ${city}` : ''}`,
-  "image": "https://localjobzz.com/favicon-orange.png",
+  "image": "https://localjobzz.com/favicon-new.png",
   "url": `https://localjobzz.com${city ? `/city/${city.toLowerCase().replace(/\s+/g, '-')}` : ''}`,
   "telephone": "+91-XXX-XXX-XXXX",
   "address": {
