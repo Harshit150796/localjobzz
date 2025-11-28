@@ -1,4 +1,5 @@
-import { corsHeaders, getCacheHeaders, generateSitemapXML, getTodayDate, SitemapUrl, jobCategories, majorCities } from '../_shared/sitemap-utils.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
+import { corsHeaders, getCacheHeaders, generateSitemapXML, getTodayDate, SitemapUrl } from '../_shared/sitemap-utils.ts';
 
 const BASE_URL = 'https://localjobzz.com';
 
@@ -11,11 +12,37 @@ Deno.serve(async (req) => {
   try {
     console.log('Generating categories sitemap...');
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
     const today = getTodayDate();
     const categoryUrls: SitemapUrl[] = [];
 
-    // Add main category pages
-    jobCategories.forEach(category => {
+    // Query distinct categories with active jobs
+    const { data: categoriesData, error: categoriesError } = await supabase
+      .from('jobs')
+      .select('category')
+      .eq('status', 'active')
+      .not('category', 'is', null);
+
+    if (categoriesError) {
+      console.error('Error fetching categories:', categoriesError);
+      throw new Error(`Database error: ${categoriesError.message}`);
+    }
+
+    // Extract unique categories (normalize to lowercase with hyphens)
+    const activeCategories = [...new Set(
+      (categoriesData || [])
+        .map(job => job.category?.toLowerCase().trim().replace(/\s+/g, '-'))
+        .filter(category => category && category.length > 0)
+    )];
+
+    console.log(`Found ${activeCategories.length} categories with active jobs`);
+
+    // Add main category pages (only categories with jobs)
+    activeCategories.forEach(category => {
       categoryUrls.push({
         loc: `${BASE_URL}/category/${category}`,
         lastmod: today,
@@ -24,10 +51,29 @@ Deno.serve(async (req) => {
       });
     });
 
-    // Add category + city combinations for top 10 cities
-    const topCities = majorCities.slice(0, 10);
-    jobCategories.forEach(category => {
-      topCities.forEach(city => {
+    // Query category + city combinations with active jobs
+    const { data: categoryCity, error: ccError } = await supabase
+      .from('jobs')
+      .select('category, location')
+      .eq('status', 'active')
+      .not('category', 'is', null);
+
+    if (ccError) {
+      console.error('Error fetching category-cities:', ccError);
+    } else {
+      // Create unique category-city combinations
+      const combinations = new Set(
+        (categoryCity || [])
+          .map(job => {
+            const category = job.category?.toLowerCase().trim().replace(/\s+/g, '-');
+            const city = job.location.toLowerCase().trim().replace(/\s+/g, '-');
+            return category ? `${category}|${city}` : null;
+          })
+          .filter(Boolean)
+      );
+
+      combinations.forEach(combo => {
+        const [category, city] = combo!.split('|');
         categoryUrls.push({
           loc: `${BASE_URL}/jobs/${city}/${category}`,
           lastmod: today,
@@ -35,7 +81,7 @@ Deno.serve(async (req) => {
           priority: 0.85
         });
       });
-    });
+    }
 
     const xml = generateSitemapXML(categoryUrls);
     
