@@ -55,41 +55,32 @@ const Signup = () => {
         }
       });
       
-      // Extract structured error info from data or error response
-      let errorCode = (data as any)?.error as string | undefined;
-      let canLogin = (data as any)?.canLogin as boolean | undefined;
-
-      // For non-2xx responses, Supabase puts details on the error context response
-      if (error && (error as any).context?.response) {
-        try {
-          const response = (error as any).context.response as Response;
-          const errorBody = await response.clone().json();
-
-          if (errorBody?.error && !errorCode) {
-            errorCode = errorBody.error;
-          }
-          if (typeof errorBody?.canLogin !== 'undefined' && typeof canLogin === 'undefined') {
-            canLogin = errorBody.canLogin;
-          }
-        } catch (parseError) {
-          console.error('Failed to parse error response from create-pending-registration:', parseError);
-        }
-      }
-
-      // Handle duplicate email based on structured error info
-      if (errorCode === 'EMAIL_ALREADY_EXISTS' || canLogin) {
+      // Debug logging
+      console.log('Registration response:', { data, error });
+      
+      // Check for duplicate email FIRST (before any error throwing)
+      if (data && data.success === false && data.error === 'EMAIL_ALREADY_EXISTS') {
+        console.log('Duplicate email detected, showing alert');
         setDuplicateEmailError(true);
         setIsSubmitting(false);
         return;
       }
 
-      // THEN: Handle general errors
+      // Also check canLogin flag as backup
+      if (data && data.canLogin === true) {
+        console.log('canLogin flag detected, showing alert');
+        setDuplicateEmailError(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Handle general errors
       if (error) {
         throw new Error(error.message);
       }
 
       if (!data?.success) {
-        throw new Error((data as any)?.error || 'Failed to create account');
+        throw new Error(data?.error || 'Failed to create account');
       }
       
       // Store email and password for verification page
