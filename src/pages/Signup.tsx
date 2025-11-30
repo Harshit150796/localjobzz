@@ -55,8 +55,29 @@ const Signup = () => {
         }
       });
       
-      // FIRST: Check data for structured errors (even with non-2xx responses)
-      if (data?.error === 'EMAIL_ALREADY_EXISTS' || data?.canLogin) {
+      // Extract structured error info from data or error response
+      let errorCode = (data as any)?.error as string | undefined;
+      let canLogin = (data as any)?.canLogin as boolean | undefined;
+
+      // For non-2xx responses, Supabase puts details on the error context response
+      if (error && (error as any).context?.response) {
+        try {
+          const response = (error as any).context.response as Response;
+          const errorBody = await response.clone().json();
+
+          if (errorBody?.error && !errorCode) {
+            errorCode = errorBody.error;
+          }
+          if (typeof errorBody?.canLogin !== 'undefined' && typeof canLogin === 'undefined') {
+            canLogin = errorBody.canLogin;
+          }
+        } catch (parseError) {
+          console.error('Failed to parse error response from create-pending-registration:', parseError);
+        }
+      }
+
+      // Handle duplicate email based on structured error info
+      if (errorCode === 'EMAIL_ALREADY_EXISTS' || canLogin) {
         setDuplicateEmailError(true);
         setIsSubmitting(false);
         return;
@@ -68,7 +89,7 @@ const Signup = () => {
       }
 
       if (!data?.success) {
-        throw new Error(data?.error || 'Failed to create account');
+        throw new Error((data as any)?.error || 'Failed to create account');
       }
       
       // Store email and password for verification page
