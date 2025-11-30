@@ -55,15 +55,16 @@ const Signup = () => {
         }
       });
       
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      // Check for duplicate email error
+      // FIRST: Check data for structured errors (even with non-2xx responses)
       if (data?.error === 'EMAIL_ALREADY_EXISTS' || data?.canLogin) {
         setDuplicateEmailError(true);
         setIsSubmitting(false);
         return;
+      }
+
+      // THEN: Handle general errors
+      if (error) {
+        throw new Error(error.message);
       }
 
       if (!data?.success) {
