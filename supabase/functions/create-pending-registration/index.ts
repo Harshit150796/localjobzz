@@ -49,11 +49,12 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Email already exists in Supabase Auth:', email);
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: 'EMAIL_ALREADY_EXISTS',
           message: 'An account with this email already exists. Please sign in instead.',
           canLogin: true
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
@@ -68,11 +69,12 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Email already exists and is verified in profiles:', email);
       return new Response(
         JSON.stringify({ 
+          success: false,
           error: 'EMAIL_ALREADY_EXISTS',
           message: 'An account with this email already exists. Please sign in instead.',
           canLogin: true
         }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 
