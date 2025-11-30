@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import SEOHead from '../components/SEOHead';
@@ -11,6 +11,7 @@ const Signup = () => {
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [duplicateEmailError, setDuplicateEmailError] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -58,6 +59,13 @@ const Signup = () => {
         throw new Error(error.message);
       }
 
+      // Check for duplicate email error
+      if (data?.error === 'EMAIL_ALREADY_EXISTS' || data?.canLogin) {
+        setDuplicateEmailError(true);
+        setIsSubmitting(false);
+        return;
+      }
+
       if (!data?.success) {
         throw new Error(data?.error || 'Failed to create account');
       }
@@ -85,6 +93,10 @@ const Signup = () => {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Clear duplicate email error when user changes the email
+    if (e.target.name === 'email') {
+      setDuplicateEmailError(false);
+    }
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
@@ -124,6 +136,27 @@ const Signup = () => {
 
             {/* Content */}
             <div className="p-8">
+              {/* Duplicate Email Alert */}
+              {duplicateEmailError && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-orange-800">Account Already Exists</h3>
+                      <p className="text-sm text-orange-700 mt-1">
+                        You've already created an account with <strong>{formData.email}</strong>.
+                      </p>
+                      <Link 
+                        to={`/login?email=${encodeURIComponent(formData.email)}`}
+                        className="inline-flex items-center gap-1 mt-2 text-orange-600 font-semibold hover:text-orange-700 transition-colors"
+                      >
+                        Sign In Instead →
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Signup Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>

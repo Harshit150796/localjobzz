@@ -42,6 +42,15 @@ const Login = () => {
   
   const from = (location.state as any)?.from || '/';
 
+  // Pre-fill email from URL params if provided
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const prefilledEmail = searchParams.get('email');
+    if (prefilledEmail) {
+      setFormData(prev => ({ ...prev, emailOrPhone: prefilledEmail }));
+    }
+  }, [location.search]);
+
   // Redirect if already logged in
   useEffect(() => {
     if (user) {

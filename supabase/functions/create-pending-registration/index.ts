@@ -41,7 +41,23 @@ const handler = async (req: Request): Promise<Response> => {
     const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
 
-    // Check if email already exists in profiles with verified email
+    // Check if email exists in Supabase Auth first
+    const { data: existingAuthUsers } = await supabase.auth.admin.listUsers();
+    const existingAuthUser = existingAuthUsers.users.find(u => u.email === email && u.email_confirmed_at);
+
+    if (existingAuthUser) {
+      console.log('Email already exists in Supabase Auth:', email);
+      return new Response(
+        JSON.stringify({ 
+          error: 'EMAIL_ALREADY_EXISTS',
+          message: 'An account with this email already exists. Please sign in instead.',
+          canLogin: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
+      );
+    }
+
+    // Also check profiles table as backup
     const { data: existingProfile } = await supabase
       .from('profiles')
       .select('email, email_verified')
@@ -49,10 +65,14 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (existingProfile && existingProfile.email_verified) {
-      console.log('Email already exists and is verified:', email);
+      console.log('Email already exists and is verified in profiles:', email);
       return new Response(
-        JSON.stringify({ error: 'Email already registered. Please login instead.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ 
+          error: 'EMAIL_ALREADY_EXISTS',
+          message: 'An account with this email already exists. Please sign in instead.',
+          canLogin: true
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 409 }
       );
     }
 
