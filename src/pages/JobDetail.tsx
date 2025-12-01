@@ -87,32 +87,24 @@ const JobDetail = () => {
   const displayImages = job.images && job.images.length > 0 ? job.images : [];
 
   const handleSendMessage = async () => {
-    let currentSession = session;
+    // If auth is still loading, wait
+    if (authLoading) {
+      toast({
+        title: "Please wait...",
+        description: "Checking authentication...",
+      });
+      return;
+    }
     
-    // If session appears null, try to recover it
-    if (!currentSession) {
-      if (authLoading) {
-        toast({
-          title: "Please wait...",
-          description: "Checking authentication...",
-        });
-        return;
-      }
-      
-      // Try to get session directly from Supabase (recovery attempt)
-      const { data } = await supabase.auth.getSession();
-      currentSession = data.session;
-      
-      // If still no session after recovery, redirect to login
-      if (!currentSession) {
-        toast({
-          title: "Login Required",
-          description: "Please login to send messages",
-          variant: "destructive"
-        });
-        navigate('/login');
-        return;
-      }
+    // If no session after auth loaded, user is not logged in
+    if (!session) {
+      toast({
+        title: "Login Required",
+        description: "Please login to send messages",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
     }
 
     if (!job.user_id) {
@@ -124,7 +116,7 @@ const JobDetail = () => {
       return;
     }
 
-    if (currentSession.user.id === job.user_id) {
+    if (session.user.id === job.user_id) {
       toast({ 
         title: "Notice", 
         description: "You cannot message your own job posting",
@@ -139,8 +131,8 @@ const JobDetail = () => {
       const result = await createOrFindConversation(
         job.id,
         job.user_id,
-        currentSession.user.id,
-        currentSession
+        session.user.id,
+        session
       );
 
       if (result.success && result.conversationId) {
