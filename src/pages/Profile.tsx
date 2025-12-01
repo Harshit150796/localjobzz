@@ -1,21 +1,62 @@
-import React, { useState } from 'react';
-import { User, Mail, Phone, Save, ArrowLeft, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { User, Mail, Phone, Save, ArrowLeft, LogOut, Star, Briefcase } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import RatingStars from '../components/RatingStars';
 
 const Profile: React.FC = () => {
   const { user, updateProfile, isLoading, logout } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [ratingStats, setRatingStats] = useState<{
+    averageWorkerRating: number | null;
+    averageEmployerRating: number | null;
+    totalWorkerReviews: number;
+    totalEmployerReviews: number;
+    totalJobsPosted: number;
+    totalJobsCompleted: number;
+  } | null>(null);
   
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
     phone: user?.phone || ''
   });
+
+  useEffect(() => {
+    if (user) {
+      fetchRatingStats();
+    }
+  }, [user]);
+
+  const fetchRatingStats = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('average_worker_rating, average_employer_rating, total_worker_reviews, total_employer_reviews, total_jobs_posted, total_jobs_completed')
+        .eq('user_id', user?.id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setRatingStats({
+          averageWorkerRating: data.average_worker_rating,
+          averageEmployerRating: data.average_employer_rating,
+          totalWorkerReviews: data.total_worker_reviews,
+          totalEmployerReviews: data.total_employer_reviews,
+          totalJobsPosted: data.total_jobs_posted,
+          totalJobsCompleted: data.total_jobs_completed,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching rating stats:', error);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +119,54 @@ const Profile: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* Rating Summary */}
+        {ratingStats && (ratingStats.averageWorkerRating || ratingStats.averageEmployerRating) && (
+          <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">Your Reputation</h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {ratingStats.averageWorkerRating && (
+                <div className="flex items-start gap-4 p-4 border rounded-lg">
+                  <div className="bg-blue-100 p-3 rounded-full">
+                    <Briefcase className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 mb-1">As Worker</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <RatingStars value={ratingStats.averageWorkerRating} readonly size="sm" />
+                      <span className="font-semibold text-lg">{ratingStats.averageWorkerRating.toFixed(1)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{ratingStats.totalWorkerReviews} reviews • {ratingStats.totalJobsCompleted} jobs completed</p>
+                  </div>
+                </div>
+              )}
+
+              {ratingStats.averageEmployerRating && (
+                <div className="flex items-start gap-4 p-4 border rounded-lg">
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <Star className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 mb-1">As Employer</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <RatingStars value={ratingStats.averageEmployerRating} readonly size="sm" />
+                      <span className="font-semibold text-lg">{ratingStats.averageEmployerRating.toFixed(1)}</span>
+                    </div>
+                    <p className="text-xs text-gray-500">{ratingStats.totalEmployerReviews} reviews • {ratingStats.totalJobsPosted} jobs posted</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Link 
+              to={`/user/${user.id}`}
+              className="mt-4 text-sm text-orange-600 hover:text-orange-700 font-semibold inline-block"
+            >
+              View Public Profile →
+            </Link>
+          </div>
+        )}
 
         {/* Profile Form */}
         <div className="bg-white rounded-xl shadow-sm p-6">
