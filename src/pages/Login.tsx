@@ -51,12 +51,16 @@ const Login = () => {
     }
   }, [location.search]);
 
-  // Redirect if already logged in
+  // Redirect if already logged in - check session directly
   useEffect(() => {
-    if (user) {
-      navigate(from);
-    }
-  }, [user, navigate, from]);
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate(from);
+      }
+    };
+    checkSession();
+  }, [navigate, from]);
 
   const isPhone = (input: string) => {
     return /^[\d\s\-\+\(\)]+$/.test(input) && input.replace(/\D/g, '').length >= 10;
