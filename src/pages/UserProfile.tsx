@@ -71,12 +71,12 @@ const UserProfile: React.FC = () => {
       if (profileError) throw profileError;
       setProfile(profileData);
 
-      // Fetch posted jobs
+      // Fetch posted jobs (both active and completed)
       const { data: jobsData } = await supabase
         .from('jobs')
-        .select('id, title, location, created_at, daily_salary, category')
+        .select('id, title, location, created_at, daily_salary, category, status')
         .eq('user_id', userId)
-        .eq('status', 'active')
+        .in('status', ['active', 'completed'])
         .order('created_at', { ascending: false })
         .limit(10);
 

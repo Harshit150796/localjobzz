@@ -115,6 +115,18 @@ const JobDetail = () => {
       return;
     }
 
+    // Verify session before creating conversation
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Session Expired",
+        description: "Your session has expired. Please log in again.",
+        variant: "destructive"
+      });
+      navigate('/login');
+      return;
+    }
+
     setIsCreatingConversation(true);
     
     try {

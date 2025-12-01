@@ -31,20 +31,20 @@ interface MyJobCardProps {
 
 const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
   const navigate = useNavigate();
-  const { deleteJob } = useJobs();
+  const { deleteJob, updateJob } = useJobs();
   const { user } = useAuth();
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
   const handleCompletionSuccess = async () => {
-    // Delete the job after successful completion
-    const result = await deleteJob(job.id);
+    // Mark job as completed instead of deleting
+    const result = await updateJob(job.id, { status: 'completed' } as any);
     
     if (result.success) {
       toast({
         title: 'Success',
-        description: 'Job deleted successfully',
+        description: 'Job marked as completed',
       });
-      onJobDeleted();
+      onJobDeleted(); // Refresh the list
     } else {
       toast({
         title: 'Error',
