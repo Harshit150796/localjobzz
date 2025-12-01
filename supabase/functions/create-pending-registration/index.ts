@@ -123,6 +123,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Check IP-based rate limit (10 per hour)
+    const oneHourAgo = new Date(Date.now() - 3600000);
     const { count: ipCount } = await supabase
       .from('pending_registrations')
       .select('*', { count: 'exact', head: true })
