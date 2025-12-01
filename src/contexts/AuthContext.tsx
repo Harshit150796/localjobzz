@@ -43,6 +43,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [sessionChecked, setSessionChecked] = useState(false);
 
   // Set up auth state listeners and check for existing session
   useEffect(() => {
@@ -68,7 +69,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(null);
           setProfileLoaded(false);
         }
-        setIsLoading(false);
+        
+        // Only set isLoading false if we've done initial check OR this is a definitive event
+        if (sessionChecked || event !== 'INITIAL_SESSION') {
+          setIsLoading(false);
+        }
       }
     );
 
@@ -78,6 +83,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!isMounted) return;
       
       setSession(session);
+      setSessionChecked(true); // Mark as checked
+      
       if (session?.user && !profileLoaded) {
         setTimeout(() => {
           if (isMounted) {
@@ -85,9 +92,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setProfileLoaded(true);
           }
         }, 0);
-      } else {
-        setIsLoading(false);
       }
+      
+      setIsLoading(false); // Now safe to say we're done loading
     };
 
     initializeAuth();

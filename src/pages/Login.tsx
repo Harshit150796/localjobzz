@@ -31,7 +31,7 @@ const TwitterIcon = () => (
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, user } = useAuth();
+  const { login, session } = useAuth();
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,12 +51,12 @@ const Login = () => {
     }
   }, [location.search]);
 
-  // Redirect if already logged in - use AuthContext session
+  // Redirect if already logged in - use session as source of truth
   useEffect(() => {
-    if (user) {
+    if (session) {
       navigate(from);
     }
-  }, [user, navigate, from]);
+  }, [session, navigate, from]);
 
   const isPhone = (input: string) => {
     return /^[\d\s\-\+\(\)]+$/.test(input) && input.replace(/\D/g, '').length >= 10;
