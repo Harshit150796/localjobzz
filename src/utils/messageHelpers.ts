@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import type { Session } from '@supabase/supabase-js';
 
 export interface ConversationResult {
   success: boolean;
@@ -12,7 +13,8 @@ export interface ConversationResult {
 export const createOrFindConversation = async (
   jobId: string,
   employerId: string,
-  workerId: string
+  workerId: string,
+  session: Session
 ): Promise<ConversationResult> => {
   try {
     // Validate all UUIDs are present and not null
@@ -32,19 +34,8 @@ export const createOrFindConversation = async (
       };
     }
 
-    // Verify session is valid before creating conversation
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError || !session) {
-      console.error('Session validation error:', sessionError);
-      return { 
-        success: false, 
-        error: 'Your session has expired. Please log in again.' 
-      };
-    }
-
     // Verify the session user matches the worker ID
-    if (session.user.id !== workerId) {
+    if (!session || session.user.id !== workerId) {
       return { 
         success: false, 
         error: 'Authentication mismatch. Please refresh the page and try again.' 
