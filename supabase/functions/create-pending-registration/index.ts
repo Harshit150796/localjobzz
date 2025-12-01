@@ -78,17 +78,31 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // If profile exists but not verified, allow re-signup (clean up old pending registrations)
+    // Clean up ALL old pending registrations and orphaned profiles for unverified emails
+    // This allows users to retry signup until account is fully verified
     if (existingProfile && !existingProfile.email_verified) {
-      console.log('Email exists but not verified, allowing re-signup:', email);
-      // Delete old pending registrations for this email
+      console.log('Email exists but not verified, cleaning up old data:', email);
+      
+      // Delete unverified profile (orphaned from failed signup)
       await supabase
-        .from('pending_registrations')
+        .from('profiles')
         .delete()
-        .eq('email', email);
+        .eq('email', email)
+        .eq('email_verified', false);
     }
 
-    // Check rate limiting - 30 second cooldown
+    // Delete ALL old pending registrations for this email (fresh start)
+    const { error: cleanupError } = await supabase
+      .from('pending_registrations')
+      .delete()
+      .eq('email', email);
+
+    if (cleanupError) {
+      console.log('Cleanup warning:', cleanupError);
+      // Continue anyway - not critical
+    }
+
+    // Check 30-second cooldown only (prevent spam clicking)
     const { data: lastPending } = await supabase
       .from('pending_registrations')
       .select('created_at')
@@ -106,21 +120,6 @@ const handler = async (req: Request): Promise<Response> => {
           { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
         );
       }
-    }
-
-    // Check hourly rate limit (3 OTPs per hour per email)
-    const oneHourAgo = new Date(Date.now() - 3600000);
-    const { data: recentAttempts, count } = await supabase
-      .from('pending_registrations')
-      .select('*', { count: 'exact', head: false })
-      .eq('email', email)
-      .gte('created_at', oneHourAgo.toISOString());
-
-    if (count && count >= 3) {
-      return new Response(
-        JSON.stringify({ error: 'Too many OTP requests. Please try again in 1 hour.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 429 }
-      );
     }
 
     // Check IP-based rate limit (10 per hour)
@@ -149,9 +148,10 @@ const handler = async (req: Request): Promise<Response> => {
     expiresAt.setMinutes(expiresAt.getMinutes() + 5);
 
     // Store pending registration (with plain password, only for 5 min)
+    // Use INSERT since we cleaned up old records above
     const { error: insertError } = await supabase
       .from('pending_registrations')
-      .upsert({
+      .insert({
         email,
         name,
         password_hash: password, // Store plain password temporarily for registration
@@ -164,8 +164,6 @@ const handler = async (req: Request): Promise<Response> => {
         verified_at: null,
         ip_address: ipAddress,
         user_agent: userAgent
-      }, {
-        onConflict: 'email'
       });
 
     if (insertError) {
