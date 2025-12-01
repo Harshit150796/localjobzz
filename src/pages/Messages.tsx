@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, ArrowLeft, Phone } from 'lucide-react';
+import { MessageCircle, Send, ArrowLeft, Phone, Star, User } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import WorkerRatingModal from '../components/WorkerRatingModal';
+import RatingBadge from '../components/RatingBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -13,13 +15,24 @@ interface Conversation {
   employer_id: string;
   worker_id: string;
   otherUser: {
+    id: string;
     name: string;
     avatar: string;
+    rating: number | null;
+    reviewCount: number;
   };
   jobTitle: string;
   lastMessage: string;
   lastMessageTime: string;
   unread: number;
+}
+
+interface PendingRating {
+  job_completion_id: string;
+  job_id: string;
+  employer_id: string;
+  employer_name: string;
+  job_title: string;
 }
 
 interface Message {
@@ -41,9 +54,12 @@ const Messages: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [pendingRatings, setPendingRatings] = useState<PendingRating[]>([]);
+  const [showRatingModal, setShowRatingModal] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<PendingRating | null>(null);
   const { toast } = useToast();
 
-  // Fetch conversations
+  // Fetch conversations and pending ratings
   useEffect(() => {
     if (!user) return;
 
@@ -69,15 +85,20 @@ const Messages: React.FC = () => {
           (convData || []).map(async (conv: any) => {
             const otherUserId = conv.employer_id === user.id ? conv.worker_id : conv.employer_id;
             
-            // Fetch other user's profile
+            // Fetch other user's profile with rating
             const { data: profile } = await supabase
               .from('profiles')
-              .select('name')
+              .select('name, average_worker_rating, total_worker_reviews, average_employer_rating, total_employer_reviews')
               .eq('user_id', otherUserId)
               .single();
 
             const lastMsg = conv.messages?.[conv.messages.length - 1];
             const initials = profile?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
+
+            // Determine which rating to show based on user's role in this conversation
+            const isEmployer = conv.employer_id === user.id;
+            const rating = isEmployer ? profile?.average_worker_rating : profile?.average_employer_rating;
+            const reviewCount = isEmployer ? profile?.total_worker_reviews : profile?.total_employer_reviews;
 
             return {
               id: conv.id,
@@ -85,8 +106,11 @@ const Messages: React.FC = () => {
               employer_id: conv.employer_id,
               worker_id: conv.worker_id,
               otherUser: {
+                id: otherUserId,
                 name: profile?.name || 'Unknown User',
-                avatar: initials
+                avatar: initials,
+                rating: rating,
+                reviewCount: reviewCount || 0,
               },
               jobTitle: conv.jobs?.title || 'Job',
               lastMessage: lastMsg?.content || 'No messages yet',
@@ -107,7 +131,60 @@ const Messages: React.FC = () => {
       }
     };
 
+    const fetchPendingRatings = async () => {
+      try {
+        // Find job completions where user is the worker and hasn't rated the employer yet
+        const { data: completions, error } = await supabase
+          .from('job_completions')
+          .select(`
+            id,
+            job_id,
+            employer_id,
+            jobs (title)
+          `)
+          .eq('completed_by_user_id', user.id)
+          .eq('completion_type', 'platform_worker');
+
+        if (error) throw error;
+
+        // Check which completions don't have a worker-to-employer rating
+        const pendingRatingsData: PendingRating[] = [];
+        
+        for (const completion of completions || []) {
+          const { data: existingRating } = await supabase
+            .from('ratings')
+            .select('id')
+            .eq('job_completion_id', completion.id)
+            .eq('rater_id', user.id)
+            .eq('rating_type', 'worker_to_employer')
+            .maybeSingle();
+
+          if (!existingRating) {
+            // Fetch employer name
+            const { data: employerProfile } = await supabase
+              .from('profiles')
+              .select('name')
+              .eq('user_id', completion.employer_id)
+              .single();
+
+            pendingRatingsData.push({
+              job_completion_id: completion.id,
+              job_id: completion.job_id,
+              employer_id: completion.employer_id,
+              employer_name: employerProfile?.name || 'Employer',
+              job_title: (completion.jobs as any)?.title || 'Job',
+            });
+          }
+        }
+
+        setPendingRatings(pendingRatingsData);
+      } catch (error) {
+        console.error('Error fetching pending ratings:', error);
+      }
+    };
+
     fetchConversations();
+    fetchPendingRatings();
   }, [user, toast]);
 
   // Fetch messages for selected conversation
@@ -217,6 +294,31 @@ const Messages: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <Header />
       
+      {/* Pending Ratings Banner */}
+      {pendingRatings.length > 0 && (
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-b border-orange-200">
+          <div className="max-w-6xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Star className="h-5 w-5 text-orange-600" />
+                <p className="text-sm font-medium text-orange-900">
+                  You have {pendingRatings.length} pending employer rating{pendingRatings.length > 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  setSelectedRating(pendingRatings[0]);
+                  setShowRatingModal(true);
+                }}
+                className="text-sm font-semibold text-orange-600 hover:text-orange-700 underline"
+              >
+                Rate Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Desktop: Back Button */}
       <div className="hidden md:block max-w-6xl mx-auto px-4 pt-8 w-full">
         <Link 
@@ -264,13 +366,27 @@ const Messages: React.FC = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-gray-800 truncate">
+                          <Link 
+                            to={`/user/${conversation.otherUser.id}`}
+                            className="text-sm font-semibold text-gray-800 truncate hover:text-orange-600"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             {conversation.otherUser.name}
-                          </p>
+                          </Link>
                           <span className="text-xs text-gray-500">
                             {conversation.lastMessageTime}
                           </span>
                         </div>
+                        
+                        {conversation.otherUser.rating && (
+                          <div className="mb-1">
+                            <RatingBadge 
+                              rating={conversation.otherUser.rating} 
+                              reviewCount={conversation.otherUser.reviewCount}
+                              size="sm"
+                            />
+                          </div>
+                        )}
                         
                         <p className="text-xs text-orange-600 mb-1 truncate">
                           {conversation.jobTitle}
@@ -420,24 +536,38 @@ const Messages: React.FC = () => {
                       </span>
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-base font-semibold text-gray-800 truncate">
-                          {conversation.otherUser.name}
-                        </p>
-                        <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                          {conversation.lastMessageTime}
-                        </span>
-                      </div>
-                      
-                      <p className="text-sm text-orange-600 mb-1 truncate">
-                        {conversation.jobTitle}
-                      </p>
-                      
-                      <p className="text-sm text-gray-600 truncate">
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
+                     <div className="flex-1 min-w-0">
+                       <div className="flex items-center justify-between mb-1">
+                         <Link 
+                           to={`/user/${conversation.otherUser.id}`}
+                           className="text-base font-semibold text-gray-800 truncate hover:text-orange-600"
+                           onClick={(e) => e.stopPropagation()}
+                         >
+                           {conversation.otherUser.name}
+                         </Link>
+                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                           {conversation.lastMessageTime}
+                         </span>
+                       </div>
+                       
+                       {conversation.otherUser.rating && (
+                         <div className="mb-1">
+                           <RatingBadge 
+                             rating={conversation.otherUser.rating} 
+                             reviewCount={conversation.otherUser.reviewCount}
+                             size="sm"
+                           />
+                         </div>
+                       )}
+                       
+                       <p className="text-sm text-orange-600 mb-1 truncate">
+                         {conversation.jobTitle}
+                       </p>
+                       
+                       <p className="text-sm text-gray-600 truncate">
+                         {conversation.lastMessage}
+                       </p>
+                     </div>
                   </div>
                 </div>
                 ))
@@ -462,14 +592,28 @@ const Messages: React.FC = () => {
                     <span className="text-white font-semibold text-sm">
                       {selectedConv?.otherUser.avatar}
                     </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-800 truncate">{selectedConv?.otherUser.name}</p>
-                    <p className="text-sm text-orange-600 truncate">{selectedConv?.jobTitle}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <Link 
+                       to={`/user/${selectedConv?.otherUser.id}`}
+                       className="font-semibold text-gray-800 truncate hover:text-orange-600 block"
+                     >
+                       {selectedConv?.otherUser.name}
+                     </Link>
+                     {selectedConv?.otherUser.rating && (
+                       <div className="mt-1 mb-1">
+                         <RatingBadge 
+                           rating={selectedConv.otherUser.rating} 
+                           reviewCount={selectedConv.otherUser.reviewCount}
+                           size="sm"
+                         />
+                       </div>
+                     )}
+                     <p className="text-sm text-orange-600 truncate">{selectedConv?.jobTitle}</p>
+                   </div>
+                 </div>
+               </div>
+             </div>
 
             {/* Messages - Mobile with bottom padding for fixed input */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
@@ -529,6 +673,26 @@ const Messages: React.FC = () => {
       <div className="hidden md:block">
         <Footer />
       </div>
+
+      {/* Worker Rating Modal */}
+      {selectedRating && user && (
+        <WorkerRatingModal
+          open={showRatingModal}
+          onOpenChange={setShowRatingModal}
+          jobCompletionId={selectedRating.job_completion_id}
+          jobId={selectedRating.job_id}
+          employerId={selectedRating.employer_id}
+          employerName={selectedRating.employer_name}
+          jobTitle={selectedRating.job_title}
+          workerId={user.id}
+          onSuccess={() => {
+            setPendingRatings(prev => 
+              prev.filter(r => r.job_completion_id !== selectedRating.job_completion_id)
+            );
+            setSelectedRating(null);
+          }}
+        />
+      )}
     </div>
   );
 };

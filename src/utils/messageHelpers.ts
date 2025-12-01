@@ -32,6 +32,25 @@ export const createOrFindConversation = async (
       };
     }
 
+    // Verify session is valid before creating conversation
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    
+    if (sessionError || !session) {
+      console.error('Session validation error:', sessionError);
+      return { 
+        success: false, 
+        error: 'Your session has expired. Please log in again.' 
+      };
+    }
+
+    // Verify the session user matches the worker ID
+    if (session.user.id !== workerId) {
+      return { 
+        success: false, 
+        error: 'Authentication mismatch. Please refresh the page and try again.' 
+      };
+    }
+
     // Check if conversation already exists
     const { data: existing, error: searchError } = await supabase
       .from('conversations')

@@ -168,7 +168,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const updateJob = async (jobId: string, jobData: Partial<JobFormData>): Promise<{ success: boolean; message: string }> => {
+  const updateJob = async (jobId: string, jobData: Partial<JobFormData & { status?: string }>): Promise<{ success: boolean; message: string }> => {
     setIsLoading(true);
     
     if (!user?.id) {
@@ -190,6 +190,7 @@ export const JobProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (jobData.urgency !== undefined) updateData.urgency = jobData.urgency;
       if (jobData.category !== undefined) updateData.category = jobData.category;
       if (jobData.images !== undefined) updateData.images = jobData.images;
+      if ((jobData as any).status !== undefined) updateData.status = (jobData as any).status;
       
       const { error } = await supabase
         .from('jobs')
