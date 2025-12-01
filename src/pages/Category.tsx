@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { createOrFindConversation } from '../utils/messageHelpers';
 
 const Category = () => {
@@ -143,7 +144,10 @@ const Category = () => {
   };
 
   const handleSendMessage = async (job: any) => {
-    if (!session) {
+    let currentSession = session;
+    
+    // If session appears null, try to recover it
+    if (!currentSession) {
       if (authLoading) {
         toast({
           title: "Please wait...",
@@ -151,13 +155,21 @@ const Category = () => {
         });
         return;
       }
-      toast({
-        title: "Login Required",
-        description: "Please login to send messages",
-        variant: "destructive"
-      });
-      navigate('/login');
-      return;
+      
+      // Try to get session directly from Supabase (recovery attempt)
+      const { data } = await supabase.auth.getSession();
+      currentSession = data.session;
+      
+      // If still no session after recovery, redirect to login
+      if (!currentSession) {
+        toast({
+          title: "Login Required",
+          description: "Please login to send messages",
+          variant: "destructive"
+        });
+        navigate('/login');
+        return;
+      }
     }
 
     setIsCreatingConversation(true);
@@ -171,7 +183,7 @@ const Category = () => {
       }
 
       // Prevent self-messaging
-      if (user.id === originalJob.user_id) {
+      if (currentSession.user.id === originalJob.user_id) {
         toast({ 
           title: "Notice", 
           description: "You cannot message your own job posting",
@@ -184,8 +196,8 @@ const Category = () => {
       const result = await createOrFindConversation(
         job.id,
         originalJob.user_id,
-        session.user.id,
-        session
+        currentSession.user.id,
+        currentSession
       );
 
       if (result.success && result.conversationId) {
