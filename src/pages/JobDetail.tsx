@@ -18,7 +18,7 @@ import ListingCard from '../components/ListingCard';
 const JobDetail = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { jobs } = useJobs();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
@@ -87,7 +87,7 @@ const JobDetail = () => {
   const displayImages = job.images && job.images.length > 0 ? job.images : [];
 
   const handleSendMessage = async () => {
-    if (!user) {
+    if (!user || !session) {
       toast({
         title: "Login Required",
         description: "Please login to send messages",
@@ -115,25 +115,14 @@ const JobDetail = () => {
       return;
     }
 
-    // Verify session before creating conversation
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      toast({
-        title: "Session Expired",
-        description: "Your session has expired. Please log in again.",
-        variant: "destructive"
-      });
-      navigate('/login');
-      return;
-    }
-
     setIsCreatingConversation(true);
     
     try {
       const result = await createOrFindConversation(
         job.id,
         job.user_id,
-        user.id
+        user.id,
+        session
       );
 
       if (result.success && result.conversationId) {
