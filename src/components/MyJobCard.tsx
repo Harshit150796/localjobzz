@@ -3,18 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import JobCompletionModal from '@/components/JobCompletionModal';
 import { MapPin, DollarSign, Trash2, Eye, Calendar, Pencil } from 'lucide-react';
 import { useJobs } from '@/contexts/JobContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -40,19 +32,17 @@ interface MyJobCardProps {
 const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
   const navigate = useNavigate();
   const { deleteJob } = useJobs();
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { user } = useAuth();
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
+  const handleCompletionSuccess = async () => {
+    // Delete the job after successful completion
     const result = await deleteJob(job.id);
-    setIsDeleting(false);
-    setShowDeleteDialog(false);
-
+    
     if (result.success) {
       toast({
         title: 'Success',
-        description: result.message,
+        description: 'Job deleted successfully',
       });
       onJobDeleted();
     } else {
@@ -165,7 +155,7 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
             <Button
               variant="destructive"
               size="icon"
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={() => setShowCompletionModal(true)}
             >
               <Trash2 className="h-4 w-4" />
             </Button>
@@ -173,27 +163,17 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
         </CardContent>
       </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Job Post?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{job.title}"? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      {/* Job Completion Modal */}
+      {user && (
+        <JobCompletionModal
+          open={showCompletionModal}
+          onOpenChange={setShowCompletionModal}
+          jobId={job.id}
+          jobTitle={job.title}
+          employerId={user.id}
+          onSuccess={handleCompletionSuccess}
+        />
+      )}
     </>
   );
 };

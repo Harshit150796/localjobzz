@@ -88,6 +88,44 @@ export type Database = {
         }
         Relationships: []
       }
+      job_completions: {
+        Row: {
+          completed_by_user_id: string | null
+          completion_type: string
+          created_at: string | null
+          employer_id: string
+          external_source: string | null
+          id: string
+          job_id: string
+        }
+        Insert: {
+          completed_by_user_id?: string | null
+          completion_type: string
+          created_at?: string | null
+          employer_id: string
+          external_source?: string | null
+          id?: string
+          job_id: string
+        }
+        Update: {
+          completed_by_user_id?: string | null
+          completion_type?: string
+          created_at?: string | null
+          employer_id?: string
+          external_source?: string | null
+          id?: string
+          job_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_completions_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       jobs: {
         Row: {
           category: string | null
@@ -321,6 +359,8 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          average_employer_rating: number | null
+          average_worker_rating: number | null
           bio: string | null
           created_at: string
           email: string
@@ -330,11 +370,17 @@ export type Database = {
           name: string
           phone: string | null
           skills: string[] | null
+          total_employer_reviews: number | null
+          total_jobs_completed: number | null
+          total_jobs_posted: number | null
+          total_worker_reviews: number | null
           updated_at: string
           user_id: string
         }
         Insert: {
           avatar_url?: string | null
+          average_employer_rating?: number | null
+          average_worker_rating?: number | null
           bio?: string | null
           created_at?: string
           email: string
@@ -344,11 +390,17 @@ export type Database = {
           name: string
           phone?: string | null
           skills?: string[] | null
+          total_employer_reviews?: number | null
+          total_jobs_completed?: number | null
+          total_jobs_posted?: number | null
+          total_worker_reviews?: number | null
           updated_at?: string
           user_id: string
         }
         Update: {
           avatar_url?: string | null
+          average_employer_rating?: number | null
+          average_worker_rating?: number | null
           bio?: string | null
           created_at?: string
           email?: string
@@ -358,10 +410,65 @@ export type Database = {
           name?: string
           phone?: string | null
           skills?: string[] | null
+          total_employer_reviews?: number | null
+          total_jobs_completed?: number | null
+          total_jobs_posted?: number | null
+          total_worker_reviews?: number | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      ratings: {
+        Row: {
+          created_at: string | null
+          feedback: string | null
+          id: string
+          job_completion_id: string
+          job_id: string
+          rated_user_id: string
+          rater_id: string
+          rating_type: string
+          stars: number
+        }
+        Insert: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          job_completion_id: string
+          job_id: string
+          rated_user_id: string
+          rater_id: string
+          rating_type: string
+          stars: number
+        }
+        Update: {
+          created_at?: string | null
+          feedback?: string | null
+          id?: string
+          job_completion_id?: string
+          job_id?: string
+          rated_user_id?: string
+          rater_id?: string
+          rating_type?: string
+          stars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ratings_job_completion_id_fkey"
+            columns: ["job_completion_id"]
+            isOneToOne: false
+            referencedRelation: "job_completions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ratings_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_email_preferences: {
         Row: {

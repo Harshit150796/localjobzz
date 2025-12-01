@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight, ImageIcon, Share2 } from 'lucide-react';
+import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, ChevronRight, ImageIcon, Share2, User } from 'lucide-react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
+import RatingBadge from '../components/RatingBadge';
 import { Badge } from '../components/ui/badge';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { createOrFindConversation } from '../utils/messageHelpers';
 import { createJobPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
 import { timeAgo } from '../utils/timeHelpers';
@@ -21,8 +23,41 @@ const JobDetail = () => {
   const { toast } = useToast();
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [employerProfile, setEmployerProfile] = useState<{
+    name: string;
+    averageEmployerRating: number | null;
+    totalEmployerReviews: number;
+  } | null>(null);
 
   const job = jobs.find(j => j.id === jobId);
+
+  useEffect(() => {
+    if (job?.user_id) {
+      fetchEmployerProfile();
+    }
+  }, [job?.user_id]);
+
+  const fetchEmployerProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('name, average_employer_rating, total_employer_reviews')
+        .eq('user_id', job?.user_id)
+        .single();
+
+      if (error) throw error;
+      
+      if (data) {
+        setEmployerProfile({
+          name: data.name,
+          averageEmployerRating: data.average_employer_rating,
+          totalEmployerReviews: data.total_employer_reviews,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching employer profile:', error);
+    }
+  };
 
   useEffect(() => {
     if (!job) {
@@ -344,6 +379,30 @@ const JobDetail = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-8">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Contact Employer</h3>
+              
+              {/* Employer Info */}
+              {employerProfile && job?.user_id && (
+                <div className="mb-4 pb-4 border-b border-gray-200">
+                  <Link 
+                    to={`/user/${job.user_id}`}
+                    className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors"
+                  >
+                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-gray-900 truncate">{employerProfile.name}</p>
+                      {employerProfile.averageEmployerRating && (
+                        <RatingBadge 
+                          rating={employerProfile.averageEmployerRating} 
+                          reviewCount={employerProfile.totalEmployerReviews}
+                          size="sm"
+                        />
+                      )}
+                    </div>
+                  </Link>
+                </div>
+              )}
               
               <div className="space-y-3">
                 <a
