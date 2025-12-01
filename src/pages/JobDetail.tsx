@@ -18,7 +18,7 @@ import ListingCard from '../components/ListingCard';
 const JobDetail = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const { jobs } = useJobs();
-  const { user, session } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
@@ -87,7 +87,14 @@ const JobDetail = () => {
   const displayImages = job.images && job.images.length > 0 ? job.images : [];
 
   const handleSendMessage = async () => {
-    if (!user || !session) {
+    if (!session) {
+      if (authLoading) {
+        toast({
+          title: "Please wait...",
+          description: "Checking authentication...",
+        });
+        return;
+      }
       toast({
         title: "Login Required",
         description: "Please login to send messages",
@@ -121,7 +128,7 @@ const JobDetail = () => {
       const result = await createOrFindConversation(
         job.id,
         job.user_id,
-        user.id,
+        session.user.id,
         session
       );
 
