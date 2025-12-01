@@ -16,7 +16,7 @@ const Category = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [sortBy, setSortBy] = useState('newest');
   const { jobs } = useJobs();
-  const { user, session } = useAuth();
+  const { user, session, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isCreatingConversation, setIsCreatingConversation] = useState(false);
@@ -143,7 +143,14 @@ const Category = () => {
   };
 
   const handleSendMessage = async (job: any) => {
-    if (!user || !session) {
+    if (!session) {
+      if (authLoading) {
+        toast({
+          title: "Please wait...",
+          description: "Checking authentication...",
+        });
+        return;
+      }
       toast({
         title: "Login Required",
         description: "Please login to send messages",
@@ -177,7 +184,7 @@ const Category = () => {
       const result = await createOrFindConversation(
         job.id,
         originalJob.user_id,
-        user.id,
+        session.user.id,
         session
       );
 
