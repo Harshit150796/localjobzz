@@ -46,49 +46,110 @@ const handler = async (req: Request): Promise<Response> => {
     const existingAuthUser = existingAuthUsers.users.find(u => u.email === email && u.email_confirmed_at);
 
     if (existingAuthUser) {
-      console.log('Email already exists in Supabase Auth:', email);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'EMAIL_ALREADY_EXISTS',
-          message: 'An account with this email already exists. Please sign in instead.',
-          canLogin: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-
-    // Also check profiles table as backup
-    const { data: existingProfile } = await supabase
-      .from('profiles')
-      .select('email, email_verified')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (existingProfile && existingProfile.email_verified) {
-      console.log('Email already exists and is verified in profiles:', email);
-      return new Response(
-        JSON.stringify({ 
-          success: false,
-          error: 'EMAIL_ALREADY_EXISTS',
-          message: 'An account with this email already exists. Please sign in instead.',
-          canLogin: true
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-
-    // Clean up ALL old pending registrations and orphaned profiles for unverified emails
-    // This allows users to retry signup until account is fully verified
-    if (existingProfile && !existingProfile.email_verified) {
-      console.log('Email exists but not verified, cleaning up old data:', email);
+      console.log('Auth user found with email_confirmed_at:', email);
       
-      // Delete unverified profile (orphaned from failed signup)
-      await supabase
+      // Check if profile is ALSO verified (both conditions must be true for fully verified account)
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .delete()
+        .select('email_verified, user_id')
+        .eq('user_id', existingAuthUser.id)
+        .maybeSingle();
+
+      if (existingProfile && existingProfile.email_verified === true) {
+        // Account is FULLY verified - block signup
+        console.log('Account is fully verified (auth + profile), blocking signup:', email);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'EMAIL_ALREADY_EXISTS',
+            message: 'An account with this email already exists. Please sign in instead.',
+            canLogin: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      } else {
+        // Account is INCOMPLETE (auth user exists but profile not verified) - clean up and allow retry
+        console.log('INCOMPLETE ACCOUNT DETECTED - Auth confirmed but profile not verified, cleaning up:', email);
+        
+        try {
+          // Step 1: Delete the incomplete auth user
+          console.log('Deleting incomplete auth user:', existingAuthUser.id);
+          const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(existingAuthUser.id);
+          if (deleteAuthError) {
+            console.error('Error deleting auth user:', deleteAuthError);
+          } else {
+            console.log('Successfully deleted incomplete auth user');
+          }
+
+          // Step 2: Delete the orphaned profile
+          if (existingProfile) {
+            console.log('Deleting orphaned profile for user_id:', existingAuthUser.id);
+            const { error: deleteProfileError } = await supabase
+              .from('profiles')
+              .delete()
+              .eq('user_id', existingAuthUser.id);
+            if (deleteProfileError) {
+              console.error('Error deleting profile:', deleteProfileError);
+            } else {
+              console.log('Successfully deleted orphaned profile');
+            }
+          }
+
+          // Step 3: Delete all pending registrations for this email
+          console.log('Deleting all pending registrations for email:', email);
+          const { error: deletePendingError } = await supabase
+            .from('pending_registrations')
+            .delete()
+            .eq('email', email);
+          if (deletePendingError) {
+            console.error('Error deleting pending registrations:', deletePendingError);
+          } else {
+            console.log('Successfully deleted pending registrations');
+          }
+
+          console.log('Cleanup complete, proceeding with fresh signup for:', email);
+        } catch (cleanupError: any) {
+          console.error('Error during cleanup:', cleanupError);
+          // Continue with signup attempt even if cleanup fails
+        }
+      }
+    } else {
+      // No auth user with email_confirmed_at found
+      // Check if there's an orphaned profile without auth user
+      const { data: orphanedProfile } = await supabase
+        .from('profiles')
+        .select('email, email_verified, user_id')
         .eq('email', email)
-        .eq('email_verified', false);
+        .maybeSingle();
+
+      if (orphanedProfile && !orphanedProfile.email_verified) {
+        console.log('Orphaned unverified profile found (no auth user), cleaning up:', email);
+        
+        // Delete the orphaned profile
+        const { error: deleteProfileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('email', email)
+          .eq('email_verified', false);
+        
+        if (deleteProfileError) {
+          console.error('Error deleting orphaned profile:', deleteProfileError);
+        } else {
+          console.log('Successfully deleted orphaned profile');
+        }
+      } else if (orphanedProfile && orphanedProfile.email_verified) {
+        // Profile is verified but no auth user - shouldn't happen, but block signup
+        console.log('Verified profile exists without auth user (inconsistent state):', email);
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'EMAIL_ALREADY_EXISTS',
+            message: 'An account with this email already exists. Please sign in instead.',
+            canLogin: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
     }
 
     // Delete ALL old pending registrations for this email (fresh start)
