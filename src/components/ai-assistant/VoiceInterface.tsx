@@ -1,25 +1,37 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { VoiceOrb } from './VoiceOrb';
 import { AudioVisualizer } from './AudioVisualizer';
 import { VoiceSpeechRecognition } from '@/utils/SpeechRecognition';
 import { VoiceTextToSpeech } from '@/utils/TextToSpeech';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 interface VoiceInterfaceProps {
   onTranscript?: (text: string) => void;
 }
 
+type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
+
 export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [status, setStatus] = useState<VoiceStatus>('idle');
   const [currentTranscript, setCurrentTranscript] = useState('');
   const [conversationHistory, setConversationHistory] = useState<Array<{role: string, content: string}>>([]);
   const { toast } = useToast();
 
+  // Use refs for values accessed in callbacks to avoid stale closures
+  const statusRef = useRef<VoiceStatus>('idle');
   const recognitionRef = useRef<VoiceSpeechRecognition | null>(null);
   const ttsRef = useRef<VoiceTextToSpeech | null>(null);
+  const isProcessingRef = useRef(false);
+
+  // Sync status to ref
+  useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  // Derived states for VoiceOrb
+  const isConnected = status !== 'idle';
+  const isListening = status === 'listening';
+  const isSpeaking = status === 'speaking';
 
   useEffect(() => {
     // Check browser support
@@ -40,9 +52,14 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       });
     }
 
-    // Initialize Text-to-Speech
+    // Initialize Text-to-Speech with speaking state callback
     ttsRef.current = new VoiceTextToSpeech((speaking) => {
-      setIsSpeaking(speaking);
+      if (speaking) {
+        setStatus('speaking');
+      } else if (statusRef.current === 'speaking') {
+        // TTS finished, restart listening if still connected
+        restartListening();
+      }
     });
 
     return () => {
@@ -51,69 +68,31 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     };
   }, []);
 
-  const startVoiceChat = async () => {
-    try {
-      // Initialize Speech Recognition
-      recognitionRef.current = new VoiceSpeechRecognition(
-        async (transcript, isFinal) => {
-          setCurrentTranscript(transcript);
-
-          if (isFinal) {
-            console.log('Final transcript:', transcript);
-            
-            // Notify parent component
-            if (onTranscript) {
-              onTranscript(transcript);
-            }
-
-            // Send to AI assistant
-            await processTranscript(transcript);
-            
-            // Clear transcript
-            setCurrentTranscript('');
-          }
-        },
-        (error) => {
-          console.error('Speech recognition error:', error);
-          toast({
-            title: 'Voice input error',
-            description: error,
-            variant: 'destructive',
-          });
-        },
-        () => {
-          // On end - restart if still connected
-          if (isConnected && recognitionRef.current) {
-            setTimeout(() => {
-              if (isConnected) {
-                recognitionRef.current?.start();
-              }
-            }, 100);
+  const restartListening = useCallback(() => {
+    if (statusRef.current !== 'idle' && !isProcessingRef.current) {
+      console.log('Restarting listening...');
+      setStatus('listening');
+      setTimeout(() => {
+        if (statusRef.current === 'listening' && recognitionRef.current) {
+          try {
+            recognitionRef.current.start();
+          } catch (e) {
+            console.error('Error restarting recognition:', e);
           }
         }
-      );
-
-      recognitionRef.current.start();
-      setIsListening(true);
-      setIsConnected(true);
-
-      toast({
-        title: 'Voice chat started',
-        description: 'Listening for your command...',
-      });
-    } catch (error) {
-      console.error('Error starting voice chat:', error);
-      toast({
-        title: 'Failed to start',
-        description: error instanceof Error ? error.message : 'Could not start voice chat',
-        variant: 'destructive',
-      });
+      }, 200);
     }
-  };
+  }, []);
 
-  const processTranscript = async (transcript: string) => {
+  const processTranscript = useCallback(async (transcript: string) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
+
     try {
-      setIsListening(false);
+      setStatus('processing');
+      
+      // Stop recognition while processing
+      recognitionRef.current?.stop();
       
       // Build conversation with history
       const newMessage = { role: 'user', content: transcript };
@@ -131,7 +110,9 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         }
       );
 
-      if (!response.ok || !response.body) throw new Error('Failed to get AI response');
+      if (!response.ok || !response.body) {
+        throw new Error('Failed to get AI response');
+      }
 
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
@@ -158,18 +139,11 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
             // Handle tool results
             if (parsed.tool_result === 'jobs_found') {
               jobsFound = parsed.jobs || [];
-              // Let AI narrate the jobs
             } else if (parsed.tool_result === 'job_details') {
-              // Job details will be narrated by the AI
               const job = parsed.job;
               console.log('Got job details:', job);
             } else if (parsed.error) {
               console.error('AI Error:', parsed.error);
-              toast({
-                title: 'AI Error',
-                description: parsed.error,
-                variant: 'destructive',
-              });
             }
             
             // Handle regular content
@@ -190,7 +164,11 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
       // Speak the complete response
       if (fullResponse && ttsRef.current) {
-        ttsRef.current.speak(fullResponse);
+        console.log('Speaking response:', fullResponse.substring(0, 50) + '...');
+        await ttsRef.current.speak(fullResponse);
+      } else {
+        // No response to speak, restart listening
+        restartListening();
       }
 
       // Show jobs found
@@ -198,29 +176,94 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         onTranscript(JSON.stringify({ found: jobsFound.length, jobs: jobsFound }, null, 2));
       }
 
-      // Resume listening
-      setTimeout(() => {
-        if (isConnected) setIsListening(true);
-      }, 500);
-
     } catch (error) {
-      console.error('Error:', error);
+      console.error('Error processing transcript:', error);
       toast({
         title: 'AI Error',
-        description: error instanceof Error ? error.message : 'Failed',
+        description: error instanceof Error ? error.message : 'Failed to get response',
         variant: 'destructive',
       });
-      setIsListening(true);
+      restartListening();
+    } finally {
+      isProcessingRef.current = false;
+    }
+  }, [conversationHistory, onTranscript, restartListening, toast]);
+
+  const startVoiceChat = async () => {
+    try {
+      setStatus('connecting');
+
+      // Request microphone permission
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Initialize Speech Recognition
+      recognitionRef.current = new VoiceSpeechRecognition(
+        async (transcript, isFinal) => {
+          if (isFinal) {
+            console.log('Final transcript received:', transcript);
+            setCurrentTranscript('');
+            
+            // Notify parent component
+            if (onTranscript) {
+              onTranscript(transcript);
+            }
+
+            // Process with AI
+            processTranscript(transcript);
+          } else {
+            // Show interim transcript
+            setCurrentTranscript(transcript);
+          }
+        },
+        (error) => {
+          console.error('Speech recognition error:', error);
+          toast({
+            title: 'Voice input error',
+            description: error,
+            variant: 'destructive',
+          });
+        },
+        () => {
+          // On end - restart if still connected and not processing
+          console.log('Recognition ended, status:', statusRef.current);
+          if (statusRef.current === 'listening' && !isProcessingRef.current) {
+            setTimeout(() => {
+              if (statusRef.current === 'listening') {
+                try {
+                  recognitionRef.current?.start();
+                } catch (e) {
+                  console.error('Error restarting:', e);
+                }
+              }
+            }, 300);
+          }
+        }
+      );
+
+      recognitionRef.current.start();
+      setStatus('listening');
+
+      toast({
+        title: 'Voice chat started',
+        description: 'Listening for your command...',
+      });
+    } catch (error) {
+      console.error('Error starting voice chat:', error);
+      setStatus('idle');
+      toast({
+        title: 'Failed to start',
+        description: error instanceof Error ? error.message : 'Could not start voice chat',
+        variant: 'destructive',
+      });
     }
   };
 
   const endVoiceChat = () => {
     recognitionRef.current?.stop();
     ttsRef.current?.stop();
-    setIsConnected(false);
-    setIsListening(false);
-    setIsSpeaking(false);
+    setStatus('idle');
     setCurrentTranscript('');
+    isProcessingRef.current = false;
 
     toast({
       title: 'Voice chat ended',
@@ -228,10 +271,25 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   };
 
   const handleOrbClick = () => {
-    if (isConnected) {
-      endVoiceChat();
-    } else {
+    if (status === 'idle') {
       startVoiceChat();
+    } else {
+      endVoiceChat();
+    }
+  };
+
+  const getStatusText = () => {
+    switch (status) {
+      case 'connecting':
+        return 'Connecting...';
+      case 'listening':
+        return 'Listening...';
+      case 'processing':
+        return 'Thinking...';
+      case 'speaking':
+        return 'Speaking...';
+      default:
+        return 'Tap to start';
     }
   };
 
@@ -250,7 +308,15 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         />
       </div>
 
-      {currentTranscript && (
+      {/* Status indicator */}
+      {status !== 'idle' && (
+        <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm text-muted-foreground">
+          {getStatusText()}
+        </div>
+      )}
+
+      {/* Current transcript */}
+      {currentTranscript && status === 'listening' && (
         <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg px-4 py-2 max-w-md">
           <p className="text-sm text-muted-foreground">You're saying:</p>
           <p className="text-foreground">{currentTranscript}</p>
