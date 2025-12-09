@@ -3,6 +3,7 @@ import { VoiceOrb } from './VoiceOrb';
 import { AudioVisualizer } from './AudioVisualizer';
 import { VoiceSpeechRecognition } from '@/utils/SpeechRecognition';
 import { VoiceTextToSpeech } from '@/utils/TextToSpeech';
+import { AudioLevelAnalyzer } from '@/utils/AudioLevelAnalyzer';
 import { useToast } from '@/hooks/use-toast';
 
 interface VoiceInterfaceProps {
@@ -21,6 +22,8 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const statusRef = useRef<VoiceStatus>('idle');
   const recognitionRef = useRef<VoiceSpeechRecognition | null>(null);
   const ttsRef = useRef<VoiceTextToSpeech | null>(null);
+  const audioAnalyzerRef = useRef<AudioLevelAnalyzer | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const isProcessingRef = useRef(false);
 
   // Sync status to ref
@@ -57,43 +60,55 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       if (speaking) {
         setStatus('speaking');
       } else if (statusRef.current === 'speaking') {
-        // TTS finished, restart listening if still connected
-        restartListening();
+        // TTS finished, resume listening
+        console.log('[VoiceInterface] TTS finished, resuming listening');
+        setStatus('listening');
+        setCurrentTranscript('');
+        audioAnalyzerRef.current?.resume();
       }
     });
 
     return () => {
-      recognitionRef.current?.stop();
-      ttsRef.current?.stop();
+      cleanup();
     };
   }, []);
 
-  const restartListening = useCallback(() => {
-    if (statusRef.current !== 'idle' && !isProcessingRef.current) {
-      console.log('Restarting listening...');
-      setStatus('listening');
-      setTimeout(() => {
-        if (statusRef.current === 'listening' && recognitionRef.current) {
-          try {
-            recognitionRef.current.start();
-          } catch (e) {
-            console.error('Error restarting recognition:', e);
-          }
-        }
-      }, 200);
+  const cleanup = useCallback(() => {
+    console.log('[VoiceInterface] Cleaning up...');
+    
+    recognitionRef.current?.stop();
+    recognitionRef.current = null;
+
+    audioAnalyzerRef.current?.stop();
+    audioAnalyzerRef.current = null;
+
+    ttsRef.current?.stop();
+
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
     }
   }, []);
 
   const processTranscript = useCallback(async (transcript: string) => {
-    if (isProcessingRef.current) return;
+    if (!transcript.trim() || isProcessingRef.current) {
+      // Resume listening if empty transcript
+      if (!transcript.trim()) {
+        console.log('[VoiceInterface] Empty transcript, resuming listening');
+        setStatus('listening');
+        audioAnalyzerRef.current?.resume();
+      }
+      return;
+    }
+
+    console.log('[VoiceInterface] Processing transcript:', transcript);
     isProcessingRef.current = true;
+    setStatus('processing');
+    
+    // Notify parent
+    onTranscript?.(transcript);
 
     try {
-      setStatus('processing');
-      
-      // Stop recognition while processing
-      recognitionRef.current?.stop();
-      
       // Build conversation with history
       const newMessage = { role: 'user', content: transcript };
       const messagesToSend = [...conversationHistory, newMessage];
@@ -140,8 +155,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
             if (parsed.tool_result === 'jobs_found') {
               jobsFound = parsed.jobs || [];
             } else if (parsed.tool_result === 'job_details') {
-              const job = parsed.job;
-              console.log('Got job details:', job);
+              console.log('Got job details:', parsed.job);
             } else if (parsed.error) {
               console.error('AI Error:', parsed.error);
             }
@@ -151,7 +165,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
               fullResponse += parsed.choices[0].delta.content;
             }
           } catch (e) {
-            console.error('Parse error:', e);
+            // Ignore parse errors for incomplete chunks
           }
         }
       }
@@ -162,13 +176,15 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         { role: 'assistant', content: fullResponse }
       ]);
 
+      console.log('[VoiceInterface] AI response:', fullResponse.substring(0, 100) + '...');
+
       // Speak the complete response
       if (fullResponse && ttsRef.current) {
-        console.log('Speaking response:', fullResponse.substring(0, 50) + '...');
         await ttsRef.current.speak(fullResponse);
       } else {
-        // No response to speak, restart listening
-        restartListening();
+        // No response to speak, resume listening
+        setStatus('listening');
+        audioAnalyzerRef.current?.resume();
       }
 
       // Show jobs found
@@ -177,90 +193,136 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       }
 
     } catch (error) {
-      console.error('Error processing transcript:', error);
+      console.error('[VoiceInterface] Error processing:', error);
       toast({
         title: 'AI Error',
         description: error instanceof Error ? error.message : 'Failed to get response',
         variant: 'destructive',
       });
-      restartListening();
+      setStatus('listening');
+      audioAnalyzerRef.current?.resume();
     } finally {
       isProcessingRef.current = false;
     }
-  }, [conversationHistory, onTranscript, restartListening, toast]);
+  }, [conversationHistory, onTranscript, toast]);
 
   const startVoiceChat = async () => {
+    // Check browser support
+    if (!VoiceSpeechRecognition.isSupported()) {
+      toast({
+        title: 'Not supported',
+        description: 'Speech recognition is not supported in your browser. Please use Chrome or Edge.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (!AudioLevelAnalyzer.isSupported()) {
+      toast({
+        title: 'Not supported',
+        description: 'Audio analysis is not supported in your browser.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setStatus('connecting');
+    setCurrentTranscript('');
+
     try {
-      setStatus('connecting');
-
       // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+      streamRef.current = stream;
 
-      // Initialize Speech Recognition
+      // Initialize speech recognition
       recognitionRef.current = new VoiceSpeechRecognition(
-        async (transcript, isFinal) => {
-          if (isFinal) {
-            console.log('Final transcript received:', transcript);
-            setCurrentTranscript('');
-            
-            // Notify parent component
-            if (onTranscript) {
-              onTranscript(transcript);
-            }
-
-            // Process with AI
-            processTranscript(transcript);
-          } else {
-            // Show interim transcript
-            setCurrentTranscript(transcript);
-          }
+        // onTranscriptUpdate - just update display
+        (transcript) => {
+          setCurrentTranscript(transcript);
         },
+        // onError
         (error) => {
-          console.error('Speech recognition error:', error);
+          console.error('[VoiceInterface] Recognition error:', error);
           toast({
             title: 'Voice input error',
             description: error,
             variant: 'destructive',
           });
         },
+        // onEnd
         () => {
-          // On end - restart if still connected and not processing
-          console.log('Recognition ended, status:', statusRef.current);
-          if (statusRef.current === 'listening' && !isProcessingRef.current) {
-            setTimeout(() => {
-              if (statusRef.current === 'listening') {
-                try {
-                  recognitionRef.current?.start();
-                } catch (e) {
-                  console.error('Error restarting:', e);
-                }
-              }
-            }, 300);
-          }
+          console.log('[VoiceInterface] Recognition ended');
         }
       );
 
+      // Initialize audio level analyzer for silence detection
+      audioAnalyzerRef.current = new AudioLevelAnalyzer({
+        silenceThreshold: 0.015,
+        silenceDuration: 1500,
+        minSpeechDuration: 300
+      });
+
+      await audioAnalyzerRef.current.start(stream, {
+        onSilenceDetected: () => {
+          console.log('[VoiceInterface] Silence detected by analyzer');
+          
+          // Get the accumulated transcript
+          const transcript = recognitionRef.current?.finalizeTranscript() || '';
+          
+          if (transcript) {
+            processTranscript(transcript);
+          } else {
+            // No transcript - just resume listening
+            console.log('[VoiceInterface] No transcript, resuming listening');
+            audioAnalyzerRef.current?.resume();
+          }
+        },
+        onSpeechDetected: () => {
+          // User started speaking again
+        }
+      });
+
+      // Start recognition
       recognitionRef.current.start();
       setStatus('listening');
 
       toast({
         title: 'Voice chat started',
-        description: 'Listening for your command...',
+        description: 'Speak now... I\'ll process when you pause.',
       });
-    } catch (error) {
-      console.error('Error starting voice chat:', error);
+
+      console.log('[VoiceInterface] Voice chat started successfully');
+    } catch (error: any) {
+      console.error('[VoiceInterface] Failed to start:', error);
+      
+      if (error.name === 'NotAllowedError') {
+        toast({
+          title: 'Microphone access denied',
+          description: 'Please allow microphone access to use voice chat.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Failed to start',
+          description: error.message || 'Could not start voice chat',
+          variant: 'destructive',
+        });
+      }
+      
       setStatus('idle');
-      toast({
-        title: 'Failed to start',
-        description: error instanceof Error ? error.message : 'Could not start voice chat',
-        variant: 'destructive',
-      });
+      cleanup();
     }
   };
 
   const endVoiceChat = () => {
-    recognitionRef.current?.stop();
-    ttsRef.current?.stop();
+    console.log('[VoiceInterface] Ending voice chat');
+    cleanup();
     setStatus('idle');
     setCurrentTranscript('');
     isProcessingRef.current = false;
@@ -281,11 +343,11 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const getStatusText = () => {
     switch (status) {
       case 'connecting':
-        return 'Connecting...';
+        return 'Starting...';
       case 'listening':
-        return 'Listening...';
+        return currentTranscript ? 'Listening...' : 'Speak now...';
       case 'processing':
-        return 'Thinking...';
+        return 'Processing...';
       case 'speaking':
         return 'Speaking...';
       default:
