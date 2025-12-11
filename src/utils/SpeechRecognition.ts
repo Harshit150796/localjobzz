@@ -1,7 +1,10 @@
+import { SilenceTimer } from './SilenceTimer';
+
 export interface SpeechRecognitionConfig {
   continuous?: boolean;
   interimResults?: boolean;
   language?: string;
+  silenceDuration?: number;  // ms of silence before triggering callback
 }
 
 export class VoiceSpeechRecognition {
@@ -9,18 +12,21 @@ export class VoiceSpeechRecognition {
   private isListening = false;
   private accumulatedTranscript = '';      // From isFinal=true results
   private lastInterimTranscript = '';      // Latest interim results (backup)
-  private hasSpeechEnded = false;          // Track browser's speechend event
+  private silenceTimer: SilenceTimer | null = null;
   private onTranscriptUpdate: (transcript: string) => void;
+  private onSilenceDetected: () => void;
   private onError: (error: string) => void;
   private onEnd: () => void;
 
   constructor(
     onTranscriptUpdate: (transcript: string) => void,
+    onSilenceDetected: () => void,
     onError: (error: string) => void,
     onEnd: () => void,
     config: SpeechRecognitionConfig = {}
   ) {
     this.onTranscriptUpdate = onTranscriptUpdate;
+    this.onSilenceDetected = onSilenceDetected;
     this.onError = onError;
     this.onEnd = onEnd;
 
@@ -36,7 +42,31 @@ export class VoiceSpeechRecognition {
     this.recognition.interimResults = config.interimResults ?? true;
     this.recognition.lang = config.language ?? 'en-IN';
 
+    // Create silence timer - triggers when user stops speaking
+    const silenceDuration = config.silenceDuration ?? 1500;
+    this.silenceTimer = new SilenceTimer(silenceDuration, () => {
+      this.handleSilenceDetected();
+    });
+
     this.setupEventHandlers();
+  }
+
+  private handleSilenceDetected(): void {
+    console.log('[SpeechRecognition] Silence timer triggered');
+    
+    // Pause the timer to prevent multiple triggers
+    this.silenceTimer?.pause();
+    
+    // Get the best available transcript
+    const transcript = this.getCurrentTranscript();
+    
+    if (transcript) {
+      console.log('[SpeechRecognition] Processing transcript:', transcript.substring(0, 50));
+      this.onSilenceDetected();
+    } else {
+      console.log('[SpeechRecognition] No transcript available, resuming');
+      this.silenceTimer?.resume();
+    }
   }
 
   private setupEventHandlers(): void {
@@ -54,22 +84,17 @@ export class VoiceSpeechRecognition {
         } else {
           // Interim result - store as backup
           this.lastInterimTranscript = transcript;
-          console.log('[SpeechRecognition] Interim result:', transcript.substring(0, 50));
         }
       }
 
       // Display accumulated + interim for live feedback
-      const currentDisplay = (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+      const currentDisplay = this.getCurrentTranscript();
       
       if (currentDisplay) {
         this.onTranscriptUpdate(currentDisplay);
+        // Reset silence timer - user is still speaking
+        this.silenceTimer?.activity();
       }
-    };
-
-    // Track when browser thinks speech has ended
-    this.recognition.onspeechend = () => {
-      console.log('[SpeechRecognition] Browser detected speech end');
-      this.hasSpeechEnded = true;
     };
 
     this.recognition.onerror = (event: any) => {
@@ -124,8 +149,8 @@ export class VoiceSpeechRecognition {
       this.isListening = true;
       this.accumulatedTranscript = '';
       this.lastInterimTranscript = '';
-      this.hasSpeechEnded = false;
       this.recognition.start();
+      this.silenceTimer?.start();
       console.log('[SpeechRecognition] Started');
     } catch (error) {
       console.error('[SpeechRecognition] Failed to start:', error);
@@ -137,6 +162,7 @@ export class VoiceSpeechRecognition {
   stop(): void {
     console.log('[SpeechRecognition] Stopping...');
     this.isListening = false;
+    this.silenceTimer?.stop();
     
     if (this.recognition) {
       try {
@@ -147,45 +173,43 @@ export class VoiceSpeechRecognition {
     }
   }
 
-  // Called by AudioLevelAnalyzer when silence is detected
-  // Returns BOTH accumulated AND last interim (as fallback)
+  // Get the best available transcript without clearing
+  getCurrentTranscript(): string {
+    return (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+  }
+
+  // Called when processing starts - returns transcript and clears state
   finalizeTranscript(): string {
-    const transcript = (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+    const transcript = this.getCurrentTranscript();
     console.log('[SpeechRecognition] Finalizing transcript:', transcript || '(empty)');
-    console.log('[SpeechRecognition] - Accumulated:', this.accumulatedTranscript || '(empty)');
-    console.log('[SpeechRecognition] - Interim backup:', this.lastInterimTranscript || '(empty)');
     
     // Clear both
     this.accumulatedTranscript = '';
     this.lastInterimTranscript = '';
-    this.hasSpeechEnded = false;
     
     return transcript;
   }
 
-  // Check if we have any transcript available (for grace period logic)
+  // Check if we have any transcript available
   hasTranscript(): boolean {
-    return (this.accumulatedTranscript + this.lastInterimTranscript).trim().length > 0;
-  }
-
-  // Get current transcript without clearing (for checking)
-  getCurrentTranscript(): string {
-    return (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+    return this.getCurrentTranscript().length > 0;
   }
 
   // Clear without returning - used when canceling
   clearTranscript(): void {
     this.accumulatedTranscript = '';
     this.lastInterimTranscript = '';
-    this.hasSpeechEnded = false;
+  }
+
+  // Resume listening after processing
+  resume(): void {
+    console.log('[SpeechRecognition] Resuming...');
+    this.clearTranscript();
+    this.silenceTimer?.resume();
   }
 
   isActive(): boolean {
     return this.isListening;
-  }
-
-  didSpeechEnd(): boolean {
-    return this.hasSpeechEnded;
   }
 
   static isSupported(): boolean {

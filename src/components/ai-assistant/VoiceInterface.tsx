@@ -1,22 +1,20 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { VoiceOrb } from './VoiceOrb';
-import { AudioVisualizer } from './AudioVisualizer';
 import { VoiceSpeechRecognition } from '@/utils/SpeechRecognition';
 import { VoiceTextToSpeech } from '@/utils/TextToSpeech';
-import { AudioLevelAnalyzer } from '@/utils/AudioLevelAnalyzer';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 
 interface VoiceInterfaceProps {
   onTranscript?: (text: string) => void;
+  onUserMessage?: (text: string) => void;
+  onAIResponse?: (text: string) => void;
 }
 
 type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speaking';
 
-export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
+export const VoiceInterface = ({ onTranscript, onUserMessage, onAIResponse }: VoiceInterfaceProps) => {
   const [status, setStatus] = useState<VoiceStatus>('idle');
   const [currentTranscript, setCurrentTranscript] = useState('');
-  const [audioLevel, setAudioLevel] = useState(0);
   const [conversationHistory, setConversationHistory] = useState<Array<{role: string, content: string}>>([]);
   const { toast } = useToast();
 
@@ -24,14 +22,17 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const statusRef = useRef<VoiceStatus>('idle');
   const recognitionRef = useRef<VoiceSpeechRecognition | null>(null);
   const ttsRef = useRef<VoiceTextToSpeech | null>(null);
-  const audioAnalyzerRef = useRef<AudioLevelAnalyzer | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const isProcessingRef = useRef(false);
+  const conversationHistoryRef = useRef(conversationHistory);
 
-  // Sync status to ref
+  // Sync refs
   useEffect(() => {
     statusRef.current = status;
   }, [status]);
+
+  useEffect(() => {
+    conversationHistoryRef.current = conversationHistory;
+  }, [conversationHistory]);
 
   // Derived states for VoiceOrb
   const isConnected = status !== 'idle';
@@ -43,7 +44,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     if (!VoiceSpeechRecognition.isSupported()) {
       toast({
         title: 'Voice input not supported',
-        description: 'Your browser does not support voice input. Please use text mode.',
+        description: 'Your browser does not support voice input. Please use Chrome or Edge.',
         variant: 'destructive',
       });
       return;
@@ -66,7 +67,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         console.log('[VoiceInterface] TTS finished, resuming listening');
         setStatus('listening');
         setCurrentTranscript('');
-        audioAnalyzerRef.current?.resume();
+        recognitionRef.current?.resume();
       }
     });
 
@@ -81,15 +82,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     recognitionRef.current?.stop();
     recognitionRef.current = null;
 
-    audioAnalyzerRef.current?.stop();
-    audioAnalyzerRef.current = null;
-
     ttsRef.current?.stop();
-
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
   }, []);
 
   const processTranscript = useCallback(async (transcript: string) => {
@@ -98,7 +91,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       if (!transcript.trim()) {
         console.log('[VoiceInterface] Empty transcript, resuming listening');
         setStatus('listening');
-        audioAnalyzerRef.current?.resume();
+        recognitionRef.current?.resume();
       }
       return;
     }
@@ -107,13 +100,14 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     isProcessingRef.current = true;
     setStatus('processing');
     
-    // Notify parent
+    // Notify parent of user message
+    onUserMessage?.(transcript);
     onTranscript?.(transcript);
 
     try {
       // Build conversation with history
       const newMessage = { role: 'user', content: transcript };
-      const messagesToSend = [...conversationHistory, newMessage];
+      const messagesToSend = [...conversationHistoryRef.current, newMessage];
 
       const response = await fetch(
         'https://fztiznsyknofxoplyirz.supabase.co/functions/v1/ai-job-assistant',
@@ -135,7 +129,6 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       const decoder = new TextDecoder();
       let buffer = '';
       let fullResponse = '';
-      let jobsFound: any[] = [];
 
       while (true) {
         const { done, value } = await reader.read();
@@ -152,15 +145,6 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
           try {
             const parsed = JSON.parse(data);
-            
-            // Handle tool results
-            if (parsed.tool_result === 'jobs_found') {
-              jobsFound = parsed.jobs || [];
-            } else if (parsed.tool_result === 'job_details') {
-              console.log('Got job details:', parsed.job);
-            } else if (parsed.error) {
-              console.error('AI Error:', parsed.error);
-            }
             
             // Handle regular content
             if (parsed.choices?.[0]?.delta?.content) {
@@ -180,18 +164,16 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
       console.log('[VoiceInterface] AI response:', fullResponse.substring(0, 100) + '...');
 
+      // Notify parent of AI response
+      onAIResponse?.(fullResponse);
+
       // Speak the complete response
       if (fullResponse && ttsRef.current) {
         await ttsRef.current.speak(fullResponse);
       } else {
         // No response to speak, resume listening
         setStatus('listening');
-        audioAnalyzerRef.current?.resume();
-      }
-
-      // Show jobs found
-      if (jobsFound.length > 0 && onTranscript) {
-        onTranscript(JSON.stringify({ found: jobsFound.length, jobs: jobsFound }, null, 2));
+        recognitionRef.current?.resume();
       }
 
     } catch (error) {
@@ -202,11 +184,11 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         variant: 'destructive',
       });
       setStatus('listening');
-      audioAnalyzerRef.current?.resume();
+      recognitionRef.current?.resume();
     } finally {
       isProcessingRef.current = false;
     }
-  }, [conversationHistory, onTranscript, toast]);
+  }, [onTranscript, onUserMessage, onAIResponse, toast]);
 
   const startVoiceChat = async () => {
     // Check browser support
@@ -219,35 +201,28 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       return;
     }
 
-    if (!AudioLevelAnalyzer.isSupported()) {
-      toast({
-        title: 'Not supported',
-        description: 'Audio analysis is not supported in your browser.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
     setStatus('connecting');
     setCurrentTranscript('');
-    setAudioLevel(0);
 
     try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        }
-      });
-      streamRef.current = stream;
-
-      // Initialize speech recognition
+      // Initialize speech recognition with silence callback
       recognitionRef.current = new VoiceSpeechRecognition(
         // onTranscriptUpdate - update live display
         (transcript) => {
+          console.log('[VoiceInterface] Live transcript:', transcript.substring(0, 30));
           setCurrentTranscript(transcript);
+        },
+        // onSilenceDetected - process when user stops speaking
+        () => {
+          console.log('[VoiceInterface] Silence detected, processing...');
+          const transcript = recognitionRef.current?.finalizeTranscript() || '';
+          if (transcript) {
+            setCurrentTranscript(transcript);
+            processTranscript(transcript);
+          } else {
+            console.log('[VoiceInterface] No transcript to process');
+            recognitionRef.current?.resume();
+          }
         },
         // onError
         (error) => {
@@ -261,50 +236,14 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         // onEnd
         () => {
           console.log('[VoiceInterface] Recognition ended');
+        },
+        // config
+        {
+          silenceDuration: 1500  // 1.5 seconds of silence triggers processing
         }
       );
 
-      // Initialize audio level analyzer for silence detection
-      audioAnalyzerRef.current = new AudioLevelAnalyzer({
-        silenceThreshold: 0.015,
-        silenceDuration: 1500,
-        minSpeechDuration: 300,
-        gracePeriod: 200  // Wait 200ms for speech recognition to catch up
-      });
-
-      await audioAnalyzerRef.current.start(stream, {
-        onSilenceDetected: () => {
-          console.log('[VoiceInterface] Silence detected by analyzer');
-          
-          // Get the accumulated transcript (includes interim as backup)
-          const transcript = recognitionRef.current?.finalizeTranscript() || '';
-          
-          if (transcript) {
-            setCurrentTranscript(transcript);  // Show what was heard
-            // Small delay for visual feedback before processing
-            setTimeout(() => {
-              processTranscript(transcript);
-            }, 100);
-          } else {
-            // No transcript - just resume listening
-            console.log('[VoiceInterface] No transcript, resuming listening');
-            audioAnalyzerRef.current?.resume();
-          }
-        },
-        onSpeechDetected: () => {
-          // User started speaking again - could reset any timers here
-        },
-        onAudioLevel: (level) => {
-          // Update audio level for visualization
-          setAudioLevel(level);
-        },
-        hasTranscript: () => {
-          // Check if we have any transcript to process
-          return recognitionRef.current?.hasTranscript() || false;
-        }
-      });
-
-      // Start recognition
+      // Start recognition - this will request mic permission internally
       recognitionRef.current.start();
       setStatus('listening');
 
@@ -341,7 +280,6 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     cleanup();
     setStatus('idle');
     setCurrentTranscript('');
-    setAudioLevel(0);
     isProcessingRef.current = false;
 
     toast({
@@ -373,7 +311,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   };
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 z-50">
+    <div className="flex flex-col items-center gap-4">
       <div className="relative">
         <VoiceOrb
           isConnected={isConnected}
@@ -381,43 +319,17 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
           isSpeaking={isSpeaking}
           onClick={handleOrbClick}
         />
-        <AudioVisualizer 
-          isActive={isConnected && (isListening || isSpeaking)} 
-          isSpeaking={isSpeaking}
-        />
       </div>
 
-      {/* Audio level indicator - shows mic is working */}
-      {status === 'listening' && (
-        <div className="flex items-center gap-1 h-6">
-          {[1, 2, 3, 4, 5].map((bar) => (
-            <div 
-              key={bar}
-              className={cn(
-                "w-1.5 rounded-full transition-all duration-75",
-                audioLevel > bar * 0.015 
-                  ? "bg-primary h-full" 
-                  : "bg-muted h-2"
-              )}
-              style={{
-                height: audioLevel > bar * 0.015 ? `${Math.min(24, 8 + audioLevel * 200)}px` : '8px'
-              }}
-            />
-          ))}
-        </div>
-      )}
-
       {/* Status indicator */}
-      {status !== 'idle' && (
-        <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm text-muted-foreground">
-          {getStatusText()}
-        </div>
-      )}
+      <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm text-muted-foreground">
+        {getStatusText()}
+      </div>
 
       {/* Current transcript - what user is saying */}
-      {currentTranscript && status === 'listening' && (
-        <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg px-4 py-2 max-w-md">
-          <p className="text-foreground font-medium">{currentTranscript}</p>
+      {currentTranscript && (
+        <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg px-4 py-3 max-w-sm text-center">
+          <p className="text-foreground font-medium text-lg">{currentTranscript}</p>
         </div>
       )}
     </div>
