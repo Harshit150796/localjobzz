@@ -7,7 +7,9 @@ export interface SpeechRecognitionConfig {
 export class VoiceSpeechRecognition {
   private recognition: any = null;
   private isListening = false;
-  private accumulatedTranscript = '';
+  private accumulatedTranscript = '';      // From isFinal=true results
+  private lastInterimTranscript = '';      // Latest interim results (backup)
+  private hasSpeechEnded = false;          // Track browser's speechend event
   private onTranscriptUpdate: (transcript: string) => void;
   private onError: (error: string) => void;
   private onEnd: () => void;
@@ -41,30 +43,33 @@ export class VoiceSpeechRecognition {
     if (!this.recognition) return;
 
     this.recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
-
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         
         if (event.results[i].isFinal) {
-          finalTranscript += transcript;
+          // Final result - add to accumulated and clear interim
+          this.accumulatedTranscript += transcript + ' ';
+          this.lastInterimTranscript = '';
+          console.log('[SpeechRecognition] Final result:', transcript.substring(0, 50));
         } else {
-          interimTranscript += transcript;
+          // Interim result - store as backup
+          this.lastInterimTranscript = transcript;
+          console.log('[SpeechRecognition] Interim result:', transcript.substring(0, 50));
         }
       }
 
-      // Add final transcript to accumulated
-      if (finalTranscript) {
-        this.accumulatedTranscript += finalTranscript + ' ';
-      }
-
-      // Show current state: accumulated + interim
-      const currentDisplay = (this.accumulatedTranscript + interimTranscript).trim();
+      // Display accumulated + interim for live feedback
+      const currentDisplay = (this.accumulatedTranscript + this.lastInterimTranscript).trim();
       
       if (currentDisplay) {
         this.onTranscriptUpdate(currentDisplay);
       }
+    };
+
+    // Track when browser thinks speech has ended
+    this.recognition.onspeechend = () => {
+      console.log('[SpeechRecognition] Browser detected speech end');
+      this.hasSpeechEnded = true;
     };
 
     this.recognition.onerror = (event: any) => {
@@ -118,6 +123,8 @@ export class VoiceSpeechRecognition {
     try {
       this.isListening = true;
       this.accumulatedTranscript = '';
+      this.lastInterimTranscript = '';
+      this.hasSpeechEnded = false;
       this.recognition.start();
       console.log('[SpeechRecognition] Started');
     } catch (error) {
@@ -141,20 +148,44 @@ export class VoiceSpeechRecognition {
   }
 
   // Called by AudioLevelAnalyzer when silence is detected
+  // Returns BOTH accumulated AND last interim (as fallback)
   finalizeTranscript(): string {
-    const transcript = this.accumulatedTranscript.trim();
-    console.log('[SpeechRecognition] Finalizing transcript:', transcript);
+    const transcript = (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+    console.log('[SpeechRecognition] Finalizing transcript:', transcript || '(empty)');
+    console.log('[SpeechRecognition] - Accumulated:', this.accumulatedTranscript || '(empty)');
+    console.log('[SpeechRecognition] - Interim backup:', this.lastInterimTranscript || '(empty)');
+    
+    // Clear both
     this.accumulatedTranscript = '';
+    this.lastInterimTranscript = '';
+    this.hasSpeechEnded = false;
+    
     return transcript;
+  }
+
+  // Check if we have any transcript available (for grace period logic)
+  hasTranscript(): boolean {
+    return (this.accumulatedTranscript + this.lastInterimTranscript).trim().length > 0;
+  }
+
+  // Get current transcript without clearing (for checking)
+  getCurrentTranscript(): string {
+    return (this.accumulatedTranscript + this.lastInterimTranscript).trim();
   }
 
   // Clear without returning - used when canceling
   clearTranscript(): void {
     this.accumulatedTranscript = '';
+    this.lastInterimTranscript = '';
+    this.hasSpeechEnded = false;
   }
 
   isActive(): boolean {
     return this.isListening;
+  }
+
+  didSpeechEnd(): boolean {
+    return this.hasSpeechEnded;
   }
 
   static isSupported(): boolean {
