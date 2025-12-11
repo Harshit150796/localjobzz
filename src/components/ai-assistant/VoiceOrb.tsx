@@ -52,26 +52,8 @@ export const VoiceOrb = ({ isConnected, isListening, isSpeaking, onClick }: Voic
         {/* Inner glow effect */}
         <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       </button>
-
-      {/* Listening indicator */}
-      {isListening && (
-        <div className="absolute -bottom-16 flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur-sm border border-border shadow-lg">
-          <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-          <span className="text-sm font-medium text-foreground">Listening...</span>
-        </div>
-      )}
-
-      {/* Speaking indicator */}
-      {isSpeaking && (
-        <div className="absolute -bottom-16 flex items-center gap-2 px-4 py-2 rounded-full bg-ai-primary/80 backdrop-blur-sm border border-ai-primary shadow-lg">
-          <div className="flex gap-1">
-            <div className="w-1 h-3 bg-white rounded-full animate-wave" style={{ animationDelay: '0s' }} />
-            <div className="w-1 h-3 bg-white rounded-full animate-wave" style={{ animationDelay: '0.1s' }} />
-            <div className="w-1 h-3 bg-white rounded-full animate-wave" style={{ animationDelay: '0.2s' }} />
-          </div>
-          <span className="text-sm font-medium text-white">Speaking...</span>
-        </div>
-      )}
+      
+      {/* Status indicators removed - VoiceInterface handles these now */}
     </div>
   );
 };

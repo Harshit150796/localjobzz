@@ -2,12 +2,14 @@ export interface AudioLevelAnalyzerConfig {
   silenceThreshold?: number;  // RMS threshold (0-1), default 0.015
   silenceDuration?: number;   // ms of silence before triggering, default 1500
   minSpeechDuration?: number; // minimum ms of speech before allowing silence detection, default 300
+  gracePeriod?: number;       // ms to wait after silence for transcript to finalize, default 200
 }
 
 export interface AudioLevelCallbacks {
   onSilenceDetected: () => void;
   onSpeechDetected?: () => void;
   onAudioLevel?: (level: number) => void;
+  hasTranscript?: () => boolean;  // Check if transcript is available before triggering
 }
 
 export class AudioLevelAnalyzer {
@@ -22,17 +24,20 @@ export class AudioLevelAnalyzer {
   private silenceThreshold: number;
   private silenceDuration: number;
   private minSpeechDuration: number;
+  private gracePeriod: number;
   
   // State
   private silenceStart: number | null = null;
   private speechStart: number | null = null;
   private hasSpeechStarted = false;
   private callbacks: AudioLevelCallbacks | null = null;
+  private graceTimeout: NodeJS.Timeout | null = null;
 
   constructor(config: AudioLevelAnalyzerConfig = {}) {
     this.silenceThreshold = config.silenceThreshold ?? 0.015;
     this.silenceDuration = config.silenceDuration ?? 1500;
     this.minSpeechDuration = config.minSpeechDuration ?? 300;
+    this.gracePeriod = config.gracePeriod ?? 200;
   }
 
   async start(stream: MediaStream, callbacks: AudioLevelCallbacks): Promise<void> {
@@ -57,7 +62,7 @@ export class AudioLevelAnalyzer {
       // Start detection loop
       this.detectSilence();
       
-      console.log('[AudioLevelAnalyzer] Started with threshold:', this.silenceThreshold);
+      console.log('[AudioLevelAnalyzer] Started with threshold:', this.silenceThreshold, 'grace period:', this.gracePeriod);
     } catch (error) {
       console.error('[AudioLevelAnalyzer] Failed to start:', error);
       throw error;
@@ -104,6 +109,12 @@ export class AudioLevelAnalyzer {
         this.silenceStart = null;
         this.callbacks?.onSpeechDetected?.();
       }
+
+      // Clear any pending grace timeout
+      if (this.graceTimeout) {
+        clearTimeout(this.graceTimeout);
+        this.graceTimeout = null;
+      }
     } else {
       // Below threshold - might be silence
       // Only start counting silence after minimum speech duration
@@ -118,16 +129,30 @@ export class AudioLevelAnalyzer {
             const silenceDuration = now - this.silenceStart;
             
             if (silenceDuration >= this.silenceDuration) {
-              console.log('[AudioLevelAnalyzer] Silence detected for', Math.round(silenceDuration), 'ms - triggering callback');
+              console.log('[AudioLevelAnalyzer] Silence detected for', Math.round(silenceDuration), 'ms');
               
               // Pause detection to prevent multiple triggers
               this.isPaused = true;
               this.hasSpeechStarted = false;
               this.silenceStart = null;
               this.speechStart = null;
-              
-              // Trigger callback
-              this.callbacks?.onSilenceDetected();
+
+              // Use grace period to let speech recognition catch up
+              this.graceTimeout = setTimeout(() => {
+                console.log('[AudioLevelAnalyzer] Grace period elapsed, checking for transcript');
+                
+                // Check if transcript is available before triggering
+                const hasContent = this.callbacks?.hasTranscript?.() ?? true;
+                
+                if (hasContent) {
+                  console.log('[AudioLevelAnalyzer] Transcript available, triggering callback');
+                  this.callbacks?.onSilenceDetected();
+                } else {
+                  console.log('[AudioLevelAnalyzer] No transcript yet, resuming listening');
+                  this.resume();
+                }
+              }, this.gracePeriod);
+
               return;
             }
           }
@@ -142,6 +167,13 @@ export class AudioLevelAnalyzer {
     if (!this.isRunning) return;
     
     console.log('[AudioLevelAnalyzer] Resuming detection');
+    
+    // Clear any pending grace timeout
+    if (this.graceTimeout) {
+      clearTimeout(this.graceTimeout);
+      this.graceTimeout = null;
+    }
+    
     this.isPaused = false;
     this.hasSpeechStarted = false;
     this.silenceStart = null;
@@ -162,6 +194,12 @@ export class AudioLevelAnalyzer {
     console.log('[AudioLevelAnalyzer] Stopping');
     this.isRunning = false;
     this.isPaused = false;
+
+    // Clear grace timeout
+    if (this.graceTimeout) {
+      clearTimeout(this.graceTimeout);
+      this.graceTimeout = null;
+    }
     
     if (this.animationFrame !== null) {
       cancelAnimationFrame(this.animationFrame);

@@ -5,6 +5,7 @@ import { VoiceSpeechRecognition } from '@/utils/SpeechRecognition';
 import { VoiceTextToSpeech } from '@/utils/TextToSpeech';
 import { AudioLevelAnalyzer } from '@/utils/AudioLevelAnalyzer';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface VoiceInterfaceProps {
   onTranscript?: (text: string) => void;
@@ -15,6 +16,7 @@ type VoiceStatus = 'idle' | 'connecting' | 'listening' | 'processing' | 'speakin
 export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
   const [status, setStatus] = useState<VoiceStatus>('idle');
   const [currentTranscript, setCurrentTranscript] = useState('');
+  const [audioLevel, setAudioLevel] = useState(0);
   const [conversationHistory, setConversationHistory] = useState<Array<{role: string, content: string}>>([]);
   const { toast } = useToast();
 
@@ -228,6 +230,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
     setStatus('connecting');
     setCurrentTranscript('');
+    setAudioLevel(0);
 
     try {
       // Request microphone permission
@@ -242,7 +245,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
 
       // Initialize speech recognition
       recognitionRef.current = new VoiceSpeechRecognition(
-        // onTranscriptUpdate - just update display
+        // onTranscriptUpdate - update live display
         (transcript) => {
           setCurrentTranscript(transcript);
         },
@@ -265,18 +268,23 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
       audioAnalyzerRef.current = new AudioLevelAnalyzer({
         silenceThreshold: 0.015,
         silenceDuration: 1500,
-        minSpeechDuration: 300
+        minSpeechDuration: 300,
+        gracePeriod: 200  // Wait 200ms for speech recognition to catch up
       });
 
       await audioAnalyzerRef.current.start(stream, {
         onSilenceDetected: () => {
           console.log('[VoiceInterface] Silence detected by analyzer');
           
-          // Get the accumulated transcript
+          // Get the accumulated transcript (includes interim as backup)
           const transcript = recognitionRef.current?.finalizeTranscript() || '';
           
           if (transcript) {
-            processTranscript(transcript);
+            setCurrentTranscript(transcript);  // Show what was heard
+            // Small delay for visual feedback before processing
+            setTimeout(() => {
+              processTranscript(transcript);
+            }, 100);
           } else {
             // No transcript - just resume listening
             console.log('[VoiceInterface] No transcript, resuming listening');
@@ -284,7 +292,15 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
           }
         },
         onSpeechDetected: () => {
-          // User started speaking again
+          // User started speaking again - could reset any timers here
+        },
+        onAudioLevel: (level) => {
+          // Update audio level for visualization
+          setAudioLevel(level);
+        },
+        hasTranscript: () => {
+          // Check if we have any transcript to process
+          return recognitionRef.current?.hasTranscript() || false;
         }
       });
 
@@ -325,6 +341,7 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
     cleanup();
     setStatus('idle');
     setCurrentTranscript('');
+    setAudioLevel(0);
     isProcessingRef.current = false;
 
     toast({
@@ -370,6 +387,26 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         />
       </div>
 
+      {/* Audio level indicator - shows mic is working */}
+      {status === 'listening' && (
+        <div className="flex items-center gap-1 h-6">
+          {[1, 2, 3, 4, 5].map((bar) => (
+            <div 
+              key={bar}
+              className={cn(
+                "w-1.5 rounded-full transition-all duration-75",
+                audioLevel > bar * 0.015 
+                  ? "bg-primary h-full" 
+                  : "bg-muted h-2"
+              )}
+              style={{
+                height: audioLevel > bar * 0.015 ? `${Math.min(24, 8 + audioLevel * 200)}px` : '8px'
+              }}
+            />
+          ))}
+        </div>
+      )}
+
       {/* Status indicator */}
       {status !== 'idle' && (
         <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm text-muted-foreground">
@@ -377,11 +414,10 @@ export const VoiceInterface = ({ onTranscript }: VoiceInterfaceProps) => {
         </div>
       )}
 
-      {/* Current transcript */}
+      {/* Current transcript - what user is saying */}
       {currentTranscript && status === 'listening' && (
-        <div className="bg-background/95 backdrop-blur-sm border border-border rounded-lg px-4 py-2 max-w-md">
-          <p className="text-sm text-muted-foreground">You're saying:</p>
-          <p className="text-foreground">{currentTranscript}</p>
+        <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg px-4 py-2 max-w-md">
+          <p className="text-foreground font-medium">{currentTranscript}</p>
         </div>
       )}
     </div>
