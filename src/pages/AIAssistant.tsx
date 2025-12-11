@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { VoiceInterface } from '@/components/ai-assistant/VoiceInterface';
 import { ModeSwitcher } from '@/components/ai-assistant/ModeSwitcher';
 import { MessageBubble } from '@/components/ai-assistant/MessageBubble';
-import { TranscriptOverlay } from '@/components/ai-assistant/TranscriptOverlay';
 import { StatusIndicator } from '@/components/ai-assistant/StatusIndicator';
 
 interface Message {
@@ -18,7 +17,7 @@ interface Message {
 const AIAssistant = () => {
   const [mode, setMode] = useState<'text' | 'voice'>('voice');
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: "Hi! I'm your voice assistant. You can tell me to post a job or help you find work. Just start speaking!" }
+    { role: 'assistant', content: "Hi! I'm your voice assistant. Tap the button and start speaking - I'll respond when you pause." }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -145,6 +144,15 @@ const AIAssistant = () => {
     }
   };
 
+  // Handle voice mode messages
+  const handleUserMessage = (text: string) => {
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
+  };
+
+  const handleAIResponse = (text: string) => {
+    setMessages(prev => [...prev, { role: 'assistant', content: text }]);
+  };
+
   return (
     <div className="min-h-screen relative overflow-hidden">
       {/* Animated gradient background */}
@@ -177,25 +185,32 @@ const AIAssistant = () => {
       <StatusIndicator status={isLoading ? 'thinking' : 'idle'} />
 
       {/* Main content */}
-      <main className="container mx-auto px-4 pt-32 pb-8 min-h-screen flex flex-col items-center justify-center">
+      <main className="container mx-auto px-4 pt-32 pb-8 min-h-screen flex flex-col">
         {mode === 'voice' ? (
-          <div className="flex-1 flex items-center justify-center w-full">
-            <div className="flex flex-col items-center gap-8">
+          <div className="flex-1 flex flex-col">
+            {/* Conversation display for voice mode */}
+            <div className="flex-1 overflow-y-auto pb-64 space-y-4 max-w-3xl mx-auto w-full">
+              {messages.map((message, idx) => (
+                <MessageBubble
+                  key={idx}
+                  role={message.role}
+                  content={message.content}
+                  isStreaming={false}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Voice interface - fixed at bottom */}
+            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
               <VoiceInterface
-                onTranscript={(text) => {
-                  setMessages(prev => [...prev, { 
-                    role: text.startsWith('User:') ? 'user' : 'assistant', 
-                    content: text.replace(/^(User:|AI:)\s*/, '')
-                  }]);
-                }}
+                onUserMessage={handleUserMessage}
+                onAIResponse={handleAIResponse}
               />
-              <p className="text-center text-sm text-muted-foreground max-w-md">
-                Tap to start talking! Say "I want to post a job" or "Find me work in Bangalore"
-              </p>
             </div>
           </div>
         ) : (
-          <div className="w-full max-w-3xl flex-1 flex flex-col">
+          <div className="w-full max-w-3xl mx-auto flex-1 flex flex-col">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto pb-32 space-y-4">
               {messages.map((message, idx) => (
@@ -248,13 +263,7 @@ const AIAssistant = () => {
             </div>
           </div>
         )}
-
       </main>
-
-      {/* Transcript overlay for voice mode */}
-      {mode === 'voice' && (
-        <TranscriptOverlay messages={messages.slice(1)} isVisible={messages.length > 1} />
-      )}
     </div>
   );
 };
