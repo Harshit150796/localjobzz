@@ -6,6 +6,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import MyJobCard from '@/components/MyJobCard';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Briefcase, Plus } from 'lucide-react';
 import SEOHead from '@/components/SEOHead';
 
@@ -29,6 +30,7 @@ const MyJobs: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -67,6 +69,10 @@ const MyJobs: React.FC = () => {
     fetchMyJobs();
   };
 
+  // Filter jobs by status
+  const activeJobs = jobs.filter(job => job.status === 'active');
+  const completedJobs = jobs.filter(job => job.status === 'completed');
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -84,6 +90,44 @@ const MyJobs: React.FC = () => {
     );
   }
 
+  const renderJobGrid = (jobList: Job[], isCompleted: boolean = false) => {
+    if (jobList.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[300px] text-center">
+          <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
+          <h2 className="text-xl font-semibold text-foreground mb-2">
+            {isCompleted ? 'No completed jobs yet' : 'No active jobs'}
+          </h2>
+          <p className="text-muted-foreground mb-6 max-w-md">
+            {isCompleted 
+              ? 'Jobs you mark as completed will appear here'
+              : 'Start posting jobs to find the right candidates'
+            }
+          </p>
+          {!isCompleted && (
+            <Button onClick={() => navigate('/post-ad')} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Post Your First Job
+            </Button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {jobList.map((job) => (
+          <MyJobCard 
+            key={job.id} 
+            job={job} 
+            onJobDeleted={handleJobDeleted} 
+            isCompleted={isCompleted}
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
     <>
       <SEOHead 
@@ -94,7 +138,7 @@ const MyJobs: React.FC = () => {
         <Header />
         <main className="container mx-auto px-4 py-8">
           {/* Header Section */}
-          <div className="mb-8">
+          <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Briefcase className="h-8 w-8 text-primary" />
@@ -110,28 +154,35 @@ const MyJobs: React.FC = () => {
             </p>
           </div>
 
-          {/* Jobs Grid */}
-          {jobs.length === 0 ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-              <Briefcase className="h-16 w-16 text-muted-foreground mb-4" />
-              <h2 className="text-2xl font-semibold text-foreground mb-2">
-                No jobs posted yet
-              </h2>
-              <p className="text-muted-foreground mb-6 max-w-md">
-                Start posting jobs to find the right candidates for your work
-              </p>
-              <Button onClick={() => navigate('/post-ad')} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Post Your First Job
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
-                <MyJobCard key={job.id} job={job} onJobDeleted={handleJobDeleted} />
-              ))}
-            </div>
-          )}
+          {/* Tabs for Active/Completed */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'active' | 'completed')} className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="active" className="flex items-center gap-2">
+                Active
+                {activeJobs.length > 0 && (
+                  <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full text-xs font-medium">
+                    {activeJobs.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="completed" className="flex items-center gap-2">
+                Completed
+                {completedJobs.length > 0 && (
+                  <span className="bg-muted text-muted-foreground px-2 py-0.5 rounded-full text-xs font-medium">
+                    {completedJobs.length}
+                  </span>
+                )}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="active">
+              {renderJobGrid(activeJobs, false)}
+            </TabsContent>
+
+            <TabsContent value="completed">
+              {renderJobGrid(completedJobs, true)}
+            </TabsContent>
+          </Tabs>
         </main>
         <Footer />
       </div>

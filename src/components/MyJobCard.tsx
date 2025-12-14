@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import JobCompletionModal from '@/components/JobCompletionModal';
-import { MapPin, DollarSign, Trash2, Eye, Calendar, Pencil } from 'lucide-react';
+import { MapPin, DollarSign, Eye, Calendar, Pencil, CheckCircle } from 'lucide-react';
 import { useJobs } from '@/contexts/JobContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -27,11 +27,12 @@ interface Job {
 interface MyJobCardProps {
   job: Job;
   onJobDeleted: () => void;
+  isCompleted?: boolean;
 }
 
-const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
+const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted, isCompleted = false }) => {
   const navigate = useNavigate();
-  const { deleteJob, updateJob } = useJobs();
+  const { updateJob } = useJobs();
   const { user } = useAuth();
   const [showCompletionModal, setShowCompletionModal] = useState(false);
 
@@ -85,7 +86,7 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
 
   return (
     <>
-      <Card className="hover:shadow-lg transition-all duration-300 border-border">
+      <Card className={`hover:shadow-lg transition-all duration-300 border-border ${isCompleted ? 'opacity-75' : ''}`}>
         <CardContent className="p-4">
           {/* Header with Status and Urgency */}
           <div className="flex items-center justify-between mb-3">
@@ -127,7 +128,7 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <DollarSign className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span>₹{job.daily_salary}/day</span>
+              <span>₹{job.daily_salary}</span>
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <Calendar className="h-4 w-4 mr-2 flex-shrink-0" />
@@ -145,26 +146,43 @@ const MyJobCard: React.FC<MyJobCardProps> = ({ job, onJobDeleted }) => {
               <Eye className="h-4 w-4 mr-2" />
               View Details
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/post-ad', { state: { editJob: job } })}
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={() => setShowCompletionModal(true)}
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            
+            {isCompleted ? (
+              // Show completed indicator for completed jobs
+              <Button
+                variant="secondary"
+                size="icon"
+                disabled
+                className="cursor-not-allowed"
+              >
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </Button>
+            ) : (
+              // Show edit and complete buttons for active jobs
+              <>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => navigate('/post-ad', { state: { editJob: job } })}
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="default"
+                  size="icon"
+                  onClick={() => setShowCompletionModal(true)}
+                  title="Mark as completed"
+                >
+                  <CheckCircle className="h-4 w-4" />
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
 
       {/* Job Completion Modal */}
-      {user && (
+      {user && !isCompleted && (
         <JobCompletionModal
           open={showCompletionModal}
           onOpenChange={setShowCompletionModal}
