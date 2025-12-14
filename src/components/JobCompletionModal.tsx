@@ -12,10 +12,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import RatingStars from './RatingStars';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface Worker {
   id: string;
@@ -39,17 +40,19 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
   employerId,
   onSuccess,
 }) => {
-  const [step, setStep] = useState<'type' | 'rating' | 'loading'>('type');
+  const [step, setStep] = useState<'type' | 'rating' | 'loading' | 'already_completed'>('type');
   const [completionType, setCompletionType] = useState<string>('');
   const [selectedWorker, setSelectedWorker] = useState<string>('');
   const [externalSource, setExternalSource] = useState('');
   const [rating, setRating] = useState(0);
   const [feedback, setFeedback] = useState('');
   const [workers, setWorkers] = useState<Worker[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingCompletion, setExistingCompletion] = useState<{ id: string; hasRating: boolean } | null>(null);
 
   useEffect(() => {
     if (open) {
+      checkExistingCompletion();
       fetchWorkers();
     } else {
       // Reset state when modal closes
@@ -59,8 +62,44 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
       setExternalSource('');
       setRating(0);
       setFeedback('');
+      setExistingCompletion(null);
+      setIsSubmitting(false);
     }
   }, [open, jobId]);
+
+  const checkExistingCompletion = async () => {
+    try {
+      // Check if job completion already exists
+      const { data: completion, error } = await supabase
+        .from('job_completions')
+        .select('id, completed_by_user_id')
+        .eq('job_id', jobId)
+        .eq('employer_id', employerId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking existing completion:', error);
+        return;
+      }
+
+      if (completion) {
+        // Check if rating exists for this completion
+        const { data: ratingData } = await supabase
+          .from('ratings')
+          .select('id')
+          .eq('job_completion_id', completion.id)
+          .maybeSingle();
+
+        setExistingCompletion({
+          id: completion.id,
+          hasRating: !!ratingData,
+        });
+        setStep('already_completed');
+      }
+    } catch (error) {
+      console.error('Error checking existing completion:', error);
+    }
+  };
 
   const fetchWorkers = async () => {
     try {
@@ -121,7 +160,9 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
   };
 
   const handleSubmit = async () => {
-    setIsLoading(true);
+    if (isSubmitting) return; // Prevent double submission
+    
+    setIsSubmitting(true);
     setStep('loading');
 
     try {
@@ -138,7 +179,19 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
         .select()
         .single();
 
-      if (completionError) throw completionError;
+      if (completionError) {
+        // Check for duplicate constraint error
+        if (completionError.code === '23505') {
+          toast({
+            title: 'Already Completed',
+            description: 'This job has already been marked as completed.',
+          });
+          onSuccess(); // Refresh parent list
+          onOpenChange(false);
+          return;
+        }
+        throw completionError;
+      }
 
       // If platform worker and rating provided, create rating
       if (completionType === 'platform_worker' && rating > 0 && selectedWorker) {
@@ -175,7 +228,7 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
       });
       setStep('type');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -201,9 +254,41 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
     handleSubmit();
   };
 
+  const handleCloseAlreadyCompleted = () => {
+    onSuccess(); // Refresh the list
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
+        {step === 'already_completed' && (
+          <>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500" />
+                Already Completed
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="py-4">
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  This job has already been marked as completed
+                  {existingCompletion?.hasRating && ' and rated'}.
+                </AlertDescription>
+              </Alert>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={handleCloseAlreadyCompleted}>
+                Close
+              </Button>
+            </DialogFooter>
+          </>
+        )}
+
         {step === 'type' && (
           <>
             <DialogHeader>
@@ -264,8 +349,8 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleNext} disabled={!completionType}>
-                Next
+              <Button onClick={handleNext} disabled={!completionType || isSubmitting}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Next'}
               </Button>
             </DialogFooter>
           </>
@@ -320,11 +405,11 @@ const JobCompletionModal: React.FC<JobCompletionModalProps> = ({
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setStep('type')}>
+              <Button variant="outline" onClick={() => setStep('type')} disabled={isSubmitting}>
                 Back
               </Button>
-              <Button onClick={handleRatingSubmit}>
-                Submit Rating
+              <Button onClick={handleRatingSubmit} disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Rating'}
               </Button>
             </DialogFooter>
           </>
