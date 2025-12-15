@@ -311,7 +311,14 @@ export const VoiceInterface = ({ onTranscript, onUserMessage, onAIResponse }: Vo
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-2 md:gap-4">
+      {/* Current transcript - ABOVE orb on mobile for visibility */}
+      {currentTranscript && (
+        <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg px-3 py-2 md:px-4 md:py-3 max-w-[280px] md:max-w-sm text-center mb-1">
+          <p className="text-foreground font-medium text-sm md:text-lg leading-tight">{currentTranscript}</p>
+        </div>
+      )}
+
       <div className="relative">
         <VoiceOrb
           isConnected={isConnected}
@@ -321,17 +328,10 @@ export const VoiceInterface = ({ onTranscript, onUserMessage, onAIResponse }: Vo
         />
       </div>
 
-      {/* Status indicator */}
-      <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-4 py-1.5 text-sm text-muted-foreground">
+      {/* Status indicator - compact on mobile */}
+      <div className="bg-background/95 backdrop-blur-sm border border-border rounded-full px-3 py-1 md:px-4 md:py-1.5 text-xs md:text-sm text-muted-foreground">
         {getStatusText()}
       </div>
-
-      {/* Current transcript - what user is saying */}
-      {currentTranscript && (
-        <div className="bg-primary/10 backdrop-blur-sm border border-primary/30 rounded-lg px-4 py-3 max-w-sm text-center">
-          <p className="text-foreground font-medium text-lg">{currentTranscript}</p>
-        </div>
-      )}
     </div>
   );
 };
