@@ -11,8 +11,8 @@ export const StatusIndicator = ({ status, className }: StatusIndicatorProps) => 
 
   return (
     <div className={cn(
-      "fixed top-24 left-1/2 -translate-x-1/2 z-50",
-      "px-6 py-3 rounded-full backdrop-blur-xl border shadow-2xl",
+      "fixed top-[88px] md:top-24 left-1/2 -translate-x-1/2 z-50",
+      "px-4 py-2 md:px-6 md:py-3 rounded-full backdrop-blur-xl border shadow-2xl",
       "animate-in fade-in slide-in-from-top-4 duration-300",
       status === 'listening' && "bg-destructive/10 border-destructive/20",
       status === 'thinking' && "bg-ai-primary/10 border-ai-primary/20",

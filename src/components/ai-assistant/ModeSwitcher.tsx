@@ -8,7 +8,7 @@ interface ModeSwitcherProps {
 
 export const ModeSwitcher = ({ mode, onModeChange }: ModeSwitcherProps) => {
   return (
-    <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+    <div className="fixed top-16 md:top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
       <div className="relative flex gap-1 p-1 rounded-full bg-background/80 backdrop-blur-xl border border-border shadow-lg">
         {/* Sliding background indicator */}
         <div 
@@ -23,24 +23,24 @@ export const ModeSwitcher = ({ mode, onModeChange }: ModeSwitcherProps) => {
         <button
           onClick={() => onModeChange('text')}
           className={cn(
-            "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-full transition-colors duration-200",
+            "relative z-10 flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-full transition-colors duration-200",
             mode === 'text' ? 'text-white' : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <MessageSquare className="w-4 h-4" />
-          <span className="font-medium text-sm">Text</span>
+          <span className="font-medium text-xs md:text-sm">Text</span>
         </button>
 
         {/* Voice mode button */}
         <button
           onClick={() => onModeChange('voice')}
           className={cn(
-            "relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-full transition-colors duration-200",
+            "relative z-10 flex items-center gap-1.5 md:gap-2 px-4 md:px-6 py-2 md:py-2.5 rounded-full transition-colors duration-200",
             mode === 'voice' ? 'text-white' : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <Mic className="w-4 h-4" />
-          <span className="font-medium text-sm">Voice</span>
+          <span className="font-medium text-xs md:text-sm">Voice</span>
         </button>
       </div>
     </div>

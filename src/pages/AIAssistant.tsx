@@ -185,11 +185,11 @@ const AIAssistant = () => {
       <StatusIndicator status={isLoading ? 'thinking' : 'idle'} />
 
       {/* Main content */}
-      <main className="container mx-auto px-4 pt-32 pb-8 min-h-screen flex flex-col">
+      <main className="container mx-auto px-4 pt-28 md:pt-32 pb-8 min-h-screen flex flex-col">
         {mode === 'voice' ? (
           <div className="flex-1 flex flex-col">
             {/* Conversation display for voice mode */}
-            <div className="flex-1 overflow-y-auto pb-64 space-y-4 max-w-3xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto pb-40 md:pb-64 space-y-3 md:space-y-4 max-w-3xl mx-auto w-full">
               {messages.map((message, idx) => (
                 <MessageBubble
                   key={idx}
@@ -201,8 +201,8 @@ const AIAssistant = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Voice interface - fixed at bottom */}
-            <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50">
+            {/* Voice interface - fixed at bottom, closer to edge on mobile */}
+            <div className="fixed bottom-4 md:bottom-8 left-1/2 -translate-x-1/2 z-50">
               <VoiceInterface
                 onUserMessage={handleUserMessage}
                 onAIResponse={handleAIResponse}
