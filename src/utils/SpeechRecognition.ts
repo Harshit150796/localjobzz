@@ -10,8 +10,9 @@ export interface SpeechRecognitionConfig {
 export class VoiceSpeechRecognition {
   private recognition: any = null;
   private isListening = false;
-  private accumulatedTranscript = '';      // From isFinal=true results
-  private lastInterimTranscript = '';      // Latest interim results (backup)
+  private segments: string[] = [];           // Completed segments from recognition restarts
+  private currentSessionTranscript = '';     // Current session's latest final result
+  private lastInterimTranscript = '';        // Latest interim results (backup)
   private silenceTimer: SilenceTimer | null = null;
   private onTranscriptUpdate: (transcript: string) => void;
   private onSilenceDetected: () => void;
@@ -77,17 +78,18 @@ export class VoiceSpeechRecognition {
         const transcript = event.results[i][0].transcript;
         
         if (event.results[i].isFinal) {
-          // Final result - add to accumulated and clear interim
-          this.accumulatedTranscript += transcript + ' ';
+          // Final result - REPLACE current session transcript (not append!)
+          // Browser's continuous mode returns cumulative results, not incremental
+          this.currentSessionTranscript = transcript;
           this.lastInterimTranscript = '';
-          console.log('[SpeechRecognition] Final result:', transcript.substring(0, 50));
+          console.log('[SpeechRecognition] Final result (replaced):', transcript.substring(0, 50));
         } else {
           // Interim result - store as backup
           this.lastInterimTranscript = transcript;
         }
       }
 
-      // Display accumulated + interim for live feedback
+      // Display segments + current session + interim for live feedback
       const currentDisplay = this.getCurrentTranscript();
       
       if (currentDisplay) {
@@ -125,6 +127,13 @@ export class VoiceSpeechRecognition {
       
       // Auto-restart if we're still supposed to be listening
       if (this.isListening) {
+        // Save current session's transcript as a segment before restart
+        if (this.currentSessionTranscript) {
+          this.segments.push(this.currentSessionTranscript);
+          this.currentSessionTranscript = '';
+          console.log('[SpeechRecognition] Saved segment before restart');
+        }
+        
         console.log('[SpeechRecognition] Auto-restarting...');
         try {
           this.recognition?.start();
@@ -147,7 +156,8 @@ export class VoiceSpeechRecognition {
 
     try {
       this.isListening = true;
-      this.accumulatedTranscript = '';
+      this.segments = [];
+      this.currentSessionTranscript = '';
       this.lastInterimTranscript = '';
       this.recognition.start();
       this.silenceTimer?.start();
@@ -175,7 +185,13 @@ export class VoiceSpeechRecognition {
 
   // Get the best available transcript without clearing
   getCurrentTranscript(): string {
-    return (this.accumulatedTranscript + this.lastInterimTranscript).trim();
+    const parts = [
+      ...this.segments,
+      this.currentSessionTranscript,
+      this.lastInterimTranscript
+    ].filter(Boolean);
+    
+    return parts.join(' ').replace(/\s+/g, ' ').trim();
   }
 
   // Called when processing starts - returns transcript and clears state
@@ -183,8 +199,9 @@ export class VoiceSpeechRecognition {
     const transcript = this.getCurrentTranscript();
     console.log('[SpeechRecognition] Finalizing transcript:', transcript || '(empty)');
     
-    // Clear both
-    this.accumulatedTranscript = '';
+    // Clear all state
+    this.segments = [];
+    this.currentSessionTranscript = '';
     this.lastInterimTranscript = '';
     
     return transcript;
@@ -197,14 +214,17 @@ export class VoiceSpeechRecognition {
 
   // Clear without returning - used when canceling
   clearTranscript(): void {
-    this.accumulatedTranscript = '';
+    this.segments = [];
+    this.currentSessionTranscript = '';
     this.lastInterimTranscript = '';
   }
 
   // Resume listening after processing
   resume(): void {
     console.log('[SpeechRecognition] Resuming...');
-    this.clearTranscript();
+    this.segments = [];
+    this.currentSessionTranscript = '';
+    this.lastInterimTranscript = '';
     this.silenceTimer?.resume();
   }
 
