@@ -17,7 +17,7 @@ const SEOHead = ({
   description = 'Find daily work opportunities or hire workers instantly. Join thousands of people making smart employment decisions on localjobzz.com - the fastest job platform.',
   keywords = 'local jobs, daily work, hire workers, job platform, employment, part time jobs, full time jobs, gig work',
   canonicalUrl,
-  ogImage = 'https://www.localjobzz.com/favicon-512.png',
+  ogImage = 'https://www.localjobzz.com/og-image.png',
   ogType = 'website',
   structuredData,
   city,
