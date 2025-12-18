@@ -73,6 +73,10 @@ const Messages: React.FC = () => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedRating, setSelectedRating] = useState<PendingRating | null>(null);
   const { toast } = useToast();
+  
+  // Refs for scrolling to bottom - MUST be declared before any early returns
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handle pending conversation from URL params
   useEffect(() => {
@@ -318,10 +322,6 @@ const Messages: React.FC = () => {
   }
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
-  
-  // Ref for scrolling to bottom
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
