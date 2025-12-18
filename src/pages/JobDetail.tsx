@@ -152,10 +152,25 @@ const JobDetail = () => {
     }
   };
 
+  // Check if the salary string already contains a period (e.g., "/month", "/week", "/day")
+  const hasPeriodInSalary = (salary: string) => {
+    return /\/(day|month|week|hour)/i.test(salary);
+  };
+
+  // Get the salary period from the salary string
+  const getSalaryPeriod = (salary: string) => {
+    const lowerSalary = salary.toLowerCase();
+    if (lowerSalary.includes('/month') || lowerSalary.includes('month')) return 'per month';
+    if (lowerSalary.includes('/week') || lowerSalary.includes('week')) return 'per week';
+    if (lowerSalary.includes('/hour') || lowerSalary.includes('hour')) return 'per hour';
+    return 'per day';
+  };
+
   const handleShare = async () => {
     const shareUrl = `${window.location.origin}/job/${job.id}`;
     const shareTitle = `${job.title} - ${job.location}`;
-    const shareText = `Check out this job: ${job.title} in ${job.location}. Salary: ₹${job.daily_salary}/day`;
+    const salaryText = hasPeriodInSalary(job.daily_salary) ? `₹${job.daily_salary}` : `₹${job.daily_salary}/day`;
+    const shareText = `Check out this job: ${job.title} in ${job.location}. Salary: ${salaryText}`;
 
     if (navigator.share) {
       try {
@@ -289,7 +304,9 @@ const JobDetail = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-green-600">₹{job.daily_salary}</div>
-                  <div className="text-sm text-gray-500">per day</div>
+                  {!hasPeriodInSalary(job.daily_salary) && (
+                    <div className="text-sm text-gray-500">{getSalaryPeriod(job.daily_salary)}</div>
+                  )}
                 </div>
               </div>
             </div>
