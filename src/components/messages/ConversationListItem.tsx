@@ -36,19 +36,19 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
       className={`
         relative p-4 cursor-pointer transition-all duration-200 group
         ${isSelected 
-          ? 'bg-gradient-to-r from-orange-50 to-orange-50/50 border-l-4 border-l-orange-500' 
+          ? 'bg-muted border-l-4 border-l-slate-700' 
           : 'hover:bg-muted/50 border-l-4 border-l-transparent'
         }
-        ${isPending ? 'bg-gradient-to-r from-orange-50 to-amber-50/50' : ''}
+        ${isPending ? 'bg-muted/70' : ''}
       `}
     >
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div className={`
-          relative w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0
+          relative w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
           bg-gradient-to-br from-orange-500 to-red-500
           shadow-md group-hover:shadow-lg transition-shadow duration-200
-          ${isSelected ? 'ring-2 ring-orange-400 ring-offset-2' : ''}
+          ${isSelected ? 'ring-2 ring-slate-600 ring-offset-2' : ''}
         `}>
           <span className="text-white font-semibold text-sm">
             {otherUser.avatar}

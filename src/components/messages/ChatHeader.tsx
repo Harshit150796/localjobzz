@@ -40,7 +40,7 @@ const ChatHeader: React.FC<ChatHeaderProps> = ({
         {/* Avatar */}
         <Link 
           to={`/user/${userId}`}
-          className="relative w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0
+          className="relative w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0
                      bg-gradient-to-br from-orange-500 to-red-500 shadow-md
                      hover:shadow-lg transition-shadow duration-200 group"
         >

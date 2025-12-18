@@ -29,7 +29,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     <div className={`
       flex items-center gap-2 p-1.5 bg-muted/50 rounded-full
       border-2 transition-all duration-200
-      ${isFocused ? 'border-orange-400 bg-card shadow-lg shadow-orange-500/10' : 'border-transparent'}
+      ${isFocused ? 'border-slate-800 bg-card shadow-lg' : 'border-transparent'}
     `}>
       <input
         type="text"
