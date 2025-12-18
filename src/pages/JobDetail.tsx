@@ -384,23 +384,6 @@ const JobDetail = () => {
               <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">{job.description}</p>
             </div>
 
-            {/* Safety Tips */}
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h3 className="font-semibold text-yellow-900 mb-1">Safety Tips</h3>
-                  <ul className="text-sm text-yellow-800 space-y-1">
-                    <li>• Meet in a public place for the first time</li>
-                    <li>• Never share sensitive personal information</li>
-                    <li>• Trust your instincts - if something feels wrong, it probably is</li>
-                  </ul>
-                  <Link to="/safety" className="text-sm text-yellow-900 font-semibold hover:underline mt-2 inline-block">
-                    Read all safety tips →
-                  </Link>
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Sidebar */}
@@ -469,6 +452,24 @@ const JobDetail = () => {
                   <AlertCircle className="h-4 w-4" />
                   Report this job
                 </Link>
+              </div>
+
+              {/* Safety Tips */}
+              <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-semibold text-yellow-900 mb-1">Safety Tips</h3>
+                    <ul className="text-sm text-yellow-800 space-y-1">
+                      <li>• Meet in a public place for the first time</li>
+                      <li>• Never share sensitive personal information</li>
+                      <li>• Trust your instincts - if something feels wrong, it probably is</li>
+                    </ul>
+                    <Link to="/safety" className="text-sm text-yellow-900 font-semibold hover:underline mt-2 inline-block">
+                      Read all safety tips →
+                    </Link>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
