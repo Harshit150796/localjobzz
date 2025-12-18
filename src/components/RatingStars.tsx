@@ -6,13 +6,15 @@ interface RatingStarsProps {
   onChange?: (rating: number) => void;
   readonly?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  color?: 'yellow' | 'orange';
 }
 
 const RatingStars: React.FC<RatingStarsProps> = ({ 
   value = 0, 
   onChange, 
   readonly = false,
-  size = 'md' 
+  size = 'md',
+  color = 'yellow'
 }) => {
   const [hoverRating, setHoverRating] = useState(0);
 
@@ -45,7 +47,9 @@ const RatingStars: React.FC<RatingStarsProps> = ({
           <Star 
             className={`${sizeClasses[size]} transition-colors ${
               star <= displayRating 
-                ? 'fill-yellow-400 text-yellow-400' 
+                ? color === 'orange' 
+                  ? 'fill-orange-400 text-orange-400' 
+                  : 'fill-yellow-400 text-yellow-400'
                 : 'fill-none text-gray-300'
             }`}
           />
