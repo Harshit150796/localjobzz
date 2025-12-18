@@ -4,7 +4,7 @@ import { MapPin, Clock, Phone, MessageCircle, AlertCircle, Star, ChevronLeft, Ch
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import SEOHead from '../components/SEOHead';
-import RatingBadge from '../components/RatingBadge';
+import RatingStars from '../components/RatingStars';
 import { Badge } from '../components/ui/badge';
 import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -403,13 +403,23 @@ const JobDetail = () => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-gray-900 truncate">{employerProfile.name}</p>
-                      {employerProfile.averageEmployerRating && (
-                        <RatingBadge 
-                          rating={employerProfile.averageEmployerRating} 
-                          reviewCount={employerProfile.totalEmployerReviews}
-                          size="sm"
+                      <Link 
+                        to={`/user/${job.user_id}#reviews`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                      >
+                        <RatingStars 
+                          value={employerProfile.averageEmployerRating || 0} 
+                          readonly 
+                          size="sm" 
                         />
-                      )}
+                        <span className="text-xs text-gray-600">
+                          {employerProfile.averageEmployerRating 
+                            ? `${employerProfile.averageEmployerRating.toFixed(1)} (${employerProfile.totalEmployerReviews})`
+                            : 'No reviews yet'
+                          }
+                        </span>
+                      </Link>
                     </div>
                   </Link>
                 </div>
