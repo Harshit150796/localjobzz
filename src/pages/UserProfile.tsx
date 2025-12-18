@@ -215,23 +215,22 @@ const UserProfile: React.FC = () => {
                 </Avatar>
                 
                 <div className="flex-1">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">{profile.name}</h1>
-                  
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-3">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>Member since {new Date(profile.created_at).getFullYear()}</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <h1 className="text-3xl font-bold text-foreground">{profile.name}</h1>
+                    <div className="flex items-center gap-2">
+                      <RatingStars value={overallRating || 0} readonly size="md" color="orange" />
+                      <span className="text-sm text-muted-foreground">
+                        {overallRating 
+                          ? `${overallRating.toFixed(1)} (${totalReviews})` 
+                          : 'No reviews yet'
+                        }
+                      </span>
                     </div>
-                    
-                    {overallRating && (
-                      <div className="flex items-center gap-2">
-                        <RatingStars value={overallRating} readonly size="sm" />
-                        <span className="font-semibold text-foreground">
-                          {overallRating.toFixed(1)}
-                        </span>
-                        <span>({totalReviews} {totalReviews === 1 ? 'review' : 'reviews'})</span>
-                      </div>
-                    )}
+                  </div>
+                  
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                    <Calendar className="h-4 w-4" />
+                    <span>Member since {new Date(profile.created_at).getFullYear()}</span>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
