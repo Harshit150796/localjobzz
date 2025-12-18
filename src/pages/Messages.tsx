@@ -1,11 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, Send, ArrowLeft, Phone, Star, User } from 'lucide-react';
+import { MessageCircle, ArrowLeft, Star } from 'lucide-react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import WorkerRatingModal from '../components/WorkerRatingModal';
-import RatingBadge from '../components/RatingBadge';
+import ConversationListItem from '../components/messages/ConversationListItem';
+import ChatBubble from '../components/messages/ChatBubble';
+import ChatHeader from '../components/messages/ChatHeader';
+import ChatInput from '../components/messages/ChatInput';
+import EmptyState from '../components/messages/EmptyState';
+import ConversationSkeleton from '../components/messages/ConversationSkeleton';
+import DateSeparator from '../components/messages/DateSeparator';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { createConversationWithMessage } from '../utils/messageHelpers';
@@ -53,6 +59,27 @@ interface Message {
   timestamp: string;
 }
 
+// Helper to format date for separators
+const formatMessageDate = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (date.toDateString() === today.toDateString()) {
+    return 'Today';
+  } else if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  } else {
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+};
+
+// Helper to check if two dates are different days
+const isDifferentDay = (date1: string, date2: string): boolean => {
+  return new Date(date1).toDateString() !== new Date(date2).toDateString();
+};
+
 const Messages: React.FC = () => {
   const { user, session } = useAuth();
   const navigate = useNavigate();
@@ -74,14 +101,12 @@ const Messages: React.FC = () => {
   const [selectedRating, setSelectedRating] = useState<PendingRating | null>(null);
   const { toast } = useToast();
   
-  // Refs for scrolling to bottom - MUST be declared before any early returns
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
 
   // Handle pending conversation from URL params
   useEffect(() => {
     if (pendingJobId && pendingEmployerId && user) {
-      // Fetch employer profile to get name
       const fetchEmployerProfile = async () => {
         const { data: profile } = await supabase
           .from('profiles')
@@ -100,7 +125,6 @@ const Messages: React.FC = () => {
           employerAvatar: initials,
         });
         
-        // Clear selected conversation since we're in pending mode
         setSelectedConversation(null);
         setMessages([]);
       };
@@ -130,12 +154,10 @@ const Messages: React.FC = () => {
 
         if (error) throw error;
 
-        // Format conversations
         const formattedConvs = await Promise.all(
           (convData || []).map(async (conv: any) => {
             const otherUserId = conv.employer_id === user.id ? conv.worker_id : conv.employer_id;
             
-            // Fetch other user's profile with rating
             const { data: profile } = await supabase
               .from('profiles')
               .select('name, average_worker_rating, total_worker_reviews, average_employer_rating, total_employer_reviews')
@@ -145,7 +167,6 @@ const Messages: React.FC = () => {
             const lastMsg = conv.messages?.[conv.messages.length - 1];
             const initials = profile?.name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U';
 
-            // Determine which rating to show based on user's role in this conversation
             const isEmployer = conv.employer_id === user.id;
             const rating = isEmployer ? profile?.average_worker_rating : profile?.average_employer_rating;
             const reviewCount = isEmployer ? profile?.total_worker_reviews : profile?.total_employer_reviews;
@@ -183,7 +204,6 @@ const Messages: React.FC = () => {
 
     const fetchPendingRatings = async () => {
       try {
-        // Find job completions where user is the worker and hasn't rated the employer yet
         const { data: completions, error } = await supabase
           .from('job_completions')
           .select(`
@@ -197,7 +217,6 @@ const Messages: React.FC = () => {
 
         if (error) throw error;
 
-        // Check which completions don't have a worker-to-employer rating
         const pendingRatingsData: PendingRating[] = [];
         
         for (const completion of completions || []) {
@@ -210,7 +229,6 @@ const Messages: React.FC = () => {
             .maybeSingle();
 
           if (!existingRating) {
-            // Fetch employer name
             const { data: employerProfile } = await supabase
               .from('profiles')
               .select('name')
@@ -268,7 +286,6 @@ const Messages: React.FC = () => {
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`messages:${selectedConversation}`)
       .on(
@@ -282,7 +299,6 @@ const Messages: React.FC = () => {
         (payload) => {
           const newMsg = payload.new as any;
           
-          // Prevent duplicate messages (from optimistic update or realtime)
           setMessages(prev => {
             const exists = prev.some(m => m.id === newMsg.id);
             if (exists) return prev;
@@ -306,12 +322,18 @@ const Messages: React.FC = () => {
     };
   }, [selectedConversation, user]);
 
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    mobileMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-16 text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-4">Please sign in to view messages</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-4">Please sign in to view messages</h1>
           <Link to="/" className="text-orange-500 hover:text-orange-600">
             Go back to home
           </Link>
@@ -322,21 +344,12 @@ const Messages: React.FC = () => {
   }
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    mobileMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Check if we're in a pending conversation state (no selectedConversation but have pending params)
   const isInPendingConversation = !selectedConversation && pendingConversation;
+  const showChatView = selectedConversation || isInPendingConversation;
 
   const handleSelectConversation = (convId: string) => {
-    // Clear pending conversation when selecting an existing one
     setPendingConversation(null);
     setSelectedConversation(convId);
-    // Update URL without pending params
     setSearchParams({ conversation: convId });
   };
 
@@ -344,7 +357,6 @@ const Messages: React.FC = () => {
     setSelectedConversation(null);
     setPendingConversation(null);
     setMessages([]);
-    // Clear all URL params
     setSearchParams({});
   };
 
@@ -354,9 +366,7 @@ const Messages: React.FC = () => {
     const messageContent = newMessage.trim();
     const tempId = `temp-${Date.now()}`;
 
-    // Handle pending conversation (create conversation with first message)
     if (isInPendingConversation && pendingConversation) {
-      // Optimistically add message to UI immediately
       const optimisticMessage: Message = {
         id: tempId,
         sender_id: user.id,
@@ -380,7 +390,6 @@ const Messages: React.FC = () => {
         );
 
         if (result.success && result.conversationId) {
-          // Add the new conversation to the list
           const newConv: Conversation = {
             id: result.conversationId,
             job_id: pendingConversation.jobId,
@@ -400,17 +409,12 @@ const Messages: React.FC = () => {
           };
           
           setConversations(prev => [newConv, ...prev]);
-          
-          // Switch to the real conversation
           setSelectedConversation(result.conversationId);
           setPendingConversation(null);
-          
-          // Update URL
           setSearchParams({ conversation: result.conversationId });
           
           toast({ title: "Message sent", description: "Conversation started successfully" });
         } else {
-          // Remove optimistic message on error
           setMessages([]);
           toast({ title: "Error", description: result.error || "Failed to send message", variant: "destructive" });
         }
@@ -424,10 +428,8 @@ const Messages: React.FC = () => {
       return;
     }
 
-    // Handle existing conversation
     if (!selectedConversation) return;
     
-    // Optimistically add message to UI immediately
     const optimisticMessage: Message = {
       id: tempId,
       sender_id: user.id,
@@ -438,9 +440,8 @@ const Messages: React.FC = () => {
     };
     
     setMessages(prev => [...prev, optimisticMessage]);
-    setNewMessage(''); // Clear input immediately
+    setNewMessage('');
     
-    // Update conversation list with new message
     setConversations(prev => prev.map(conv => 
       conv.id === selectedConversation 
         ? { ...conv, lastMessage: messageContent, lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
@@ -461,13 +462,11 @@ const Messages: React.FC = () => {
 
       if (error) throw error;
       
-      // Replace temp message with real one (keep existing, just update id)
       setMessages(prev => prev.map(msg => 
         msg.id === tempId ? { ...msg, id: data.id } : msg
       ));
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove optimistic message on error
       setMessages(prev => prev.filter(msg => msg.id !== tempId));
       toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
     } finally {
@@ -475,7 +474,6 @@ const Messages: React.FC = () => {
     }
   };
 
-  // Get current chat header info (either from selected conversation or pending)
   const currentChatInfo = selectedConv 
     ? {
         name: selectedConv.otherUser.name,
@@ -496,20 +494,45 @@ const Messages: React.FC = () => {
       }
     : null;
 
-  // Show chat view if we have a conversation selected OR if we're in pending mode
-  const showChatView = selectedConversation || isInPendingConversation;
+  // Render messages with date separators
+  const renderMessages = () => {
+    const elements: React.ReactNode[] = [];
+    
+    messages.forEach((message, index) => {
+      // Add date separator if this is first message or different day from previous
+      if (index === 0 || isDifferentDay(messages[index - 1].created_at, message.created_at)) {
+        elements.push(
+          <DateSeparator key={`date-${message.id}`} date={formatMessageDate(message.created_at)} />
+        );
+      }
+      
+      elements.push(
+        <ChatBubble
+          key={message.id}
+          content={message.content}
+          timestamp={message.timestamp}
+          isMe={message.senderId === 'me'}
+          isLastInGroup={true}
+        />
+      );
+    });
+    
+    return elements;
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-muted/30 flex flex-col">
       <Header />
       
       {/* Pending Ratings Banner */}
       {pendingRatings.length > 0 && (
-        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-b border-orange-200">
+        <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-200/50">
           <div className="max-w-6xl mx-auto px-4 py-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-orange-600" />
+                <div className="p-1.5 bg-orange-100 rounded-full">
+                  <Star className="h-4 w-4 text-orange-600" />
+                </div>
                 <p className="text-sm font-medium text-orange-900">
                   You have {pendingRatings.length} pending employer rating{pendingRatings.length > 1 ? 's' : ''}
                 </p>
@@ -519,7 +542,8 @@ const Messages: React.FC = () => {
                   setSelectedRating(pendingRatings[0]);
                   setShowRatingModal(true);
                 }}
-                className="text-sm font-semibold text-orange-600 hover:text-orange-700 underline"
+                className="text-sm font-semibold text-orange-600 hover:text-orange-700 
+                           bg-orange-100 hover:bg-orange-200 px-3 py-1.5 rounded-full transition-colors"
               >
                 Rate Now
               </button>
@@ -528,398 +552,208 @@ const Messages: React.FC = () => {
         </div>
       )}
       
-      {/* Desktop: Back Button */}
-      <div className="hidden md:block max-w-6xl mx-auto px-4 pt-8 w-full">
-        <Link 
-          to="/"
-          className="flex items-center text-gray-600 hover:text-gray-800 mb-6"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Home
-        </Link>
-      </div>
-
       {/* Desktop Layout */}
-      <div className="hidden md:block max-w-6xl mx-auto px-4 pb-8 w-full flex-1">
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden" style={{ height: '600px' }}>
-          <div className="flex h-full">
-            {/* Conversations List */}
-            <div className="w-1/3 border-r border-gray-200">
-              <div className="p-4 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                  <MessageCircle className="h-5 w-5 mr-2" />
-                  Messages
-                </h2>
-              </div>
-              
-              <div className="overflow-y-auto h-full">
-                {isLoading ? (
-                  <div className="p-4 text-center text-gray-500">Loading conversations...</div>
-                ) : conversations.length === 0 && !isInPendingConversation ? (
-                  <div className="p-4 text-center text-gray-500">No conversations yet</div>
-                ) : (
-                  <>
-                    {/* Show pending conversation at top if exists */}
-                    {isInPendingConversation && pendingConversation && (
-                      <div
-                        className="p-4 border-b border-gray-100 bg-orange-50 border-orange-200"
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              {pendingConversation.employerAvatar}
-                            </span>
-                          </div>
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-semibold text-gray-800 truncate">
-                                {pendingConversation.employerName}
-                              </span>
-                              <span className="text-xs text-orange-600 font-medium">New</span>
-                            </div>
-                            
-                            <p className="text-xs text-orange-600 mb-1 truncate">
-                              {pendingConversation.jobTitle}
-                            </p>
-                            
-                            <p className="text-sm text-gray-500 italic">
-                              Start typing to send a message...
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {conversations.map((conversation) => (
-                    <div
-                      key={conversation.id}
-                      onClick={() => handleSelectConversation(conversation.id)}
-                      className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                        selectedConversation === conversation.id ? 'bg-orange-50 border-orange-200' : ''
-                      }`}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                          <span className="text-white font-semibold text-sm">
-                            {conversation.otherUser.avatar}
-                          </span>
-                        </div>
-                        
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <Link 
-                              to={`/user/${conversation.otherUser.id}`}
-                              className="text-sm font-semibold text-gray-800 truncate hover:text-orange-600"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              {conversation.otherUser.name}
-                            </Link>
-                            <span className="text-xs text-gray-500">
-                              {conversation.lastMessageTime}
-                            </span>
-                          </div>
-                          
-                          {conversation.otherUser.rating && (
-                            <div className="mb-1">
-                              <RatingBadge 
-                                rating={conversation.otherUser.rating} 
-                                reviewCount={conversation.otherUser.reviewCount}
-                                size="sm"
-                              />
-                            </div>
-                          )}
-                          
-                          <p className="text-xs text-orange-600 mb-1 truncate">
-                            {conversation.jobTitle}
-                          </p>
-                          
-                          <div className="flex items-center justify-between">
-                            <p className="text-sm text-gray-600 truncate">
-                              {conversation.lastMessage}
-                            </p>
-                            {conversation.unread > 0 && (
-                              <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-2">
-                                {conversation.unread}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+      <div className="hidden md:flex flex-1 max-w-6xl mx-auto px-4 py-6 w-full">
+        <div className="flex-1 flex flex-col">
+          {/* Back Button */}
+          <Link 
+            to="/"
+            className="flex items-center text-muted-foreground hover:text-foreground mb-4 w-fit transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Home
+          </Link>
+
+          {/* Main Container */}
+          <div className="flex-1 bg-card rounded-2xl shadow-xl overflow-hidden border border-border/50">
+            <div className="flex h-[calc(100vh-220px)] min-h-[500px]">
+              {/* Conversations List */}
+              <div className="w-[340px] border-r border-border flex flex-col bg-card">
+                <div className="p-4 border-b border-border">
+                  <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                    <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
+                      <MessageCircle className="h-5 w-5 text-white" />
                     </div>
-                    ))}
+                    Messages
+                  </h2>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto">
+                  {isLoading ? (
+                    <>
+                      <ConversationSkeleton />
+                      <ConversationSkeleton />
+                      <ConversationSkeleton />
+                    </>
+                  ) : conversations.length === 0 && !isInPendingConversation ? (
+                    <EmptyState type="no-conversations" />
+                  ) : (
+                    <div className="divide-y divide-border/50">
+                      {/* Pending conversation */}
+                      {isInPendingConversation && pendingConversation && (
+                        <ConversationListItem
+                          id="pending"
+                          otherUser={{
+                            id: pendingConversation.employerId,
+                            name: pendingConversation.employerName,
+                            avatar: pendingConversation.employerAvatar,
+                            rating: null,
+                            reviewCount: 0,
+                          }}
+                          jobTitle={pendingConversation.jobTitle}
+                          lastMessage=""
+                          lastMessageTime=""
+                          unread={0}
+                          isSelected={true}
+                          isPending={true}
+                          onClick={() => {}}
+                        />
+                      )}
+                      
+                      {/* Existing conversations */}
+                      {conversations.map((conversation) => (
+                        <ConversationListItem
+                          key={conversation.id}
+                          id={conversation.id}
+                          otherUser={conversation.otherUser}
+                          jobTitle={conversation.jobTitle}
+                          lastMessage={conversation.lastMessage}
+                          lastMessageTime={conversation.lastMessageTime}
+                          unread={conversation.unread}
+                          isSelected={selectedConversation === conversation.id}
+                          onClick={() => handleSelectConversation(conversation.id)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Chat Area */}
+              <div className="flex-1 flex flex-col bg-muted/20">
+                {showChatView && currentChatInfo ? (
+                  <>
+                    <ChatHeader
+                      name={currentChatInfo.name}
+                      avatar={currentChatInfo.avatar}
+                      jobTitle={currentChatInfo.jobTitle}
+                      userId={currentChatInfo.userId}
+                      rating={currentChatInfo.rating}
+                      reviewCount={currentChatInfo.reviewCount}
+                    />
+
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                      {messages.length === 0 ? (
+                        <EmptyState type={isInPendingConversation ? 'pending' : 'no-messages'} />
+                      ) : (
+                        renderMessages()
+                      )}
+                      <div ref={messagesEndRef} />
+                    </div>
+
+                    {/* Input Area */}
+                    <div className="p-4 bg-card/50 border-t border-border/50">
+                      <ChatInput
+                        value={newMessage}
+                        onChange={setNewMessage}
+                        onSend={sendMessage}
+                        disabled={isSending}
+                      />
+                    </div>
                   </>
+                ) : (
+                  <EmptyState type="no-selection" />
                 )}
               </div>
-            </div>
-
-            {/* Chat Area - Desktop */}
-            <div className="flex-1 flex flex-col">
-              {showChatView && currentChatInfo ? (
-                <>
-                  {/* Chat Header */}
-                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
-                          {currentChatInfo.avatar}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800">{currentChatInfo.name}</p>
-                        <p className="text-sm text-orange-600">{currentChatInfo.jobTitle}</p>
-                      </div>
-                    </div>
-                    
-                    <button className="p-2 text-gray-600 hover:text-orange-500 hover:bg-orange-50 rounded-lg">
-                      <Phone className="h-5 w-5" />
-                    </button>
-                  </div>
-
-                  {/* Messages */}
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                    {messages.length === 0 ? (
-                      <div className="text-center text-gray-500 mt-8">
-                        {isInPendingConversation 
-                          ? "Type a message below to start the conversation!"
-                          : "No messages yet. Start the conversation!"}
-                      </div>
-                    ) : (
-                      messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            message.senderId === 'me'
-                              ? 'bg-orange-500 text-white'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          <p className="text-sm">{message.content}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              message.senderId === 'me' ? 'text-orange-100' : 'text-gray-500'
-                            }`}
-                          >
-                            {message.timestamp}
-                          </p>
-                        </div>
-                      </div>
-                      ))
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Message Input */}
-                  <div className="p-4 border-t border-gray-200">
-                    <div className="flex space-x-2">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        placeholder="Type your message..."
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                        onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                      />
-                      <button
-                        onClick={sendMessage}
-                        disabled={isSending || !newMessage.trim()}
-                        className="bg-orange-500 text-white p-2 rounded-lg hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <Send className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Select a conversation to start messaging</p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
 
       {/* Mobile Layout */}
-      <div className="md:hidden flex-1 flex flex-col bg-white">
+      <div className="md:hidden flex-1 flex flex-col bg-card">
         {!showChatView ? (
           /* Conversations List - Mobile */
           <div className="flex-1 flex flex-col">
-            <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+            <div className="p-4 border-b border-border bg-card sticky top-0 z-10">
               <Link 
                 to="/"
-                className="flex items-center text-gray-600 hover:text-gray-800 mb-3"
+                className="flex items-center text-muted-foreground hover:text-foreground mb-3 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back to Home
               </Link>
-              <h2 className="text-xl font-bold text-gray-800 flex items-center">
-                <MessageCircle className="h-5 w-5 mr-2" />
+              <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                <div className="p-2 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
+                  <MessageCircle className="h-5 w-5 text-white" />
+                </div>
                 Messages
               </h2>
             </div>
             
             <div className="flex-1 overflow-y-auto">
               {isLoading ? (
-                <div className="p-4 text-center text-gray-500">Loading conversations...</div>
+                <>
+                  <ConversationSkeleton />
+                  <ConversationSkeleton />
+                  <ConversationSkeleton />
+                </>
               ) : conversations.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">No conversations yet</div>
+                <EmptyState type="no-conversations" />
               ) : (
-                conversations.map((conversation) => (
-                <div
-                  key={conversation.id}
-                  onClick={() => handleSelectConversation(conversation.id)}
-                  className="p-4 border-b border-gray-100 active:bg-gray-50"
-                >
-                  <div className="flex items-start space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-white font-semibold">
-                        {conversation.otherUser.avatar}
-                      </span>
-                    </div>
-                    
-                     <div className="flex-1 min-w-0">
-                       <div className="flex items-center justify-between mb-1">
-                         <Link 
-                           to={`/user/${conversation.otherUser.id}`}
-                           className="text-base font-semibold text-gray-800 truncate hover:text-orange-600"
-                           onClick={(e) => e.stopPropagation()}
-                         >
-                           {conversation.otherUser.name}
-                         </Link>
-                         <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                           {conversation.lastMessageTime}
-                         </span>
-                       </div>
-                       
-                       {conversation.otherUser.rating && (
-                         <div className="mb-1">
-                           <RatingBadge 
-                             rating={conversation.otherUser.rating} 
-                             reviewCount={conversation.otherUser.reviewCount}
-                             size="sm"
-                           />
-                         </div>
-                       )}
-                       
-                       <p className="text-sm text-orange-600 mb-1 truncate">
-                         {conversation.jobTitle}
-                       </p>
-                       
-                       <p className="text-sm text-gray-600 truncate">
-                         {conversation.lastMessage}
-                       </p>
-                     </div>
-                  </div>
+                <div className="divide-y divide-border/50">
+                  {conversations.map((conversation) => (
+                    <ConversationListItem
+                      key={conversation.id}
+                      id={conversation.id}
+                      otherUser={conversation.otherUser}
+                      jobTitle={conversation.jobTitle}
+                      lastMessage={conversation.lastMessage}
+                      lastMessageTime={conversation.lastMessageTime}
+                      unread={conversation.unread}
+                      isSelected={false}
+                      onClick={() => handleSelectConversation(conversation.id)}
+                    />
+                  ))}
                 </div>
-                ))
               )}
             </div>
           </div>
         ) : (
           /* Chat View - Mobile */
           <div className="flex-1 flex flex-col h-full">
-            {/* Chat Header - Mobile */}
-            <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-              <div className="flex items-center justify-between">
-                <button 
-                  onClick={handleBackToList}
-                  className="p-2 -ml-2 text-gray-600 hover:text-gray-800 active:bg-gray-100 rounded-lg"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-                
-                {currentChatInfo && (
-                  <div className="flex items-center space-x-3 flex-1 ml-2">
-                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-white font-semibold text-sm">
-                        {currentChatInfo.avatar}
-                      </span>
-                     </div>
-                     <div className="flex-1 min-w-0">
-                       <Link 
-                         to={`/user/${currentChatInfo.userId}`}
-                         className="font-semibold text-gray-800 truncate hover:text-orange-600 block"
-                       >
-                         {currentChatInfo.name}
-                       </Link>
-                       {currentChatInfo.rating && (
-                         <div className="mt-1 mb-1">
-                           <RatingBadge 
-                             rating={currentChatInfo.rating} 
-                             reviewCount={currentChatInfo.reviewCount}
-                             size="sm"
-                           />
-                         </div>
-                       )}
-                       <p className="text-sm text-orange-600 truncate">{currentChatInfo.jobTitle}</p>
-                     </div>
-                   </div>
-                )}
-               </div>
-             </div>
+            {currentChatInfo && (
+              <ChatHeader
+                name={currentChatInfo.name}
+                avatar={currentChatInfo.avatar}
+                jobTitle={currentChatInfo.jobTitle}
+                userId={currentChatInfo.userId}
+                rating={currentChatInfo.rating}
+                reviewCount={currentChatInfo.reviewCount}
+                showBackButton={true}
+                onBack={handleBackToList}
+              />
+            )}
 
-            {/* Messages - Mobile with bottom padding for fixed input */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
+            {/* Messages - Mobile */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-2 pb-28 bg-muted/20">
               {messages.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">
-                  {isInPendingConversation 
-                    ? "Type a message below to start the conversation!"
-                    : "No messages yet. Start the conversation!"}
-                </div>
+                <EmptyState type={isInPendingConversation ? 'pending' : 'no-messages'} />
               ) : (
-                messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[75%] px-4 py-2 rounded-lg ${
-                      message.senderId === 'me'
-                        ? 'bg-orange-500 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <p className="text-sm break-words">{message.content}</p>
-                    <p
-                      className={`text-xs mt-1 ${
-                        message.senderId === 'me' ? 'text-orange-100' : 'text-gray-500'
-                      }`}
-                    >
-                      {message.timestamp}
-                    </p>
-                  </div>
-                </div>
-                ))
+                renderMessages()
               )}
               <div ref={mobileMessagesEndRef} />
             </div>
 
-            {/* Message Input - Fixed at bottom on mobile */}
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 safe-area-bottom">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Type your message..."
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-base"
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                />
-                <button
-                  onClick={sendMessage}
-                  disabled={isSending || !newMessage.trim()}
-                  className="bg-orange-500 text-white px-4 py-3 rounded-lg hover:bg-orange-600 active:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[56px] flex items-center justify-center"
-                >
-                  <Send className="h-5 w-5" />
-                </button>
-              </div>
+            {/* Input - Fixed at bottom */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-card border-t border-border safe-area-bottom">
+              <ChatInput
+                value={newMessage}
+                onChange={setNewMessage}
+                onSend={sendMessage}
+                disabled={isSending}
+              />
             </div>
           </div>
         )}
