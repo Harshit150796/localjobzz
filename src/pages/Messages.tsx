@@ -571,9 +571,7 @@ const Messages: React.FC = () => {
               <div className="w-[340px] border-r border-border flex flex-col bg-card">
                 <div className="p-4 border-b border-border">
                   <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <div className="p-2 bg-slate-800 rounded-xl">
-                      <MessageCircle className="h-5 w-5 text-white" />
-                    </div>
+                    <MessageCircle className="h-6 w-6 text-foreground" />
                     Messages
                   </h2>
                 </div>
@@ -685,9 +683,7 @@ const Messages: React.FC = () => {
                 Back to Home
               </Link>
               <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                <div className="p-2 bg-slate-800 rounded-xl">
-                  <MessageCircle className="h-5 w-5 text-white" />
-                </div>
+                <MessageCircle className="h-6 w-6 text-foreground" />
                 Messages
               </h2>
             </div>

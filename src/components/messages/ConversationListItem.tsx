@@ -48,7 +48,6 @@ const ConversationListItem: React.FC<ConversationListItemProps> = ({
           relative w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0
           bg-gradient-to-br from-orange-500 to-red-500
           shadow-md group-hover:shadow-lg transition-shadow duration-200
-          ${isSelected ? 'ring-2 ring-slate-600 ring-offset-2' : ''}
         `}>
           <span className="text-white font-semibold text-sm">
             {otherUser.avatar}
