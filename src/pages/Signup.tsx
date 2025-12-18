@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle, Phone } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import SEOHead from '../components/SEOHead';
@@ -15,6 +15,7 @@ const Signup = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     password: ''
   });
   
@@ -51,7 +52,8 @@ const Signup = () => {
         body: {
           email: formData.email,
           name: formData.name,
-          password: formData.password
+          password: formData.password,
+          phone: formData.phone || undefined
         }
       });
       
@@ -211,6 +213,27 @@ const Signup = () => {
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
                     We'll send you a verification code to this email
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone Number <span className="text-gray-400 font-normal">(Optional)</span>
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      placeholder="Enter your phone number"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      maxLength={15}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You can add or update this later in your profile
                   </p>
                 </div>
 
