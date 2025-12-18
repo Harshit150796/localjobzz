@@ -7,13 +7,62 @@ export interface ConversationResult {
   error?: string;
 }
 
+export interface FindConversationResult {
+  exists: boolean;
+  conversationId?: string;
+  error?: string;
+}
+
 /**
- * Creates a new conversation or finds an existing one between a user and a job poster
+ * Finds an existing conversation between a user and a job poster.
+ * Does NOT create a new conversation - use createConversationWithMessage for that.
  */
-export const createOrFindConversation = async (
+export const findConversation = async (
+  jobId: string,
+  employerId: string,
+  workerId: string
+): Promise<FindConversationResult> => {
+  try {
+    // Validate all UUIDs are present and not null
+    if (!jobId || !employerId || !workerId || 
+        jobId === 'null' || employerId === 'null' || workerId === 'null') {
+      return { exists: false, error: 'Invalid user or job information.' };
+    }
+
+    // Check if conversation already exists
+    const { data: existing, error: searchError } = await supabase
+      .from('conversations')
+      .select('id')
+      .eq('job_id', jobId)
+      .eq('employer_id', employerId)
+      .eq('worker_id', workerId)
+      .maybeSingle();
+
+    if (searchError) {
+      console.error('Error searching for conversation:', searchError);
+      return { exists: false, error: 'Failed to check existing conversations' };
+    }
+
+    if (existing) {
+      return { exists: true, conversationId: existing.id };
+    }
+
+    return { exists: false };
+  } catch (error) {
+    console.error('Unexpected error in findConversation:', error);
+    return { exists: false, error: 'An unexpected error occurred' };
+  }
+};
+
+/**
+ * Creates a new conversation AND sends the first message in a single transaction.
+ * This prevents ghost conversations by only creating when a message is actually sent.
+ */
+export const createConversationWithMessage = async (
   jobId: string,
   employerId: string,
   workerId: string,
+  messageContent: string,
   session: Session
 ): Promise<ConversationResult> => {
   try {
@@ -42,7 +91,7 @@ export const createOrFindConversation = async (
       };
     }
 
-    // Check if conversation already exists
+    // First check if conversation already exists
     const { data: existing, error: searchError } = await supabase
       .from('conversations')
       .select('id')
@@ -56,29 +105,70 @@ export const createOrFindConversation = async (
       return { success: false, error: 'Failed to check existing conversations' };
     }
 
+    let conversationId: string;
+
     if (existing) {
-      return { success: true, conversationId: existing.id };
+      conversationId = existing.id;
+    } else {
+      // Create new conversation
+      const { data: newConv, error: createError } = await supabase
+        .from('conversations')
+        .insert({
+          job_id: jobId,
+          employer_id: employerId,
+          worker_id: workerId
+        })
+        .select('id')
+        .single();
+
+      if (createError) {
+        console.error('Error creating conversation:', createError);
+        return { success: false, error: 'Failed to create conversation' };
+      }
+      
+      conversationId = newConv.id;
     }
 
-    // Create new conversation
-    const { data: newConv, error: createError } = await supabase
-      .from('conversations')
+    // Now send the first message
+    const { error: messageError } = await supabase
+      .from('messages')
       .insert({
-        job_id: jobId,
-        employer_id: employerId,
-        worker_id: workerId
-      })
-      .select('id')
-      .single();
+        conversation_id: conversationId,
+        sender_id: workerId,
+        content: messageContent
+      });
 
-    if (createError) {
-      console.error('Error creating conversation:', createError);
-      return { success: false, error: 'Failed to create conversation' };
+    if (messageError) {
+      console.error('Error sending message:', messageError);
+      return { success: false, error: 'Failed to send message' };
     }
 
-    return { success: true, conversationId: newConv.id };
+    return { success: true, conversationId };
   } catch (error) {
-    console.error('Unexpected error in createOrFindConversation:', error);
+    console.error('Unexpected error in createConversationWithMessage:', error);
     return { success: false, error: 'An unexpected error occurred' };
   }
+};
+
+/**
+ * @deprecated Use findConversation and createConversationWithMessage instead.
+ * This function is kept for backwards compatibility.
+ */
+export const createOrFindConversation = async (
+  jobId: string,
+  employerId: string,
+  workerId: string,
+  session: Session
+): Promise<ConversationResult> => {
+  const result = await findConversation(jobId, employerId, workerId);
+  
+  if (result.exists && result.conversationId) {
+    return { success: true, conversationId: result.conversationId };
+  }
+  
+  // Return without creating - caller should use createConversationWithMessage
+  return { 
+    success: false, 
+    error: 'No existing conversation found. Use createConversationWithMessage to create one.' 
+  };
 };

@@ -10,7 +10,7 @@ import { useJobs } from '../contexts/JobContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { createOrFindConversation } from '../utils/messageHelpers';
+import { findConversation } from '../utils/messageHelpers';
 import { createJobPostingSchema, createBreadcrumbSchema } from '../components/StructuredData';
 import { timeAgo } from '../utils/timeHelpers';
 import ListingCard from '../components/ListingCard';
@@ -128,24 +128,18 @@ const JobDetail = () => {
     setIsCreatingConversation(true);
     
     try {
-      const result = await createOrFindConversation(
-        job.id,
-        job.user_id,
-        session.user.id,
-        session
-      );
+      // Check if conversation already exists
+      const result = await findConversation(job.id, job.user_id, session.user.id);
 
-      if (result.success && result.conversationId) {
+      if (result.exists && result.conversationId) {
+        // Navigate to existing conversation
         navigate(`/messages?conversation=${result.conversationId}`);
       } else {
-        toast({ 
-          title: "Error", 
-          description: result.error || "Failed to start conversation",
-          variant: "destructive" 
-        });
+        // Navigate with pending conversation params - conversation will be created when first message is sent
+        navigate(`/messages?pending_job=${job.id}&pending_employer=${job.user_id}&job_title=${encodeURIComponent(job.title)}`);
       }
     } catch (error) {
-      console.error('Error starting conversation:', error);
+      console.error('Error checking conversation:', error);
       toast({ title: "Error", description: "Failed to start conversation", variant: "destructive" });
     } finally {
       setIsCreatingConversation(false);
