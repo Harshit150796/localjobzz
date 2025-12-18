@@ -35,6 +35,8 @@ const Login = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [showResetPrompt, setShowResetPrompt] = useState(false);
   const [formData, setFormData] = useState({
     emailOrPhone: '',
     password: ''
@@ -96,13 +98,24 @@ const Login = () => {
       
       const result = await login(loginEmail, formData.password);
       if (result.success) {
+        setFailedAttempts(0);
         toast({ title: "Welcome back!", description: result.message });
         navigate('/');
       } else {
+        const newAttempts = failedAttempts + 1;
+        setFailedAttempts(newAttempts);
+        if (newAttempts >= 3) {
+          setShowResetPrompt(true);
+        }
         toast({ title: "Login failed", description: result.message, variant: "destructive" });
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      const newAttempts = failedAttempts + 1;
+      setFailedAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setShowResetPrompt(true);
+      }
       toast({ 
         title: "Login failed", 
         description: error.message || "An error occurred during login",
@@ -262,8 +275,33 @@ const Login = () => {
                 </button>
               </form>
 
+              {/* Reset Password Prompt after 3 failed attempts */}
+              {showResetPrompt && (
+                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <p className="text-sm text-orange-800 text-center">
+                    Having trouble logging in?{' '}
+                    <Link 
+                      to={`/forgot-password?email=${encodeURIComponent(formData.emailOrPhone)}`}
+                      className="font-semibold text-orange-600 hover:text-orange-700 underline"
+                    >
+                      Reset your password
+                    </Link>
+                  </p>
+                </div>
+              )}
+
+              {/* Forgot Password Link */}
+              <div className="mt-4 text-center">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm text-orange-500 hover:text-orange-600 font-medium"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
+
               {/* Sign Up Link */}
-              <div className="mt-6 text-center">
+              <div className="mt-4 text-center">
                 <p className="text-gray-600">
                   Don't have an account?{' '}
                   <Link to="/signup" className="text-orange-500 font-semibold hover:text-orange-600">
