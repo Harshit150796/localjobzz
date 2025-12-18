@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, ArrowLeft, Phone, Star, User } from 'lucide-react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -8,6 +8,7 @@ import WorkerRatingModal from '../components/WorkerRatingModal';
 import RatingBadge from '../components/RatingBadge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { createConversationWithMessage } from '../utils/messageHelpers';
 
 interface Conversation {
   id: string;
@@ -25,6 +26,14 @@ interface Conversation {
   lastMessage: string;
   lastMessageTime: string;
   unread: number;
+}
+
+interface PendingConversation {
+  jobId: string;
+  employerId: string;
+  jobTitle: string;
+  employerName: string;
+  employerAvatar: string;
 }
 
 interface PendingRating {
@@ -45,10 +54,16 @@ interface Message {
 }
 
 const Messages: React.FC = () => {
-  const { user } = useAuth();
-  const [searchParams] = useSearchParams();
+  const { user, session } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const conversationIdFromUrl = searchParams.get('conversation');
+  const pendingJobId = searchParams.get('pending_job');
+  const pendingEmployerId = searchParams.get('pending_employer');
+  const pendingJobTitle = searchParams.get('job_title');
+  
   const [selectedConversation, setSelectedConversation] = useState<string | null>(conversationIdFromUrl);
+  const [pendingConversation, setPendingConversation] = useState<PendingConversation | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -58,6 +73,37 @@ const Messages: React.FC = () => {
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [selectedRating, setSelectedRating] = useState<PendingRating | null>(null);
   const { toast } = useToast();
+
+  // Handle pending conversation from URL params
+  useEffect(() => {
+    if (pendingJobId && pendingEmployerId && user) {
+      // Fetch employer profile to get name
+      const fetchEmployerProfile = async () => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('name')
+          .eq('user_id', pendingEmployerId)
+          .single();
+
+        const name = profile?.name || 'User';
+        const initials = name.split(' ').map((n: string) => n[0]).join('').toUpperCase();
+        
+        setPendingConversation({
+          jobId: pendingJobId,
+          employerId: pendingEmployerId,
+          jobTitle: pendingJobTitle ? decodeURIComponent(pendingJobTitle) : 'Job',
+          employerName: name,
+          employerAvatar: initials,
+        });
+        
+        // Clear selected conversation since we're in pending mode
+        setSelectedConversation(null);
+        setMessages([]);
+      };
+      
+      fetchEmployerProfile();
+    }
+  }, [pendingJobId, pendingEmployerId, pendingJobTitle, user]);
 
   // Fetch conversations and pending ratings
   useEffect(() => {
@@ -283,11 +329,103 @@ const Messages: React.FC = () => {
     mobileMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Check if we're in a pending conversation state (no selectedConversation but have pending params)
+  const isInPendingConversation = !selectedConversation && pendingConversation;
+
+  const handleSelectConversation = (convId: string) => {
+    // Clear pending conversation when selecting an existing one
+    setPendingConversation(null);
+    setSelectedConversation(convId);
+    // Update URL without pending params
+    setSearchParams({ conversation: convId });
+  };
+
+  const handleBackToList = () => {
+    setSelectedConversation(null);
+    setPendingConversation(null);
+    setMessages([]);
+    // Clear all URL params
+    setSearchParams({});
+  };
+
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !user) return;
+    if (!newMessage.trim() || !user || !session) return;
 
     const messageContent = newMessage.trim();
     const tempId = `temp-${Date.now()}`;
+
+    // Handle pending conversation (create conversation with first message)
+    if (isInPendingConversation && pendingConversation) {
+      // Optimistically add message to UI immediately
+      const optimisticMessage: Message = {
+        id: tempId,
+        sender_id: user.id,
+        content: messageContent,
+        created_at: new Date().toISOString(),
+        senderId: 'me',
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      };
+      
+      setMessages([optimisticMessage]);
+      setNewMessage('');
+      setIsSending(true);
+
+      try {
+        const result = await createConversationWithMessage(
+          pendingConversation.jobId,
+          pendingConversation.employerId,
+          user.id,
+          messageContent,
+          session
+        );
+
+        if (result.success && result.conversationId) {
+          // Add the new conversation to the list
+          const newConv: Conversation = {
+            id: result.conversationId,
+            job_id: pendingConversation.jobId,
+            employer_id: pendingConversation.employerId,
+            worker_id: user.id,
+            otherUser: {
+              id: pendingConversation.employerId,
+              name: pendingConversation.employerName,
+              avatar: pendingConversation.employerAvatar,
+              rating: null,
+              reviewCount: 0,
+            },
+            jobTitle: pendingConversation.jobTitle,
+            lastMessage: messageContent,
+            lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unread: 0,
+          };
+          
+          setConversations(prev => [newConv, ...prev]);
+          
+          // Switch to the real conversation
+          setSelectedConversation(result.conversationId);
+          setPendingConversation(null);
+          
+          // Update URL
+          setSearchParams({ conversation: result.conversationId });
+          
+          toast({ title: "Message sent", description: "Conversation started successfully" });
+        } else {
+          // Remove optimistic message on error
+          setMessages([]);
+          toast({ title: "Error", description: result.error || "Failed to send message", variant: "destructive" });
+        }
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        setMessages([]);
+        toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    // Handle existing conversation
+    if (!selectedConversation) return;
     
     // Optimistically add message to UI immediately
     const optimisticMessage: Message = {
@@ -336,6 +474,30 @@ const Messages: React.FC = () => {
       setIsSending(false);
     }
   };
+
+  // Get current chat header info (either from selected conversation or pending)
+  const currentChatInfo = selectedConv 
+    ? {
+        name: selectedConv.otherUser.name,
+        avatar: selectedConv.otherUser.avatar,
+        jobTitle: selectedConv.jobTitle,
+        userId: selectedConv.otherUser.id,
+        rating: selectedConv.otherUser.rating,
+        reviewCount: selectedConv.otherUser.reviewCount,
+      }
+    : pendingConversation 
+    ? {
+        name: pendingConversation.employerName,
+        avatar: pendingConversation.employerAvatar,
+        jobTitle: pendingConversation.jobTitle,
+        userId: pendingConversation.employerId,
+        rating: null,
+        reviewCount: 0,
+      }
+    : null;
+
+  // Show chat view if we have a conversation selected OR if we're in pending mode
+  const showChatView = selectedConversation || isInPendingConversation;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -393,85 +555,119 @@ const Messages: React.FC = () => {
               <div className="overflow-y-auto h-full">
                 {isLoading ? (
                   <div className="p-4 text-center text-gray-500">Loading conversations...</div>
-                ) : conversations.length === 0 ? (
+                ) : conversations.length === 0 && !isInPendingConversation ? (
                   <div className="p-4 text-center text-gray-500">No conversations yet</div>
                 ) : (
-                  conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation.id)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                      selectedConversation === conversation.id ? 'bg-orange-50 border-orange-200' : ''
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                        <span className="text-white font-semibold text-sm">
-                          {conversation.otherUser.avatar}
-                        </span>
+                  <>
+                    {/* Show pending conversation at top if exists */}
+                    {isInPendingConversation && pendingConversation && (
+                      <div
+                        className="p-4 border-b border-gray-100 bg-orange-50 border-orange-200"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-semibold text-sm">
+                              {pendingConversation.employerAvatar}
+                            </span>
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold text-gray-800 truncate">
+                                {pendingConversation.employerName}
+                              </span>
+                              <span className="text-xs text-orange-600 font-medium">New</span>
+                            </div>
+                            
+                            <p className="text-xs text-orange-600 mb-1 truncate">
+                              {pendingConversation.jobTitle}
+                            </p>
+                            
+                            <p className="text-sm text-gray-500 italic">
+                              Start typing to send a message...
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <Link 
-                            to={`/user/${conversation.otherUser.id}`}
-                            className="text-sm font-semibold text-gray-800 truncate hover:text-orange-600"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {conversation.otherUser.name}
-                          </Link>
-                          <span className="text-xs text-gray-500">
-                            {conversation.lastMessageTime}
+                    )}
+                    
+                    {conversations.map((conversation) => (
+                    <div
+                      key={conversation.id}
+                      onClick={() => handleSelectConversation(conversation.id)}
+                      className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                        selectedConversation === conversation.id ? 'bg-orange-50 border-orange-200' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {conversation.otherUser.avatar}
                           </span>
                         </div>
                         
-                        {conversation.otherUser.rating && (
-                          <div className="mb-1">
-                            <RatingBadge 
-                              rating={conversation.otherUser.rating} 
-                              reviewCount={conversation.otherUser.reviewCount}
-                              size="sm"
-                            />
-                          </div>
-                        )}
-                        
-                        <p className="text-xs text-orange-600 mb-1 truncate">
-                          {conversation.jobTitle}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm text-gray-600 truncate">
-                            {conversation.lastMessage}
-                          </p>
-                          {conversation.unread > 0 && (
-                            <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-2">
-                              {conversation.unread}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <Link 
+                              to={`/user/${conversation.otherUser.id}`}
+                              className="text-sm font-semibold text-gray-800 truncate hover:text-orange-600"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {conversation.otherUser.name}
+                            </Link>
+                            <span className="text-xs text-gray-500">
+                              {conversation.lastMessageTime}
                             </span>
+                          </div>
+                          
+                          {conversation.otherUser.rating && (
+                            <div className="mb-1">
+                              <RatingBadge 
+                                rating={conversation.otherUser.rating} 
+                                reviewCount={conversation.otherUser.reviewCount}
+                                size="sm"
+                              />
+                            </div>
                           )}
+                          
+                          <p className="text-xs text-orange-600 mb-1 truncate">
+                            {conversation.jobTitle}
+                          </p>
+                          
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm text-gray-600 truncate">
+                              {conversation.lastMessage}
+                            </p>
+                            {conversation.unread > 0 && (
+                              <span className="bg-orange-500 text-white text-xs rounded-full px-2 py-1 ml-2">
+                                {conversation.unread}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  ))
+                    ))}
+                  </>
                 )}
               </div>
             </div>
 
             {/* Chat Area - Desktop */}
             <div className="flex-1 flex flex-col">
-              {selectedConversation ? (
+              {showChatView && currentChatInfo ? (
                 <>
                   {/* Chat Header */}
                   <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold text-sm">
-                          {selectedConv?.otherUser.avatar}
+                          {currentChatInfo.avatar}
                         </span>
                       </div>
                       <div>
-                        <p className="font-semibold text-gray-800">{selectedConv?.otherUser.name}</p>
-                        <p className="text-sm text-orange-600">{selectedConv?.jobTitle}</p>
+                        <p className="font-semibold text-gray-800">{currentChatInfo.name}</p>
+                        <p className="text-sm text-orange-600">{currentChatInfo.jobTitle}</p>
                       </div>
                     </div>
                     
@@ -483,7 +679,11 @@ const Messages: React.FC = () => {
                   {/* Messages */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.length === 0 ? (
-                      <div className="text-center text-gray-500 mt-8">No messages yet. Start the conversation!</div>
+                      <div className="text-center text-gray-500 mt-8">
+                        {isInPendingConversation 
+                          ? "Type a message below to start the conversation!"
+                          : "No messages yet. Start the conversation!"}
+                      </div>
                     ) : (
                       messages.map((message) => (
                       <div
@@ -548,7 +748,7 @@ const Messages: React.FC = () => {
 
       {/* Mobile Layout */}
       <div className="md:hidden flex-1 flex flex-col bg-white">
-        {!selectedConversation ? (
+        {!showChatView ? (
           /* Conversations List - Mobile */
           <div className="flex-1 flex flex-col">
             <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
@@ -574,7 +774,7 @@ const Messages: React.FC = () => {
                 conversations.map((conversation) => (
                 <div
                   key={conversation.id}
-                  onClick={() => setSelectedConversation(conversation.id)}
+                  onClick={() => handleSelectConversation(conversation.id)}
                   className="p-4 border-b border-gray-100 active:bg-gray-50"
                 >
                   <div className="flex items-start space-x-3">
@@ -629,44 +829,50 @@ const Messages: React.FC = () => {
             <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <button 
-                  onClick={() => setSelectedConversation(null)}
+                  onClick={handleBackToList}
                   className="p-2 -ml-2 text-gray-600 hover:text-gray-800 active:bg-gray-100 rounded-lg"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
                 
-                <div className="flex items-center space-x-3 flex-1 ml-2">
-                  <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold text-sm">
-                      {selectedConv?.otherUser.avatar}
-                    </span>
+                {currentChatInfo && (
+                  <div className="flex items-center space-x-3 flex-1 ml-2">
+                    <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-red-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold text-sm">
+                        {currentChatInfo.avatar}
+                      </span>
+                     </div>
+                     <div className="flex-1 min-w-0">
+                       <Link 
+                         to={`/user/${currentChatInfo.userId}`}
+                         className="font-semibold text-gray-800 truncate hover:text-orange-600 block"
+                       >
+                         {currentChatInfo.name}
+                       </Link>
+                       {currentChatInfo.rating && (
+                         <div className="mt-1 mb-1">
+                           <RatingBadge 
+                             rating={currentChatInfo.rating} 
+                             reviewCount={currentChatInfo.reviewCount}
+                             size="sm"
+                           />
+                         </div>
+                       )}
+                       <p className="text-sm text-orange-600 truncate">{currentChatInfo.jobTitle}</p>
+                     </div>
                    </div>
-                   <div className="flex-1 min-w-0">
-                     <Link 
-                       to={`/user/${selectedConv?.otherUser.id}`}
-                       className="font-semibold text-gray-800 truncate hover:text-orange-600 block"
-                     >
-                       {selectedConv?.otherUser.name}
-                     </Link>
-                     {selectedConv?.otherUser.rating && (
-                       <div className="mt-1 mb-1">
-                         <RatingBadge 
-                           rating={selectedConv.otherUser.rating} 
-                           reviewCount={selectedConv.otherUser.reviewCount}
-                           size="sm"
-                         />
-                       </div>
-                     )}
-                     <p className="text-sm text-orange-600 truncate">{selectedConv?.jobTitle}</p>
-                   </div>
-                 </div>
+                )}
                </div>
              </div>
 
             {/* Messages - Mobile with bottom padding for fixed input */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24">
               {messages.length === 0 ? (
-                <div className="text-center text-gray-500 mt-8">No messages yet. Start the conversation!</div>
+                <div className="text-center text-gray-500 mt-8">
+                  {isInPendingConversation 
+                    ? "Type a message below to start the conversation!"
+                    : "No messages yet. Start the conversation!"}
+                </div>
               ) : (
                 messages.map((message) => (
                 <div
