@@ -50,7 +50,9 @@ const RatingStars: React.FC<RatingStarsProps> = ({
                 ? color === 'orange' 
                   ? 'fill-orange-400 text-orange-400' 
                   : 'fill-yellow-400 text-yellow-400'
-                : 'fill-none text-gray-300'
+                : color === 'orange'
+                  ? 'fill-none text-orange-400'
+                  : 'fill-none text-gray-300'
             }`}
           />
         </button>
