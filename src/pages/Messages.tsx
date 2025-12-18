@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, Send, ArrowLeft, Phone, Star, User } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -231,15 +231,22 @@ const Messages: React.FC = () => {
         },
         (payload) => {
           const newMsg = payload.new as any;
-          const formattedMsg: Message = {
-            id: newMsg.id,
-            sender_id: newMsg.sender_id,
-            content: newMsg.content,
-            created_at: newMsg.created_at,
-            senderId: (newMsg.sender_id === user.id ? 'me' : 'other') as 'me' | 'other',
-            timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-          };
-          setMessages(prev => [...prev, formattedMsg]);
+          
+          // Prevent duplicate messages (from optimistic update or realtime)
+          setMessages(prev => {
+            const exists = prev.some(m => m.id === newMsg.id);
+            if (exists) return prev;
+            
+            const formattedMsg: Message = {
+              id: newMsg.id,
+              sender_id: newMsg.sender_id,
+              content: newMsg.content,
+              created_at: newMsg.created_at,
+              senderId: (newMsg.sender_id === user.id ? 'me' : 'other') as 'me' | 'other',
+              timestamp: new Date(newMsg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            return [...prev, formattedMsg];
+          });
         }
       )
       .subscribe();
@@ -265,25 +272,65 @@ const Messages: React.FC = () => {
   }
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
+  
+  // Ref for scrolling to bottom
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const mobileMessagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    mobileMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation || !user) return;
 
+    const messageContent = newMessage.trim();
+    const tempId = `temp-${Date.now()}`;
+    
+    // Optimistically add message to UI immediately
+    const optimisticMessage: Message = {
+      id: tempId,
+      sender_id: user.id,
+      content: messageContent,
+      created_at: new Date().toISOString(),
+      senderId: 'me',
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage(''); // Clear input immediately
+    
+    // Update conversation list with new message
+    setConversations(prev => prev.map(conv => 
+      conv.id === selectedConversation 
+        ? { ...conv, lastMessage: messageContent, lastMessageTime: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+        : conv
+    ));
+
     setIsSending(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('messages')
         .insert({
           conversation_id: selectedConversation,
           sender_id: user.id,
-          content: newMessage.trim()
-        });
+          content: messageContent
+        })
+        .select('id')
+        .single();
 
       if (error) throw error;
-
-      setNewMessage('');
+      
+      // Replace temp message with real one (keep existing, just update id)
+      setMessages(prev => prev.map(msg => 
+        msg.id === tempId ? { ...msg, id: data.id } : msg
+      ));
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempId));
       toast({ title: "Error", description: "Failed to send message", variant: "destructive" });
     } finally {
       setIsSending(false);
@@ -462,6 +509,7 @@ const Messages: React.FC = () => {
                       </div>
                       ))
                     )}
+                    <div ref={messagesEndRef} />
                   </div>
 
                   {/* Message Input */}
@@ -644,6 +692,7 @@ const Messages: React.FC = () => {
                 </div>
                 ))
               )}
+              <div ref={mobileMessagesEndRef} />
             </div>
 
             {/* Message Input - Fixed at bottom on mobile */}
