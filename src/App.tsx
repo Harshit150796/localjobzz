@@ -33,6 +33,9 @@ import CityJobsLanding from "./pages/CityJobsLanding";
 import AIAssistant from "./pages/AIAssistant";
 import VerifyOTP from "./pages/VerifyOTP";
 import JobDetail from "./pages/JobDetail";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPasswordVerify from "./pages/ResetPasswordVerify";
+import ResetPasswordNew from "./pages/ResetPasswordNew";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +73,9 @@ const App = () => (
         <Route path="/cities" element={<CityJobsLanding />} />
         <Route path="/ai-assistant" element={<AIAssistant />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password-verify" element={<ResetPasswordVerify />} />
+        <Route path="/reset-password-new" element={<ResetPasswordNew />} />
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
         <Route path="*" element={<NotFound />} />
         </Routes>

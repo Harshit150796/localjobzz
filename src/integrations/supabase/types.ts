@@ -299,6 +299,57 @@ export type Database = {
         }
         Relationships: []
       }
+      password_reset_requests: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          ip_address: string | null
+          last_resend_at: string | null
+          otp_code: string
+          otp_hash: string
+          resend_count: number | null
+          reset_token: string | null
+          used_at: string | null
+          user_agent: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          email: string
+          expires_at: string
+          id?: string
+          ip_address?: string | null
+          last_resend_at?: string | null
+          otp_code: string
+          otp_hash: string
+          resend_count?: number | null
+          reset_token?: string | null
+          used_at?: string | null
+          user_agent?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string | null
+          last_resend_at?: string | null
+          otp_code?: string
+          otp_hash?: string
+          resend_count?: number | null
+          reset_token?: string | null
+          used_at?: string | null
+          user_agent?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       pending_registrations: {
         Row: {
           attempts: number | null
