@@ -22,6 +22,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<{ success: boolean; message: string }>;
+  signInWithGoogle: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -163,6 +164,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setSession(null);
   };
 
+  const signInWithGoogle = async () => {
+    const redirectUrl = `${window.location.origin}/auth/callback`;
+    
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+    
+    if (error) {
+      console.error('Google OAuth error:', error);
+      throw error;
+    }
+  };
+
   const updateProfile = async (userData: Partial<User>): Promise<{ success: boolean; message: string }> => {
     if (!user || !session) return { success: false, message: 'No user logged in' };
 
@@ -202,7 +223,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     login,
     logout,
-    updateProfile
+    updateProfile,
+    signInWithGoogle
   };
 
   return (
