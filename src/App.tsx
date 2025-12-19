@@ -26,6 +26,7 @@ import Signup from "./pages/Signup";
 import VerifyEmail from "./pages/VerifyEmail";
 import WaitingVerification from "./pages/WaitingVerification";
 import VerifySuccess from "./pages/VerifySuccess";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import CityJobs from "./pages/CityJobs";
 import CategoryCityJobs from "./pages/CategoryCityJobs";
@@ -68,6 +69,7 @@ const App = () => (
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/waiting-verification" element={<WaitingVerification />} />
         <Route path="/verify" element={<VerifySuccess />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/jobs/:city" element={<CityJobs />} />
         <Route path="/jobs/:city/:category" element={<CategoryCityJobs />} />
         <Route path="/cities" element={<CityJobsLanding />} />
