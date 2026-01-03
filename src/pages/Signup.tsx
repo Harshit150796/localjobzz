@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, AlertCircle, Phone } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
@@ -18,7 +18,7 @@ const GoogleIcon = () => (
 
 const Signup = () => {
   const { toast } = useToast();
-  const { signInWithGoogle, isGoogleLoaded } = useAuth();
+  const { signInWithGoogle, isGoogleLoaded, session } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -33,6 +33,13 @@ const Signup = () => {
   });
   
   const from = (location.state as any)?.from || '/';
+
+  // Redirect if already logged in - use session as source of truth
+  useEffect(() => {
+    if (session) {
+      navigate(from);
+    }
+  }, [session, navigate, from]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
