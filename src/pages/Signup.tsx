@@ -18,7 +18,7 @@ const GoogleIcon = () => (
 
 const Signup = () => {
   const { toast } = useToast();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, isGoogleLoaded } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [showPassword, setShowPassword] = useState(false);
@@ -132,9 +132,20 @@ const Signup = () => {
   };
 
   const handleGoogleSignup = async () => {
+    if (!isGoogleLoaded) {
+      toast({
+        title: "Please wait",
+        description: "Google Sign-In is loading. Please try again in a moment.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
+      // Note: The actual sign-in happens via callback, so we wait a bit before resetting
+      setTimeout(() => setIsGoogleLoading(false), 3000);
     } catch (error: any) {
       console.error('Google signup error:', error);
       toast({
@@ -318,12 +329,12 @@ const Signup = () => {
               <button
                 type="button"
                 onClick={handleGoogleSignup}
-                disabled={isGoogleLoading}
+                disabled={isGoogleLoading || !isGoogleLoaded}
                 className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <GoogleIcon />
                 <span className="font-medium text-gray-700">
-                  {isGoogleLoading ? 'Connecting...' : 'Continue with Google'}
+                  {isGoogleLoading ? 'Connecting...' : !isGoogleLoaded ? 'Loading...' : 'Continue with Google'}
                 </span>
               </button>
 
