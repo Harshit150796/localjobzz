@@ -4,7 +4,7 @@ import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import '@/types/google.d.ts';
 
 // Google Client ID - Replace with your actual client ID from Google Cloud Console
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '297454987348-u150j87slvldokrf35jvjfc04loki90d.apps.googleusercontent.com';
 
 // Types for our auth system
 export interface User {
@@ -235,7 +235,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       throw new Error('Google Identity Services not loaded. Please refresh the page and try again.');
     }
 
-    if (GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') {
+    if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_GOOGLE_CLIENT_ID')) {
       throw new Error('Google OAuth is not configured. Please set up the Google Client ID.');
     }
 
